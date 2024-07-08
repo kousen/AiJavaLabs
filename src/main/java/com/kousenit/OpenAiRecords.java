@@ -2,7 +2,6 @@ package com.kousenit;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.awt.*;
 import java.util.List;
 
 public class OpenAiRecords {
