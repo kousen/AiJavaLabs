@@ -70,7 +70,7 @@ public static void saveBinaryFile(byte[] data, String fileName) {
     Path directory = Paths.get("src/main/resources");
     Path filePath = directory.resolve(fileName);
     try {
-        Files.write(filePath, data, StandardOpenOption.CREATE_NEW);
+        Files.write(filePath, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         System.out.printf("Saved %s to %s%n", fileName, directory.toAbsolutePath());
     } catch (IOException e) {
         throw new UncheckedIOException("Error writing audio to file", e);
@@ -136,7 +136,7 @@ public class OpenAiRecords {
 - Add a private, static, final attribute called `OPENAI_API_KEY` of type `String` that reads the API key from the environment variable.
 
 ```java
-private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
+private static final String API_KEY = System.getenv("OPENAI_API_KEY");
 ```
 
 - Also add a constant for the Models endpoint:
