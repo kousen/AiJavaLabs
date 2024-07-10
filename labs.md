@@ -12,7 +12,7 @@
 ```java
 private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
 ```
-- Add a method called `generateMp3` that returns a `byte[]`. The method should take three arguments:
+- Add a method called `generateMp3` that returns a `java.nio.file.Path`. The method should take three arguments:
   - `model` of type `String`
   - `input` of type `String`
   - `voice` of type `String`
@@ -49,32 +49,29 @@ HttpRequest request = HttpRequest.newBuilder()
 - To send a request, you need an `HttpClient` instance. Starting in Java 21, the `HttpClient` class implements `AutoCloseable`, so you can use it in a try-with-resources block. Here is the code to send the request:
 
 ```java
-public byte[] generateMp3(String model, String input, String voice) {
+public Path generateMp3(String model, String input, String voice) {
   
     // ... from before ...
-  
-    try (HttpClient client = HttpClient.newHttpClient()) {
-        HttpResponse<byte[]> response =
-                client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+  try (HttpClient client = HttpClient.newHttpClient()) {
+        HttpResponse<Path> response =
+            client.send(request, HttpResponse.BodyHandlers.ofFile(getFilePath()));
         return response.body();
-    } catch (IOException | InterruptedException e) {
+  } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
-    }
+  }
 }
 ```
 
-- You'll probably want to save the returned byte array to a file. Create a class called `FileUtils` and add the following static method:
+- You'll likely want to save the generated audio file into a unique file. The argument to `ofFile` is a `Path` object that represents the file where the response will be saved. Add the following private method to generate one:
 
 ```java
-public static void saveBinaryFile(byte[] data, String fileName) {
-    Path directory = Paths.get("src/main/resources");
-    Path filePath = directory.resolve(fileName);
-    try {
-        Files.write(filePath, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        System.out.printf("Saved %s to %s%n", fileName, directory.toAbsolutePath());
-    } catch (IOException e) {
-        throw new UncheckedIOException("Error writing audio to file", e);
-    }
+private Path getFilePath() {
+    String timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    String fileName = String.format("audio_%s.png", timestamp);
+    Path dir = Paths.get("src/main/resources");
+    return dir.resolve(fileName);
 }
 ```
 
@@ -84,22 +81,23 @@ public static void saveBinaryFile(byte[] data, String fileName) {
 
 @Test
 void testGenerateMp3() {
-    var service = new TextToSpeechService();
-    byte[] result = service.generateMp3(
+  var service = new TextToSpeechService();
+  Path result = service.generateMp3(
           "tts-1",
           """
-             Now that I know how to generate audio from text,
-             I can use this feature in my applications.""",
-          "fable"
-    );
-    
-    FileUtils.saveBinaryFile(result, "test.mp3");
-    assertNotNull(result);
-    assertTrue(result.length > 0);
+          Now that I know how to generate an audio file,
+          I can use it to add the ability to convert
+          text to speech to any existing Java system.
+          """,
+          "alloy"
+  );
+
+  assertNotNull(result);
+  System.out.println("Generated audio file: " + result.toAbsolutePath());
 }
 ```
 
-- Run the test. The console should that `test.mp3` was saved in the `src/main/resources` folder. You can play the file to hear the text you provided.
+- Run the test. The console should show the name of an mp3 file saved in the `src/main/resources` folder. You can play the file to hear the text you provided.
 
 ## List the OpenAI Models
 

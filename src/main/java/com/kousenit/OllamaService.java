@@ -108,4 +108,5 @@ public class OllamaService {
             throw new RuntimeException(e);
         }
     }
+
 }
