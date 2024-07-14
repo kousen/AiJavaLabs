@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.kousenit.OllamaRecords.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class OllamaServiceTest {
@@ -77,5 +79,15 @@ class OllamaServiceTest {
         OllamaChatResponse response = service.chat(request);
         assertNotNull(response);
         System.out.println(response);
+    }
+
+    @Test
+    void testStreamingRequest() {
+        var request = new OllamaTextRequest("gemma2", "Why is the sky blue?", true);
+        var response = service.generateStreamingResponse(request);
+        assertThat(response)
+                .isNotEmpty()
+                .containsIgnoringCase("sky")
+                .containsIgnoringCase("blue");
     }
 }
