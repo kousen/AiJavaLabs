@@ -4,16 +4,10 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+**/src/main/resources/audio_*.mp3
+
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/gradle.xml
-.idea/libraries/
-.idea/misc.xml
-.idea/dictionaries/kousen.xml
-.idea/vcs.xml
-.idea/uiDesigner.xml
+.idea
 *.iws
 *.iml
 *.ipr
