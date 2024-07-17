@@ -45,7 +45,7 @@ public class TextToSpeechService {
     private Path getFilePath() {
         String timestamp = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String fileName = String.format("audio_%s.png", timestamp);
+        String fileName = String.format("audio_%s.mp3", timestamp);
         Path dir = Paths.get(RESOURCES_DIR);
         return dir.resolve(fileName);
     }
