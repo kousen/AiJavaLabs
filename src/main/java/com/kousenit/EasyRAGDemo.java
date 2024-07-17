@@ -1,0 +1,50 @@
+package com.kousenit;
+
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+
+import java.util.List;
+
+import static com.kousenit.Utils.*;
+import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocuments;
+
+public class EasyRAGDemo {
+    public interface Assistant {
+        String chat(String userMessage);
+    }
+
+    private static ContentRetriever createContentRetriever(List<Document> documents) {
+        // Here, we create and empty in-memory store for our documents and their embeddings.
+        InMemoryEmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
+
+        // Here, we are ingesting our documents into the store.
+        // Under the hood, a lot of "magic" is happening, but we can ignore it for now.
+        EmbeddingStoreIngestor.ingest(documents, embeddingStore);
+
+        // Lastly, let's create a content retriever from an embedding store.
+        return EmbeddingStoreContentRetriever.from(embeddingStore);
+    }
+
+    public static void main(String[] args) {
+        List<Document> documents = loadDocuments(toPath("documents/"), glob("*.txt"));
+
+        // Second, let's create an assistant that will have access to our documents
+        Assistant assistant = AiServices.builder(Assistant.class)
+                .chatLanguageModel(OpenAiChatModel.withApiKey(
+                        System.getenv("OPENAI_API_KEY"))) // it should use OpenAI LLM
+                .chatMemory(MessageWindowChatMemory.withMaxMessages(10)) // it should remember 10 latest messages
+                .contentRetriever(createContentRetriever(documents)) // it should have access to our documents
+                .build();
+
+        // Lastly, let's start the conversation with the assistant.
+        startConversationWith(assistant);
+        System.exit(0);
+    }
+}

@@ -9,12 +9,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.Flow;
-import java.util.concurrent.SubmissionPublisher;
+import java.util.stream.Stream;
 
 import static com.kousenit.OllamaRecords.*;
-import static com.kousenit.OllamaRecords.OllamaTextRequest;
-import static com.kousenit.OllamaRecords.OllamaResponse;
 
 public class OllamaService {
     private static final HttpClient client = HttpClient.newHttpClient();
@@ -120,66 +117,35 @@ public class OllamaService {
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
-            return handleStreamingRequest(client, httpRequest);
-        }
-    }
-
-    private String handleStreamingRequest(HttpClient client, HttpRequest request) {
-        try (var publisher = new SubmissionPublisher<String>()) {
-            var subscriber = new OllamaSubscriber();
-            publisher.subscribe(subscriber);
 
             var responseFuture = client.sendAsync(
-                            request,
-                            HttpResponse.BodyHandlers.fromLineSubscriber(subscriber))
-                    .thenApply(HttpResponse::body);
-            responseFuture.join();
+                            httpRequest,
+                            HttpResponse.BodyHandlers.ofLines())
+                    .thenApply(this::handleLines);
 
-            return subscriber.getAccumulatedResponse();
+            return responseFuture.join();
+        } catch (Exception e) {
+            System.err.println("Error generating streaming response: " + e.getMessage());
+            return "";
         }
     }
-    private class OllamaSubscriber implements Flow.Subscriber<String> {
-        private Flow.Subscription subscription;
-        private final StringBuilder accumulatedResponse = new StringBuilder();
 
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            subscription.request(1);
-        }
-
-        @Override
-        public void onNext(String item) {
+    private String handleLines(HttpResponse<Stream<String>> response) {
+        var accumulatedResponse = new StringBuilder();
+        response.body().forEach(line -> {
             try {
-                var response = gson.fromJson(item, OllamaResponse.class);
-                System.out.print(response.response());
-                accumulatedResponse.append(response.response());
+                var ollamaResponse = gson.fromJson(line, OllamaResponse.class);
+                System.out.print(ollamaResponse.response());
+                accumulatedResponse.append(ollamaResponse.response());
 
-                if (response.done()) {
-                    // You can log or process the final response metadata here if needed
+                if (ollamaResponse.done()) {
                     System.out.println();
-                    System.out.println("Final response metadata: " + item);
-                } else {
-                    subscription.request(1);
+                    System.out.println("Final response metadata: " + line);
                 }
             } catch (Exception e) {
                 System.err.println("Error processing JSON: " + e.getMessage());
             }
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            System.err.println("Error occurred: " + throwable.getMessage());
-        }
-
-        @Override
-        public void onComplete() {
-            // Streaming completed
-        }
-
-        public String getAccumulatedResponse() {
-            return accumulatedResponse.toString();
-        }
+        });
+        return accumulatedResponse.toString();
     }
-
 }
