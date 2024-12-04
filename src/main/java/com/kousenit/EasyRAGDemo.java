@@ -3,6 +3,7 @@ package com.kousenit;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
@@ -33,14 +34,19 @@ public class EasyRAGDemo {
     }
 
     public static void main(String[] args) {
-        List<Document> documents = loadDocuments(toPath("documents/"), glob("*.txt"));
+        List<Document> documents = loadDocuments(
+                toPath("documents/"), glob("*.txt"));
+
+        ChatLanguageModel chatLanguageModel = OpenAiChatModel.builder()
+                .apiKey(System.getenv("OPENAI_API_KEY"))
+                .modelName("gpt-4o-mini")
+                .build();
 
         // Second, let's create an assistant that will have access to our documents
         Assistant assistant = AiServices.builder(Assistant.class)
-                .chatLanguageModel(OpenAiChatModel.withApiKey(
-                        System.getenv("OPENAI_API_KEY"))) // it should use OpenAI LLM
-                .chatMemory(MessageWindowChatMemory.withMaxMessages(10)) // it should remember 10 latest messages
-                .contentRetriever(createContentRetriever(documents)) // it should have access to our documents
+                .chatLanguageModel(chatLanguageModel)
+                .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+                .contentRetriever(createContentRetriever(documents))
                 .build();
 
         // Lastly, let's start the conversation with the assistant.

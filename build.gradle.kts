@@ -9,11 +9,13 @@ repositories {
     mavenCentral()
 }
 
+val langchain4jVersion = "0.36.2"
+
 dependencies {
     // LangChain4j Easy RAG example
-    implementation("dev.langchain4j:langchain4j:0.32.0")
-    implementation("dev.langchain4j:langchain4j-open-ai:0.32.0")
-    implementation("dev.langchain4j:langchain4j-easy-rag:0.32.0") {
+    implementation("dev.langchain4j:langchain4j:${langchain4jVersion}")
+    implementation("dev.langchain4j:langchain4j-open-ai:${langchain4jVersion}")
+    implementation("dev.langchain4j:langchain4j-easy-rag:${langchain4jVersion}") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
 
