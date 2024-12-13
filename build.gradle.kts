@@ -15,6 +15,8 @@ dependencies {
     // LangChain4j Easy RAG example
     implementation("dev.langchain4j:langchain4j:${langchain4jVersion}")
     implementation("dev.langchain4j:langchain4j-open-ai:${langchain4jVersion}")
+    implementation("dev.langchain4j:langchain4j-ollama:${langchain4jVersion}")
+    implementation("dev.langchain4j:langchain4j-google-ai-gemini:${langchain4jVersion}")
     implementation("dev.langchain4j:langchain4j-easy-rag:${langchain4jVersion}") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
