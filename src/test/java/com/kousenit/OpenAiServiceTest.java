@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.kousenit.OpenAiRecords.*;
 import static com.kousenit.OpenAiRecords.ModelList;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,5 +23,14 @@ class OpenAiServiceTest {
         assertTrue(new HashSet<>(models).containsAll(
                 List.of("dall-e-3", "gpt-3.5-turbo", "gpt-4o",
                         "tts-1", "whisper-1")));
+    }
+
+    @Test
+    void list_and_delete_VectorStores() {
+        VectorStoreList vectorStoreList = service.listVectorStores();
+        vectorStoreList.data().stream()
+                .peek(System.out::println)
+                .map(VectorStore::id)
+                .forEach(service::deleteVectorStore);
     }
 }
