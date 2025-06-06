@@ -33,7 +33,9 @@ public class OpenAiLC4jTest {
                 .logResponses(true)
                 .build();
 
-        System.out.println(perplexity.generate("""
+        System.out.println(
+                perplexity.generate(
+                        """
                         What are today's top news stories
                         in the AI field?
                         """));
@@ -49,7 +51,9 @@ public class OpenAiLC4jTest {
                 .logResponses(true)
                 .build();
 
-        System.out.println(gemini.generate("""
+        System.out.println(
+                gemini.generate(
+                        """
                         What are today's top news stories
                         in the AI field?
                         """));
@@ -62,7 +66,9 @@ public class OpenAiLC4jTest {
                 .modelName("gemini-2.0-flash-exp")
                 .build();
 
-        System.out.println(gemini.generate("""
+        System.out.println(
+                gemini.generate(
+                        """
                         What are today's top news stories
                         in the AI field?
                         """));
@@ -75,11 +81,11 @@ public class OpenAiLC4jTest {
                 .modelName(OpenAiImageModelName.DALL_E_3)
                 .build();
 
-        Response<Image> response = model.generate("""
+        Response<Image> response = model.generate(
+                """
                 A warrior cat rides a
                 dragon into battle.
                 """);
         System.out.println(response);
-
     }
 }

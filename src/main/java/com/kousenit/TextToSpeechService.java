@@ -15,14 +15,15 @@ public class TextToSpeechService {
     public static final String RESOURCES_DIR = "src/main/resources";
 
     public Path generateMp3(String model, String input, String voice) {
-        String payload = """
+        String payload =
+                """
                 {
                     "model": "%s",
                     "input": "%s",
                     "voice": "%s"
                 }
-                """.formatted(model, input.replaceAll("\\s+", " ")
-                .trim(), voice);
+                """
+                        .formatted(model, input.replaceAll("\\s+", " ").trim(), voice);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/audio/speech"))
@@ -34,8 +35,7 @@ public class TextToSpeechService {
 
         Path filePath = getFilePath();
         try (HttpClient client = HttpClient.newHttpClient()) {
-            HttpResponse<Path> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofFile(filePath));
+            HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(filePath));
             return response.body();
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -43,8 +43,7 @@ public class TextToSpeechService {
     }
 
     private Path getFilePath() {
-        String timestamp = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String fileName = String.format("audio_%s.png", timestamp);
         Path dir = Paths.get(RESOURCES_DIR);
         return dir.resolve(fileName);

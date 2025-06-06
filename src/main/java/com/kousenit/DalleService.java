@@ -1,16 +1,15 @@
 package com.kousenit;
 
+import static com.kousenit.OpenAiRecords.*;
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-import static com.kousenit.OpenAiRecords.*;
 
 public class DalleService {
     private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
@@ -29,8 +28,7 @@ public class DalleService {
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(imageRequest)))
                 .build();
         try (HttpClient client = HttpClient.newHttpClient()) {
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), ImageResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error sending prompt prompt", e);

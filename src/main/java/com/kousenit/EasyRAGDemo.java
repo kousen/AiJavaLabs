@@ -1,5 +1,8 @@
 package com.kousenit;
 
+import static com.kousenit.Utils.*;
+import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocuments;
+
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -10,11 +13,7 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
-
 import java.util.List;
-
-import static com.kousenit.Utils.*;
-import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocuments;
 
 public class EasyRAGDemo {
     public interface Assistant {
@@ -34,8 +33,7 @@ public class EasyRAGDemo {
     }
 
     public static void main(String[] args) {
-        List<Document> documents = loadDocuments(
-                toPath("documents/"), glob("*.txt"));
+        List<Document> documents = loadDocuments(toPath("documents/"), glob("*.txt"));
 
         ChatLanguageModel chatLanguageModel = OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))

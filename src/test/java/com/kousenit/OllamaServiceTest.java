@@ -1,15 +1,14 @@
 package com.kousenit;
 
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static com.kousenit.OllamaRecords.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Test;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class OllamaServiceTest {
@@ -28,7 +27,8 @@ class OllamaServiceTest {
 
     @Test
     void generate_with_vision_request() {
-        var request = new OllamaVisionRequest("moondream",
+        var request = new OllamaVisionRequest(
+                "moondream",
                 """
                 Generate a text description of this image
                 suitable for accessibility in HTML.
@@ -57,7 +57,8 @@ class OllamaServiceTest {
 
     @Test
     void test_vision_generate() {
-        var request = new OllamaVisionRequest("moondream",
+        var request = new OllamaVisionRequest(
+                "moondream",
                 """
                 Generate a text description of this image
                 suitable for accessibility in HTML.
@@ -71,8 +72,10 @@ class OllamaServiceTest {
 
     @Test
     void test_chat() {
-        var request = new OllamaChatRequest("gemma2",
-                List.of(new OllamaMessage("user", "why is the sky blue?"),
+        var request = new OllamaChatRequest(
+                "gemma2",
+                List.of(
+                        new OllamaMessage("user", "why is the sky blue?"),
                         new OllamaMessage("assistant", "due to rayleigh scattering."),
                         new OllamaMessage("user", "how is that different than mie scattering?")),
                 false);
@@ -85,9 +88,6 @@ class OllamaServiceTest {
     void testStreamingRequest() {
         var request = new OllamaTextRequest("gemma2", "Why is the sky blue?", true);
         var response = service.generateStreamingResponse(request);
-        assertThat(response)
-                .isNotEmpty()
-                .containsIgnoringCase("sky")
-                .containsIgnoringCase("blue");
+        assertThat(response).isNotEmpty().containsIgnoringCase("sky").containsIgnoringCase("blue");
     }
 }

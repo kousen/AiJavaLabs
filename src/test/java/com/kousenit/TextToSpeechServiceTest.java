@@ -1,10 +1,9 @@
 package com.kousenit;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.nio.file.Path;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.Test;
 
 class TextToSpeechServiceTest {
     @Test
@@ -17,8 +16,7 @@ class TextToSpeechServiceTest {
                    from text using the OpenAI API, and
                    write it to a file directly.
                    """,
-                "alloy"
-        );
+                "alloy");
 
         assertNotNull(result);
         System.out.println("Generated audio file: " + result.toAbsolutePath());

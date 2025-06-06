@@ -10,26 +10,15 @@ import java.util.stream.Collectors;
 
 public class OllamaRecords {
 
-    public sealed interface OllamaRequest
-            permits OllamaTextRequest, OllamaVisionRequest { }
+    public sealed interface OllamaRequest permits OllamaTextRequest, OllamaVisionRequest {}
 
-    public record OllamaTextRequest(
-            String model,
-            String prompt,
-            boolean stream)
-    implements OllamaRequest { }
+    public record OllamaTextRequest(String model, String prompt, boolean stream) implements OllamaRequest {}
 
-    public record OllamaVisionRequest(
-            String model,
-            String prompt,
-            boolean stream,
-            List<String> images)
-    implements OllamaRequest {
+    public record OllamaVisionRequest(String model, String prompt, boolean stream, List<String> images)
+            implements OllamaRequest {
 
         public OllamaVisionRequest {
-            images = images.stream()
-                    .map(this::encodeImage)
-                    .collect(Collectors.toList());
+            images = images.stream().map(this::encodeImage).collect(Collectors.toList());
         }
 
         private String encodeImage(String path) {
@@ -42,15 +31,9 @@ public class OllamaRecords {
         }
     }
 
-    public record OllamaResponse(
-            String model,
-            String createdAt,
-            String response,
-            boolean done) { }
+    public record OllamaResponse(String model, String createdAt, String response, boolean done) {}
 
-    public record OllamaMessage(
-            String role,
-            String content) {
+    public record OllamaMessage(String role, String content) {
 
         public OllamaMessage {
             if (!List.of("user", "assistant", "system").contains(role)) {
@@ -59,14 +42,7 @@ public class OllamaRecords {
         }
     }
 
-    public record OllamaChatRequest(
-            String model,
-            List<OllamaMessage> messages,
-            boolean stream) {}
+    public record OllamaChatRequest(String model, List<OllamaMessage> messages, boolean stream) {}
 
-    public record OllamaChatResponse(
-            String model,
-            String createdAt,
-            OllamaMessage message,
-            boolean done) {}
+    public record OllamaChatResponse(String model, String createdAt, OllamaMessage message, boolean done) {}
 }

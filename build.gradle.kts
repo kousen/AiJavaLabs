@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 group = "com.kousenit"
@@ -9,35 +10,49 @@ repositories {
     mavenCentral()
 }
 
-val langchain4jVersion = "0.36.2"
-
 dependencies {
+    implementation(platform("dev.langchain4j:langchain4j-bom:1.0.1"))
+
     // LangChain4j Easy RAG example
-    implementation("dev.langchain4j:langchain4j:${langchain4jVersion}")
-    implementation("dev.langchain4j:langchain4j-open-ai:${langchain4jVersion}")
-    implementation("dev.langchain4j:langchain4j-ollama:${langchain4jVersion}")
-    implementation("dev.langchain4j:langchain4j-google-ai-gemini:${langchain4jVersion}")
-    implementation("dev.langchain4j:langchain4j-easy-rag:${langchain4jVersion}") {
+    implementation("dev.langchain4j:langchain4j")
+    implementation("dev.langchain4j:langchain4j-open-ai")
+    implementation("dev.langchain4j:langchain4j-ollama")
+    implementation("dev.langchain4j:langchain4j-google-ai-gemini")
+    implementation("dev.langchain4j:langchain4j-easy-rag") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
 
+    // Security fix
+    implementation("org.apache.poi:poi-ooxml:5.4.0")
+
     // Gson parser
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.google.code.gson:gson:2.13.1")
 
     // Logging
-    implementation("org.slf4j:slf4j-simple:2.0.7")
+    implementation("org.slf4j:slf4j-simple:2.0.17")
 
     // Testing libraries
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.26.3")
+    testImplementation("org.assertj:assertj-core:3.27.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-    // Security issue with mime4j from langchain4j
-    implementation("org.apache.james:apache-mime4j-core:0.8.11")
 }
 
 tasks.test {
     useJUnitPlatform()
     jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off")
+}
+
+spotless {
+    java {
+        target("src/**/*.java")
+        palantirJavaFormat("2.63.0")
+    }
+
+    format("misc") {
+        target("*.gradle", "*.gradle.kts", "*.md", ".gitignore")
+        trimTrailingWhitespace()
+        indentWithSpaces(4)
+        endWithNewline()
+    }
 }

@@ -50,7 +50,7 @@ HttpRequest request = HttpRequest.newBuilder()
 
 ```java
 public Path generateMp3(String model, String input, String voice) {
-  
+
     // ... from before ...
 
   try (HttpClient client = HttpClient.newHttpClient()) {
@@ -201,9 +201,9 @@ class OpenAiServiceTest {
 
 ## Install Ollama
 
-- Download the latest version of Ollama from the [Ollama website](https://ollama.com). 
-- Run the installer and follow the instructions. 
-- From a command prompt, enter `ollama run gemma2` to download and install the Gemma 2 model from Google (an open source model based on their Gemini model) locally. 
+- Download the latest version of Ollama from the [Ollama website](https://ollama.com).
+- Run the installer and follow the instructions.
+- From a command prompt, enter `ollama run gemma2` to download and install the Gemma 2 model from Google (an open source model based on their Gemini model) locally.
 - Try out a couple of sample prompts at the command line, like `Why is the sky blue?` or `Given the power required to train large language models, how do companies ever expect to make money?`.
 - When you're finished, type `/bye` to exit.
 
@@ -230,15 +230,15 @@ public class OllamaRecords {
 ```java
 public class OllamaRecords {
     public record OllamaRequest(
-            String model, 
-            String prompt, 
+            String model,
+            String prompt,
             boolean stream) {
     }
 
     public record OllamaResponse(
-            String model, 
+            String model,
             String created_at, // Shouldn't this be camel case?
-            String response, 
+            String response,
             boolean done) {
     }
 }
@@ -261,7 +261,7 @@ import static com.kousenit.OllamaRecords.*;
 public class OllamaService {
     private static final HttpClient client = HttpClient.newHttpClient();
     private static final String URL = "http://localhost:11434";
-    
+
     private final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
@@ -275,7 +275,7 @@ public class OllamaService {
                     gson.toJson(ollamaRequest)))
             .build();
         try {
-            HttpResponse<String> response = 
+            HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
@@ -298,7 +298,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class OllamaServiceTest {
     private final OllamaService service = new OllamaService();
-  
+
     @Test
     public void testGenerate() {
         var ollamaRequest = new OllamaRequest("gemma2", "Why is the sky blue?", false);
@@ -382,9 +382,9 @@ followed by lots more lines, until the `done` field is `true`.
 
 ```java
 public record OllamaResponse(
-        String model, 
-        @SerializedName("created_at") String createdAt, 
-        String response, 
+        String model,
+        @SerializedName("created_at") String createdAt,
+        String response,
         boolean done) {
 }
 ```
@@ -413,9 +413,9 @@ private final Gson gson = new GsonBuilder()
 
 ```java
 public record OllamaVisionRequest(
-        String model, 
-        String prompt, 
-        boolean stream, 
+        String model,
+        String prompt,
+        boolean stream,
         List<String> images) {}
 ```
 
@@ -425,17 +425,17 @@ public record OllamaVisionRequest(
 
 ```java
 public record OllamaVisionRequest(
-        String model, 
-        String prompt, 
-        boolean stream, 
+        String model,
+        String prompt,
+        boolean stream,
         List<String> images) {
-                           
+
     public OllamaVisionRequest {
         images = images.stream()
                     .map(this::encodeImage)
-                    .collect(Collectors.toList());    
+                    .collect(Collectors.toList());
     }
-    
+
     private String encodeImage(String path) {
         try {
             byte[] imageBytes = Files.readAllBytes(Paths.get(path));
@@ -455,7 +455,7 @@ public record OllamaVisionRequest(
 * Add the following test to the `OllamaServiceTest` class:
 
 ```java
-    
+
 @Test
 void test_vision_generate() {
     var request = new OllamaVisionRequest("moondream",
@@ -469,7 +469,7 @@ void test_vision_generate() {
     assertNotNull(ollamaResponse);
     System.out.println(ollamaResponse.response());
 }
-``` 
+```
 
 * Add the `generateVision` method to the `OllamaService` class:
 
@@ -507,16 +507,16 @@ public class OllamaRecords {
     public sealed interface OllamaRequest
             permits OllamaTextRequest, OllamaVisionRequest {
     }
-    
+
     public record OllamaTextRequest(
-            String model, 
-            String prompt, 
+            String model,
+            String prompt,
             boolean stream) implements OllamaRequest {}
-  
+
     public record OllamaVisionRequest(
-            String model, 
-            String prompt, 
-            boolean stream, 
+            String model,
+            String prompt,
+            boolean stream,
             List<String> images) implements OllamaRequest {
 
         public OllamaVisionRequest {
@@ -556,7 +556,7 @@ public OllamaResponse generate(OllamaRequest ollamaRequest) {
     }
 }
 ```
-  
+
 * Pattern matching for switch became GA in Java 21. If you have Java 21 available, let's use it to identify what type of request we are sending. First, add a system logger as an attribute to `OllamaService`:
 
 ```java
@@ -648,7 +648,7 @@ void generate_with_vision_request() {
 
 ```java
 public record OllamaMessage(
-        String role, 
+        String role,
         String content) {}
 ```
 
@@ -659,7 +659,7 @@ public record OllamaMessage(
 - With that in mind, add a compact constructor to `OllamaMessage` that validates the `role` field:
 
 ```java
-public record OllamaMessage(String role, 
+public record OllamaMessage(String role,
                             String content) {
     public OllamaMessage {
         if (!List.of("user", "assistant", "system").contains(role)) {
@@ -676,7 +676,7 @@ public record OllamaMessage(String role,
 
 ```java
 public record OllamaChatRequest(
-        String model, 
+        String model,
         List<OllamaMessage> messages,
         boolean stream) {}
 ```
@@ -690,8 +690,8 @@ public record OllamaChatRequest(
 
 ```java
 public record OllamaChatResponse(
-        String model, 
-        String createdAt, 
+        String model,
+        String createdAt,
         OllamaMessage message,
         boolean done) {}
 ```
@@ -830,4 +830,3 @@ class DalleServiceTest {
 ```
 
 * Run the test to see it in action. The response will contain a URL to the generated image, with you can either click on or copy and paste into a browser to download the image.
-

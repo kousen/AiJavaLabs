@@ -1,17 +1,16 @@
 package com.kousenit;
 
+import static com.kousenit.OpenAiRecords.*;
+import static com.kousenit.OpenAiRecords.ModelList;
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-import static com.kousenit.OpenAiRecords.*;
-import static com.kousenit.OpenAiRecords.ModelList;
 
 public class OpenAiService {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
@@ -28,8 +27,7 @@ public class OpenAiService {
                 .header("Accept", "application/json")
                 .build();
         try (var client = HttpClient.newHttpClient()) {
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), ModelList.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -44,8 +42,7 @@ public class OpenAiService {
                 .header("Accept", "application/json")
                 .build();
         try (var client = HttpClient.newHttpClient()) {
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), VectorStoreList.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -60,12 +57,10 @@ public class OpenAiService {
                 .DELETE()
                 .build();
         try (var client = HttpClient.newHttpClient()) {
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             System.out.println(response.body());
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
-
 }

@@ -1,37 +1,21 @@
 package com.kousenit;
 
 import com.google.gson.annotations.SerializedName;
-
 import java.util.List;
 import java.util.Map;
 
 public class OpenAiRecords {
     // Listing the models
     public record ModelList(List<Model> data) {
-        public record Model(
-                String id,
-                long created,
-                @SerializedName("owned_by") String ownedBy) {
-        }
+        public record Model(String id, long created, @SerializedName("owned_by") String ownedBy) {}
     }
 
     // Generating images
     public record ImageRequest(
-            String model,
-            String prompt,
-            Integer n,
-            String quality,
-            String responseFormat,
-            String size,
-            String style
-            ) {}
+            String model, String prompt, Integer n, String quality, String responseFormat, String size, String style) {}
 
-    public record ImageResponse(
-            long created,
-            List<Image> data) {
-        public record Image(
-                String url,
-                String revisedPrompt) {}
+    public record ImageResponse(long created, List<Image> data) {
+        public record Image(String url, String revisedPrompt) {}
     }
 
     // Vector stores
@@ -40,8 +24,7 @@ public class OpenAiRecords {
             @SerializedName("data") List<VectorStore> data,
             @SerializedName("first_id") String firstId,
             @SerializedName("last_id") String lastId,
-            @SerializedName("has_more") boolean hasMore
-    ) {}
+            @SerializedName("has_more") boolean hasMore) {}
 
     public record VectorStore(
             @SerializedName("id") String id,
@@ -54,14 +37,12 @@ public class OpenAiRecords {
             @SerializedName("metadata") Map<String, Object> metadata,
             @SerializedName("expires_after") Object expiresAfter,
             @SerializedName("expires_at") Object expiresAt,
-            @SerializedName("last_active_at") long lastActiveAt
-    ) {}
+            @SerializedName("last_active_at") long lastActiveAt) {}
 
     public record FileCounts(
             @SerializedName("in_progress") int inProgress,
             @SerializedName("completed") int completed,
             @SerializedName("failed") int failed,
             @SerializedName("cancelled") int cancelled,
-            @SerializedName("total") int total
-    ) {}
+            @SerializedName("total") int total) {}
 }

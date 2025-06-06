@@ -6,9 +6,8 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.output.Response;
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.CompletableFuture;
+import org.junit.jupiter.api.Test;
 
 public class OllamaLC4jTest {
 
@@ -18,8 +17,7 @@ public class OllamaLC4jTest {
                 .baseUrl("http://localhost:11434")
                 .modelName("gemma")
                 .build();
-        System.out.println(
-                model.generate("Why is the sky blue?"));
+        System.out.println(model.generate("Why is the sky blue?"));
     }
 
     @Test
@@ -48,6 +46,4 @@ public class OllamaLC4jTest {
         });
         futureResponse.join();
     }
-
-
 }

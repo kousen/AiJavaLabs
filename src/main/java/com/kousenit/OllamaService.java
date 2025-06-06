@@ -1,17 +1,16 @@
 package com.kousenit;
 
+import static com.kousenit.OllamaRecords.*;
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.stream.Stream;
-
-import static com.kousenit.OllamaRecords.*;
 
 public class OllamaService {
     private static final HttpClient client = HttpClient.newHttpClient();
@@ -32,7 +31,10 @@ public class OllamaService {
             }
             case OllamaVisionRequest visionRequest -> {
                 logger.log(System.Logger.Level.INFO, "Vision request to: {0}", visionRequest.model());
-                logger.log(System.Logger.Level.INFO, "Size of uploaded image: {0}", visionRequest.images().getFirst().length());
+                logger.log(
+                        System.Logger.Level.INFO,
+                        "Size of uploaded image: {0}",
+                        visionRequest.images().getFirst().length());
                 logger.log(System.Logger.Level.INFO, "Prompt: {0}", visionRequest.prompt());
             }
         }
@@ -57,8 +59,7 @@ public class OllamaService {
     }
 
     public String generateStreaming(OllamaTextRequest ollamaTextRequest) {
-        logger.log(System.Logger.Level.INFO,
-                "Generating streaming response with request: {0}", ollamaTextRequest);
+        logger.log(System.Logger.Level.INFO, "Generating streaming response with request: {0}", ollamaTextRequest);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(URL + "/api/generate"))
                 .header("Content-Type", "application/json")
@@ -76,8 +77,10 @@ public class OllamaService {
 
     public OllamaResponse generateVision(OllamaVisionRequest visionRequest) {
         logger.log(System.Logger.Level.INFO, "Model: {0}", visionRequest.model());
-        logger.log(System.Logger.Level.INFO,
-                "Size of uploaded image: {0}", visionRequest.images().getFirst().length());
+        logger.log(
+                System.Logger.Level.INFO,
+                "Size of uploaded image: {0}",
+                visionRequest.images().getFirst().length());
         logger.log(System.Logger.Level.INFO, "Prompt: {0}", visionRequest.prompt());
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(URL + "/api/generate"))
@@ -118,9 +121,7 @@ public class OllamaService {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            var responseFuture = client.sendAsync(
-                            httpRequest,
-                            HttpResponse.BodyHandlers.ofLines())
+            var responseFuture = client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofLines())
                     .thenApply(this::handleLines);
 
             return responseFuture.join();
