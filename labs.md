@@ -69,7 +69,7 @@ public Path generateMp3(String model, String input, String voice) {
 private Path getFilePath() {
     String timestamp = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-    String fileName = String.format("audio_%s.png", timestamp);
+    String fileName = String.format("audio_%s.mp3", timestamp);
     Path dir = Paths.get("src/main/resources");
     return dir.resolve(fileName);
 }
@@ -107,7 +107,7 @@ void testGenerateMp3() {
 
 ```kotlin
 dependencies {
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.google.code.gson:gson:2.13.1")
 }
 ```
 
@@ -146,7 +146,9 @@ private static final String MODELS_URL = "https://api.openai.com/v1/models";
 - Add a private, static, final attribute called `GSON` of type `Gson` that creates a new `Gson` instance:
 
 ```java
-private final Gson gson = new Gson();
+private final Gson gson = new GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+        .create();
 ```
 
 - Add a method called `listModels` that returns a `List<String>`. This method will send a GET request to the OpenAI API and return a `ModelList`.
@@ -220,7 +222,7 @@ class OpenAiServiceTest {
 
 ```java
 public class OllamaRecords {
-    public record OllamaRequest(String model, String prompt, boolean stream) {
+    public record OllamaTextRequest(String model, String prompt, boolean stream) {
     }
 }
 ```
@@ -229,7 +231,7 @@ public class OllamaRecords {
 
 ```java
 public class OllamaRecords {
-    public record OllamaRequest(
+    public record OllamaTextRequest(
             String model,
             String prompt,
             boolean stream) {
@@ -237,7 +239,7 @@ public class OllamaRecords {
 
     public record OllamaResponse(
             String model,
-            String created_at, // Shouldn't this be camel case?
+            String createdAt,
             String response,
             boolean done) {
     }
@@ -266,7 +268,7 @@ public class OllamaService {
             .setPrettyPrinting()
             .create();
 
-    public OllamaResponse generate(OllamaRequest request) {
+    public OllamaResponse generate(OllamaTextRequest ollamaRequest) {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(URL + "/api/generate"))
             .header("Content-Type", "application/json")
@@ -301,7 +303,7 @@ public class OllamaServiceTest {
 
     @Test
     public void testGenerate() {
-        var ollamaRequest = new OllamaRequest("gemma2", "Why is the sky blue?", false);
+        var ollamaRequest = new OllamaTextRequest("gemma2", "Why is the sky blue?", false);
         OllamaResponse ollamaResponse = service.generate(ollamaRequest);
         String answer = ollamaResponse.response();
         System.out.println(answer);
@@ -315,7 +317,7 @@ public class OllamaServiceTest {
 
 ```java
 public OllamaResponse generate(String model, String prompt) {
-    return generate(new OllamaRequest(model, prompt, false));
+    return generate(new OllamaTextRequest(model, prompt, false));
 }
 ```
 
@@ -336,7 +338,7 @@ void generate_with_model_and_name() {
 * To see what a streaming result looks like, add a method to send the message and return the response as a `String`:
 
 ```java
-public String generateStreaming(OllamaRequest ollamaRequest) {
+public String generateStreaming(OllamaTextRequest ollamaRequest) {
     HttpRequest request = HttpRequest.newBuilder()
           .uri(URI.create(URL + "/api/generate"))
           .header("Content-Type", "application/json")
@@ -357,7 +359,7 @@ public String generateStreaming(OllamaRequest ollamaRequest) {
 ```java
 @Test
 public void streaming_generate_request() {
-    var request = new OllamaRequest("gemma2", "Why is the sky blue?", true);
+    var request = new OllamaTextRequest("gemma2", "Why is the sky blue?", true);
     String response = service.generateStreaming(request);
     System.out.println(response);
 }
@@ -378,19 +380,10 @@ followed by lots more lines, until the `done` field is `true`.
 
 ## Fix the camel case issue
 
-* The `created_at` field in the `OllamaResponse` record should be `createdAt`. You can fix this by adding a `@SerializedName` annotation to the field:
-
-```java
-public record OllamaResponse(
-        String model,
-        @SerializedName("created_at") String createdAt,
-        String response,
-        boolean done) {
-}
-```
+* The `created_at` field in the `OllamaResponse` record should be `createdAt`. Since we're already using `FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES` in our Gson configuration, the field will automatically be mapped correctly from `created_at` to `createdAt`.
 
 * Run one of the existing tests to see that the field is populated correctly.
-* As an alternative, you can create the `Gson` object using a builder and set a field naming policy. In that case, inside the `OllamaService`, you would create the `Gson` object like this:
+* The `Gson` object in `OllamaService` should be created using a builder with the field naming policy:
 
 ```java
 private final Gson gson = new GsonBuilder()
@@ -464,7 +457,7 @@ void test_vision_generate() {
             suitable for accessibility in HTML.
             """,
             false,
-            List.of("src/main/resources/images/stablediffusion/cats_playing_cards.png"));
+            List.of("src/main/resources/cats_playing_cards.png"));
     OllamaResponse ollamaResponse = service.generateVision(request);
     assertNotNull(ollamaResponse);
     System.out.println(ollamaResponse.response());
@@ -498,9 +491,8 @@ public OllamaResponse generateVision(OllamaVisionRequest visionRequest) {
 ## Refactor to sealed interfaces
 
 * Now comes the question: how do we send the vision request to the service? We'd rather not duplicate all the existing code. Fortunately, records can implement interfaces. In this case, we'll use a _sealed interface_, so that only _permitted_ classes can implement it.
-* Refactor our existing code by renaming the `OllamaRequest` record to `OllamaTextRequest`.
+* Refactor our existing code by creating a sealed interface called `OllamaRequest` with two permitted classes: `OllamaTextRequest` and `OllamaVisionRequest` and add it to our `OllamaRecords` class. Add `implements OllamaRequest` to both records.
 * Make sure the tests for the text model still pass.
-* Create a sealed interface called `OllamaRequest` with two permitted classes: `OllamaTextRequest` and `OllamaVisionRequest` and add it to our `OllamaRecords` class. Add `implements OllamaRequest` to both records.
 
 ```java
 public class OllamaRecords {
@@ -608,7 +600,7 @@ void generate_with_vision_request() {
                   """,
           false,
           List.of("src/main/resources/cats_playing_cards.png"));
-  OllamaResponse response = service.generateVision(request);
+  OllamaResponse response = service.generate(request);
   assertNotNull(response);
   System.out.println(response);
 }
@@ -739,7 +731,7 @@ public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
 
 * We now return to OpenAI to use it's DALL-E 3 image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. It turns out we can retrieve the response as either a URL or a Base 64 encoded string.
 
-* Add a record called `DalleImageRequest` :
+* Add records for image generation to the `OpenAiRecords` class:
 
 ```java
 public record ImageRequest(
@@ -753,7 +745,7 @@ public record ImageRequest(
 ) {}
 ```
 
-* The response wraps either a URL to the generated image, or the actual Base 64 encoded data. For this exercise, we'll get the URL. Add a record called `DalleImageResponse`:
+* The response wraps either a URL to the generated image, or the actual Base 64 encoded data. For this exercise, we'll get the URL. Add the response record:
 
 ```java
 public record ImageResponse(
