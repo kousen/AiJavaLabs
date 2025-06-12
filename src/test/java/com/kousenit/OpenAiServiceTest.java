@@ -19,8 +19,7 @@ class OpenAiServiceTest {
                 .toList();
 
         models.forEach(System.out::println);
-        assertTrue(new HashSet<>(models)
-                .containsAll(List.of("dall-e-3", "gpt-4.1-nano", "tts-1", "whisper-1")));
+        assertTrue(new HashSet<>(models).containsAll(List.of("dall-e-3", "gpt-4.1-nano", "tts-1", "whisper-1")));
     }
 
     @Test

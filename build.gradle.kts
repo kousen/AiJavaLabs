@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("com.diffplug.spotless") version "6.25.0"
+    id("com.diffplug.spotless") version "7.0.4"
 }
 
 group = "com.kousenit"
@@ -23,7 +23,7 @@ dependencies {
     }
 
     // Security fix
-    implementation("org.apache.poi:poi-ooxml:5.4.0")
+    implementation("org.apache.poi:poi-ooxml:5.4.1")
 
     // Gson parser
     implementation("com.google.code.gson:gson:2.13.1")
@@ -32,7 +32,7 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.17")
 
     // Testing libraries
-    testImplementation(platform("org.junit:junit-bom:5.12.2"))
+    testImplementation(platform("org.junit:junit-bom:5.13.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.27.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -46,13 +46,13 @@ tasks.test {
 spotless {
     java {
         target("src/**/*.java")
-        palantirJavaFormat("2.63.0")
+        palantirJavaFormat("2.67.0")
     }
 
     format("misc") {
         target("*.gradle", "*.gradle.kts", "*.md", ".gitignore")
         trimTrailingWhitespace()
-        indentWithSpaces(4)
+        leadingTabsToSpaces(4)
         endWithNewline()
     }
 }
