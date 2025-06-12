@@ -1,5 +1,18 @@
 # Labs
 
+## Table of Contents
+
+- [Generate Audio from Text](#generate-audio-from-text)
+- [List the OpenAI Models](#list-the-openai-models)
+- [Install Ollama](#install-ollama)
+- [Access Ollama programmatically](#access-ollama-programmatically)
+- [Streaming Results](#streaming-results)
+- [Fix the camel case issue](#fix-the-camel-case-issue)
+- [Create a vision request](#create-a-vision-request)
+- [Refactor to sealed interfaces](#refactor-to-sealed-interfaces)
+- [Have a conversation](#have-a-conversation)
+- [Generating Images](#generating-images)
+
 ## Generate Audio from Text
 
 - At the [OpenAI developer site](https://platform.openai.com/docs/overview), sign up for an account and create an API key. Currently the link to your API keys is at https://platform.openai.com/api-keys . OpenAI now recommends project API keys. See [this page](https://help.openai.com/en/articles/9186755-managing-your-work-in-the-api-platform-with-projects) for more information.
