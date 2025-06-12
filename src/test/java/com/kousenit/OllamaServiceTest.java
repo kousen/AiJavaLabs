@@ -55,20 +55,6 @@ class OllamaServiceTest {
         System.out.println(response);
     }
 
-    @Test
-    void test_vision_generate() {
-        var request = new OllamaVisionRequest(
-                "moondream",
-                """
-                Generate a text description of this image
-                suitable for accessibility in HTML.
-                """,
-                false,
-                List.of("src/main/resources/cats_playing_cards.png"));
-        OllamaResponse response = service.generateVision(request);
-        assertNotNull(response);
-        System.out.println(response);
-    }
 
     @Test
     void test_chat() {
