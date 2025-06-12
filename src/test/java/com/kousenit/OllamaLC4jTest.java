@@ -15,7 +15,7 @@ public class OllamaLC4jTest {
     void testOllama() {
         ChatModel model = OllamaChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gemma")
+                .modelName("gemma3")
                 .build();
         System.out.println(model.chat("Why is the sky blue?"));
     }
@@ -24,7 +24,7 @@ public class OllamaLC4jTest {
     void testOllamaStreaming() {
         var gemma = OllamaStreamingChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gemma")
+                .modelName("gemma3")
                 .build();
 
         // Use CompletableFuture to handle the asynchronous response
