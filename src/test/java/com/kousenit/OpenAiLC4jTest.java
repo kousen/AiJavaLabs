@@ -28,7 +28,7 @@ public class OpenAiLC4jTest {
         ChatModel perplexity = OpenAiChatModel.builder()
                 .apiKey(System.getenv("PERPLEXITY_API_KEY"))
                 .baseUrl("https://api.perplexity.ai")
-                .modelName("llama-3.1-sonar-small-128k-online")
+                .modelName("sonar")
                 .logRequests(true)
                 .logResponses(true)
                 .build();
