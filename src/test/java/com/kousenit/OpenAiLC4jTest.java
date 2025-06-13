@@ -15,7 +15,9 @@ public class OpenAiLC4jTest {
 
     private final ChatModel model = OpenAiChatModel.builder()
             .apiKey(System.getenv("OPENAI_API_KEY"))
-            .modelName(OpenAiChatModelName.GPT_4_O_MINI)
+            .logRequests(true)
+            .logResponses(true)
+            .modelName(OpenAiChatModelName.GPT_4_1_NANO)
             .build();
 
     @Test
@@ -35,24 +37,6 @@ public class OpenAiLC4jTest {
 
         System.out.println(
                 perplexity.chat(
-                        """
-                        What are today's top news stories
-                        in the AI field?
-                        """));
-    }
-
-    @Test
-    void gemini_via_openai() {
-        ChatModel gemini = OpenAiChatModel.builder()
-                .baseUrl("https://generativelanguage.googleapis.com/v1beta/openai/")
-                .apiKey(System.getenv("GOOGLEAI_API_KEY"))
-                .modelName("gemini-2.0-flash-exp")
-                .logRequests(true)
-                .logResponses(true)
-                .build();
-
-        System.out.println(
-                gemini.chat(
                         """
                         What are today's top news stories
                         in the AI field?

@@ -218,7 +218,7 @@ class OpenAiServiceTest {
 
 - Download the latest version of Ollama from the [Ollama website](https://ollama.com).
 - Run the installer and follow the instructions.
-- From a command prompt, enter `ollama run gemma3` to download and install the Gemma 2 model from Google (an open source model based on their Gemini model) locally.
+- From a command prompt, enter `ollama run gemma3` to download and install the Gemma 3 model from Google (an open source model based on their Gemini model) locally.
 - Try out a couple of sample prompts at the command line, like `Why is the sky blue?` or `Given the power required to train large language models, how do companies ever expect to make money?`.
 - When you're finished, type `/bye` to exit.
 
