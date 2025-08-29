@@ -899,3 +899,38 @@ Run the `StreamingDemo` class to see both patterns in action:
 ```bash
 ./gradlew run -PmainClass=com.kousenit.demos.StreamingDemo
 ```
+
+## Going Further: JSON Parsing Strategies
+
+If you're working with new APIs before framework support exists (like OpenAI's new Responses API), understanding JSON parsing becomes crucial. This project includes two demonstration approaches:
+
+### Available Demos
+
+- **`ResponsesApiDemo.java`** - Uses Gson's JsonElement API
+  - Tree-based navigation with `JsonObject` and `JsonArray`
+  - Explicit type checking and conversions
+  - Already included in the project dependencies
+
+- **`ResponsesApiJacksonDemo.java`** - Uses Jackson's JsonNode with JSON Pointer
+  - Elegant navigation with `at("/path/to/element")` syntax
+  - Safe chaining with `path()` method
+  - RFC 6901 JSON Pointer standard support
+
+### Key Takeaway
+
+Understanding raw HTTP and JSON parsing lets you:
+- Use new APIs immediately without waiting for framework updates
+- Debug API responses when things go wrong
+- Build custom integrations when needed
+
+### Quick Example: JSON Pointer Magic
+
+```java
+// Instead of nested loops and null checks:
+JsonNode root = mapper.readTree(response.body());
+String text = root.at("/output/0/content/0/text").asText("default");
+
+// One line to navigate deep JSON structures!
+```
+
+If time permits in class, we can explore these demos to see how to work with bleeding-edge APIs before LangChain4j or other frameworks catch up.

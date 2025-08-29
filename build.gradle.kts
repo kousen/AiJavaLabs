@@ -31,8 +31,9 @@ dependencies {
     // Security fix
     implementation("org.apache.poi:poi-ooxml:5.4.1")
 
-    // Gson parser
+    // JSON parsers
     implementation("com.google.code.gson:gson:2.13.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
 
     // Logging
     implementation("org.slf4j:slf4j-simple:2.0.17")

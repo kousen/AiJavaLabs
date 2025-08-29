@@ -2,6 +2,10 @@ package com.kousenit.demos;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -69,14 +73,10 @@ public class ResponsesApiDemo {
         System.out.println("------------------------------");
         
         // Build request body for Responses API
+        // Key difference: uses "input" instead of "messages"
         var requestBody = Map.of(
             "model", "gpt-5-nano",
-            "messages", List.of(
-                Map.of(
-                    "role", "user",
-                    "content", "What's the main difference between the Responses API and Chat Completions API?"
-                )
-            )
+            "input", "What's the main difference between the Responses API and Chat Completions API?"
             // Note: No need to maintain conversation history client-side
         );
         
@@ -92,8 +92,12 @@ public class ResponsesApiDemo {
                 HttpResponse.BodyHandlers.ofString());
         
         if (response.statusCode() == 200) {
-            var jsonResponse = gson.fromJson(response.body(), Map.class);
-            System.out.println("Response: " + jsonResponse.get("content"));
+            // Alternative: Use JsonElement for cleaner navigation (similar to Jackson's JsonNode)
+            JsonElement root = JsonParser.parseString(response.body());
+            String responseText = extractMessageText(root);
+            if (responseText != null) {
+                System.out.println("Response: " + responseText);
+            }
         } else {
             System.out.println("Status: " + response.statusCode());
             System.out.println("Body: " + response.body());
@@ -108,14 +112,9 @@ public class ResponsesApiDemo {
         // This demonstrates the API's ability to search the web for current information
         var requestBody = Map.of(
             "model", "gpt-5-nano",
-            "messages", List.of(
-                Map.of(
-                    "role", "user",
-                    "content", "What are the latest features in LangChain4j 1.4.0? Search for current information."
-                )
-            ),
+            "input", "What are the latest features in LangChain4j 1.4.0? Search for current information.",
             "tools", List.of(
-                Map.of("type", "web_search_preview")
+                Map.of("type", "web_search")
             )
         );
         
@@ -131,8 +130,12 @@ public class ResponsesApiDemo {
                 HttpResponse.BodyHandlers.ofString());
         
         if (response.statusCode() == 200) {
-            var jsonResponse = gson.fromJson(response.body(), Map.class);
-            System.out.println("Response with web search: " + jsonResponse.get("content"));
+            // Use JsonElement for cleaner navigation
+            JsonElement root = JsonParser.parseString(response.body());
+            String responseText = extractMessageText(root);
+            if (responseText != null) {
+                System.out.println("Response with web search: " + responseText);
+            }
             
             // The API handles web search internally and returns the result
             // No need for separate tool calls like Chat Completions API
@@ -140,5 +143,38 @@ public class ResponsesApiDemo {
             System.out.println("Status: " + response.statusCode());
             System.out.println("Body: " + response.body());
         }
+    }
+    
+    /**
+     * Helper method to extract message text from the Responses API JSON structure.
+     * This is similar to using Jackson's JsonNode.at() but with Gson's JsonElement.
+     * 
+     * @param root The root JsonElement from the API response
+     * @return The extracted text content, or null if not found
+     */
+    private static String extractMessageText(JsonElement root) {
+        if (!root.isJsonObject()) return null;
+        
+        JsonObject jsonObject = root.getAsJsonObject();
+        JsonArray outputs = jsonObject.getAsJsonArray("output");
+        
+        if (outputs != null) {
+            // Iterate through output array to find message type
+            for (JsonElement outputElement : outputs) {
+                JsonObject outputItem = outputElement.getAsJsonObject();
+                String type = outputItem.has("type") ? outputItem.get("type").getAsString() : null;
+                
+                if ("message".equals(type)) {
+                    JsonArray content = outputItem.getAsJsonArray("content");
+                    if (content != null && !content.isEmpty()) {
+                        JsonObject textContent = content.get(0).getAsJsonObject();
+                        if (textContent.has("text")) {
+                            return textContent.get("text").getAsString();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

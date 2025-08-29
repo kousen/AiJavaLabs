@@ -409,6 +409,112 @@ public class OpenAiService {
 
 ---
 
+# JSON Parsing: Gson vs Jackson
+
+<div class="grid grid-cols-2 gap-4">
+
+<div>
+
+## **Gson Approach**
+
+```java
+// Using JsonElement tree navigation
+JsonElement root = JsonParser.parseString(json);
+JsonObject obj = root.getAsJsonObject();
+JsonArray outputs = obj.getAsJsonArray("output");
+
+for (JsonElement elem : outputs) {
+    JsonObject item = elem.getAsJsonObject();
+    if ("message".equals(item.get("type").getAsString())) {
+        // Extract nested content...
+    }
+}
+```
+
+<v-click>
+
+- Type-safe navigation
+- Explicit type conversions
+- Manual null checking needed
+
+</v-click>
+
+</div>
+
+<div>
+
+## **Jackson Approach**
+
+```java
+// Using JsonNode with at() method
+ObjectMapper mapper = new ObjectMapper();
+JsonNode root = mapper.readTree(json);
+
+// Direct path with JSON Pointer!
+String text = root.at("/output/0/content/0/text")
+                  .asText();
+
+// Or safe navigation with path()
+root.path("output")
+    .path(0)
+    .path("content")
+    .path(0)
+    .path("text");
+```
+
+<v-click>
+
+- JSON Pointer navigation (`at()`)
+- Safe chaining with `path()`
+- No null pointer exceptions
+
+</v-click>
+
+</div>
+
+</div>
+
+---
+
+# JSON Pointer: Elegant Deep Navigation
+
+## **RFC 6901 JSON Pointer Syntax**
+
+<v-clicks>
+
+- **Direct path access**: `/output/0/content/0/text`
+- **Array indexing**: Use numbers for array elements
+- **Nested objects**: Chain with `/` separator
+
+</v-clicks>
+
+<v-click>
+
+```java
+// Complex nested structure navigation - one line!
+JsonNode root = mapper.readTree(response.body());
+
+// Instead of multiple loops and null checks:
+String text = root.at("/data/results/0/attributes/name").asText();
+
+// With fallback:
+String value = root.at("/missing/path").asText("default");
+```
+
+</v-click>
+
+<v-click>
+
+### **When to Use Which?**
+
+- **Gson**: Already in project, simpler API, Google ecosystem
+- **Jackson**: Spring Boot default, JSON Pointer support, more features
+- **Both**: Can coexist - use what fits your needs!
+
+</v-click>
+
+---
+
 # HTTP vs Framework Comparison
 
 <div class="grid grid-cols-2 gap-8">
