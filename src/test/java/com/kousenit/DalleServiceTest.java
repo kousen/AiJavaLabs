@@ -4,6 +4,7 @@ import static com.kousenit.OpenAiRecords.*;
 
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -11,6 +12,10 @@ class DalleServiceTest {
     private final DalleService service = new DalleService();
 
     @Test
+    @Tag(TestCategories.INTEGRATION)
+    @Tag(TestCategories.OPENAI)
+    @Tag(TestCategories.EXPENSIVE)
+    @Tag(TestCategories.SLOW)
     void generate_image() {
         var imageRequest = new ImageRequest(
                 "dall-e-3", "Generate a picture of cats playing cards", 1, "standard", "url", "1024x1024", "natural");

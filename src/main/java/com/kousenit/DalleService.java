@@ -14,6 +14,10 @@ import java.net.http.HttpResponse;
 public class DalleService {
     private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
+    
+    // HttpClient is thread-safe and designed to be reused for multiple requests
+    // Using a single instance improves performance through connection pooling
+    private static final HttpClient client = HttpClient.newHttpClient();
 
     private final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
@@ -27,7 +31,7 @@ public class DalleService {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(imageRequest)))
                 .build();
-        try (HttpClient client = HttpClient.newHttpClient()) {
+        try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), ImageResponse.class);
         } catch (IOException | InterruptedException e) {

@@ -15,6 +15,10 @@ import java.net.http.HttpResponse;
 public class OpenAiService {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
     private static final String MODELS_URL = "https://api.openai.com/v1/models";
+    
+    // HttpClient is thread-safe and designed to be reused for multiple requests
+    // Using a single instance improves performance through connection pooling
+    private static final HttpClient client = HttpClient.newHttpClient();
 
     private final Gson gson = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -26,7 +30,7 @@ public class OpenAiService {
                 .header("Authorization", "Bearer %s".formatted(API_KEY))
                 .header("Accept", "application/json")
                 .build();
-        try (var client = HttpClient.newHttpClient()) {
+        try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), ModelList.class);
         } catch (IOException | InterruptedException e) {
@@ -41,7 +45,7 @@ public class OpenAiService {
                 .header("OpenAI-Beta", "assistants=v2")
                 .header("Accept", "application/json")
                 .build();
-        try (var client = HttpClient.newHttpClient()) {
+        try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), VectorStoreList.class);
         } catch (IOException | InterruptedException e) {
@@ -56,7 +60,7 @@ public class OpenAiService {
                 .header("OpenAI-Beta", "assistants=v2")
                 .DELETE()
                 .build();
-        try (var client = HttpClient.newHttpClient()) {
+        try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             System.out.println(response.body());
         } catch (IOException | InterruptedException e) {

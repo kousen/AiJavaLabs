@@ -9,6 +9,7 @@ import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiImageModel;
 import dev.langchain4j.model.openai.OpenAiImageModelName;
 import dev.langchain4j.model.output.Response;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 public class OpenAiLC4jTest {
@@ -17,15 +18,23 @@ public class OpenAiLC4jTest {
             .apiKey(System.getenv("OPENAI_API_KEY"))
             .logRequests(true)
             .logResponses(true)
-            .modelName(OpenAiChatModelName.GPT_4_1_NANO)
+            .modelName("gpt-5-nano")
             .build();
 
     @Test
+    @Tag(TestCategories.INTEGRATION)
+    @Tag(TestCategories.OPENAI)
+    @Tag(TestCategories.CHEAP)
+    @Tag(TestCategories.QUICK)
+    @Tag(TestCategories.DEMO)
     void openai() {
         System.out.println(model.chat("When did your training data end?"));
     }
 
     @Test
+    @Tag(TestCategories.INTEGRATION)
+    @Tag(TestCategories.CHEAP)
+    @Tag(TestCategories.QUICK)
     void perplexity_via_openai() {
         ChatModel perplexity = OpenAiChatModel.builder()
                 .apiKey(System.getenv("PERPLEXITY_API_KEY"))
@@ -44,6 +53,9 @@ public class OpenAiLC4jTest {
     }
 
     @Test
+    @Tag(TestCategories.INTEGRATION)
+    @Tag(TestCategories.CHEAP)
+    @Tag(TestCategories.QUICK)
     void gemini_from_lc4j() {
         ChatModel gemini = GoogleAiGeminiChatModel.builder()
                 .apiKey(System.getenv("GOOGLEAI_API_KEY"))
@@ -59,6 +71,10 @@ public class OpenAiLC4jTest {
     }
 
     @Test
+    @Tag(TestCategories.INTEGRATION)
+    @Tag(TestCategories.OPENAI)
+    @Tag(TestCategories.EXPENSIVE)
+    @Tag(TestCategories.SLOW)
     void generateImage() {
         ImageModel model = OpenAiImageModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))

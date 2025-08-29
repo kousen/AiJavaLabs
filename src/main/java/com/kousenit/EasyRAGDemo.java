@@ -37,7 +37,7 @@ public class EasyRAGDemo {
 
         ChatModel chatLanguageModel = OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-4.1-nano")
+                .modelName("gpt-5-nano")
                 .build();
 
         // Second, let's create an assistant that will have access to our documents

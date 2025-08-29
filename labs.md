@@ -43,8 +43,8 @@ String payload = """
 ```
 
 - For those parameters:
-  - The value of the `model` variable must be either `tts-1` or `tts-1-hd`. The non-hd version is almost certainly good enough, but use whichever one you prefer.
-  - The value of `voice` must be one of: `alloy`, `echo`, `fable`, `onyx`, `nova`, or `shimmer`. Pick any one you like.
+  - The value of the `model` variable must be `tts-1`, `tts-1-hd`, or the newest one, `gpt-4o-mini-tts`. Use whichever one you prefer.
+  - The value of `voice` must be one of: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, or `shimmer`. Pick any one you like.
   - The `input` parameter is the text you wish to convert to an mp3.
 
 - Next, create an `HttpRequest` object that will include the `payload` in a POST request:
@@ -59,20 +59,24 @@ HttpRequest request = HttpRequest.newBuilder()
     .build();
 ```
 
-- To send a request, you need an `HttpClient` instance. Starting in Java 21, the `HttpClient` class implements `AutoCloseable`, so you can use it in a try-with-resources block. Here is the code to send the request:
+- To send a request, you need an `HttpClient` instance. While Java 21 made `HttpClient` implement `AutoCloseable`, it's more efficient to reuse a single instance. The `HttpClient` is thread-safe and designed to handle multiple concurrent requests through connection pooling. Create it as a static field in your class:
 
 ```java
-public Path generateMp3(String model, String input, String voice) {
-
-    // ... from before ...
-
-  try (HttpClient client = HttpClient.newHttpClient()) {
-        HttpResponse<Path> response =
-            client.send(request, HttpResponse.BodyHandlers.ofFile(getFilePath()));
-        return response.body();
-  } catch (IOException | InterruptedException e) {
-        throw new RuntimeException(e);
-  }
+public class TextToSpeechService {
+    // Reuse a single HttpClient instance for better performance
+    private static final HttpClient client = HttpClient.newHttpClient();
+    
+    public Path generateMp3(String model, String input, String voice) {
+        // ... from before ...
+        
+        try {
+            HttpResponse<Path> response =
+                client.send(request, HttpResponse.BodyHandlers.ofFile(getFilePath()));
+            return response.body();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
 ```
 
@@ -156,7 +160,14 @@ private static final String API_KEY = System.getenv("OPENAI_API_KEY");
 private static final String MODELS_URL = "https://api.openai.com/v1/models";
 ```
 
-- Add a private, static, final attribute called `GSON` of type `Gson` that creates a new `Gson` instance:
+- Add a private, static, final `HttpClient` field that will be reused for all requests:
+
+```java
+// HttpClient is thread-safe and designed to be reused for better performance
+private static final HttpClient client = HttpClient.newHttpClient();
+```
+
+- Add a private, final attribute called `gson` of type `Gson` that creates a new `Gson` instance:
 
 ```java
 private final Gson gson = new GsonBuilder()
@@ -164,7 +175,7 @@ private final Gson gson = new GsonBuilder()
         .create();
 ```
 
-- Add a method called `listModels` that returns a `List<String>`. This method will send a GET request to the OpenAI API and return a `ModelList`.
+- Add a method called `listModels` that returns a `ModelList`. This method will send a GET request to the OpenAI API:
 
 ```java
 public ModelList listModels() {
@@ -173,7 +184,7 @@ public ModelList listModels() {
           .header("Authorization", "Bearer %s".formatted(API_KEY))
           .header("Accept", "application/json")
           .build();
-    try (var client = HttpClient.newHttpClient()) {
+    try {
         HttpResponse<String> response =
             client.send(request, HttpResponse.BodyHandlers.ofString());
         return gson.fromJson(response.body(), ModelList.class);
@@ -770,12 +781,15 @@ public record ImageResponse(
 }
 ```
 
-* Add a class called `DalleService` with constants for the endpoint, the API key, and a `Gson` object:
+* Add a class called `DalleService` with constants for the endpoint, the API key, an `HttpClient`, and a `Gson` object:
 
 ```java
 public class DalleService {
   private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
   private static final String API_KEY = System.getenv("OPENAI_API_KEY");
+  
+  // Reuse HttpClient for better performance through connection pooling
+  private static final HttpClient client = HttpClient.newHttpClient();
 
   private final Gson gson = new GsonBuilder()
           .setPrettyPrinting()
@@ -784,7 +798,7 @@ public class DalleService {
 }
 ```
 
-* Add a new method to `DalleService` called `generateImage` that takes a `DalleImageRequest` object and returns a `DalleImageResponse` object.
+* Add a new method to `DalleService` called `generateImage` that takes a `ImageRequest` object and returns a `ImageResponse` object:
 
 ```java
 public ImageResponse generateImage(ImageRequest imageRequest) {
@@ -794,7 +808,7 @@ public ImageResponse generateImage(ImageRequest imageRequest) {
           .header("Content-Type", "application/json")
           .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(imageRequest)))
           .build();
-  try (HttpClient client = HttpClient.newHttpClient()) {
+  try {
     HttpResponse<String> response =
             client.send(request, HttpResponse.BodyHandlers.ofString());
     return gson.fromJson(response.body(), ImageResponse.class);
@@ -835,3 +849,53 @@ class DalleServiceTest {
 ```
 
 * Run the test to see it in action. The response will contain a URL to the generated image, with you can either click on or copy and paste into a browser to download the image.
+
+## Clean Streaming with LangChain4j
+
+LangChain4j provides utility methods in `LambdaStreamingResponseHandler` that make streaming much cleaner than implementing the full `StreamingChatResponseHandler` interface.
+
+### Simple Streaming
+
+For basic streaming where you just want to print tokens as they arrive:
+
+```java
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponse;
+
+var model = OllamaStreamingChatModel.builder()
+        .baseUrl("http://localhost:11434")
+        .modelName("gemma3")
+        .build();
+
+// One-liner for simple streaming
+model.chat("Tell me a joke", onPartialResponse(System.out::print));
+```
+
+### Streaming with Error Handling
+
+When you need to handle both partial responses and errors:
+
+```java
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndError;
+
+model.chat("Why is the sky blue?", onPartialResponseAndError(
+    token -> System.out.print(token),           // Handle each token
+    error -> System.err.println("Error: " + error)  // Handle errors
+));
+```
+
+### Benefits
+
+This approach eliminates the need for:
+- Anonymous inner classes
+- CompletableFuture boilerplate
+- Implementing unused interface methods
+
+The utility methods provide a functional, lambda-based approach that's much cleaner and more maintainable.
+
+### Demo
+
+Run the `StreamingDemo` class to see both patterns in action:
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.StreamingDemo
+```

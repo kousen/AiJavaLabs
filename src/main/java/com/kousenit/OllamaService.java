@@ -13,6 +13,8 @@ import java.net.http.HttpResponse;
 import java.util.stream.Stream;
 
 public class OllamaService {
+    // HttpClient is thread-safe and designed to be reused for multiple requests
+    // Using a single instance improves performance through connection pooling
     private static final HttpClient client = HttpClient.newHttpClient();
     private static final String URL = "http://localhost:11434";
 
@@ -113,7 +115,7 @@ public class OllamaService {
     }
 
     public String generateStreamingResponse(OllamaTextRequest ollamaRequest) {
-        try (var client = HttpClient.newHttpClient()) {
+        try {
             var requestBody = gson.toJson(ollamaRequest);
             var httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(URL + "/api/generate"))

@@ -13,6 +13,10 @@ import java.time.format.DateTimeFormatter;
 public class TextToSpeechService {
     private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
     public static final String RESOURCES_DIR = "src/main/resources";
+    
+    // HttpClient is thread-safe and designed to be reused for multiple requests
+    // Using a single instance improves performance through connection pooling
+    private static final HttpClient client = HttpClient.newHttpClient();
 
     public Path generateMp3(String model, String input, String voice) {
         String payload =
@@ -34,7 +38,7 @@ public class TextToSpeechService {
                 .build();
 
         Path filePath = getFilePath();
-        try (HttpClient client = HttpClient.newHttpClient()) {
+        try {
             HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(filePath));
             return response.body();
         } catch (IOException | InterruptedException e) {

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -15,6 +16,9 @@ class OllamaServiceTest {
     private final OllamaService service = new OllamaService();
 
     @Test
+    @Tag(TestCategories.LOCAL)
+    @Tag(TestCategories.QUICK)
+    @Tag(TestCategories.DEMO)
     void generate_with_text_request() {
         var ollamaRequest = new OllamaTextRequest("gemma3", "Why is the sky blue?", false);
         OllamaResponse ollamaResponse = service.generate(ollamaRequest);
@@ -26,6 +30,8 @@ class OllamaServiceTest {
     }
 
     @Test
+    @Tag(TestCategories.LOCAL)
+    @Tag(TestCategories.SLOW)
     void generate_with_vision_request() {
         var request = new OllamaVisionRequest(
                 "moondream",
@@ -41,6 +47,8 @@ class OllamaServiceTest {
     }
 
     @Test
+    @Tag(TestCategories.LOCAL)
+    @Tag(TestCategories.QUICK)
     void generate_with_model_and_name() {
         var ollamaResponse = service.generate("gemma3", "Why is the sky blue?");
         String answer = ollamaResponse.response();
@@ -49,6 +57,8 @@ class OllamaServiceTest {
     }
 
     @Test
+    @Tag(TestCategories.LOCAL)
+    @Tag(TestCategories.SLOW)
     public void streaming_generate_request() {
         var request = new OllamaTextRequest("gemma3", "Why is the sky blue?", true);
         String response = service.generateStreaming(request);
@@ -57,6 +67,9 @@ class OllamaServiceTest {
 
 
     @Test
+    @Tag(TestCategories.LOCAL)
+    @Tag(TestCategories.QUICK)
+    @Tag(TestCategories.DEMO)
     void test_chat() {
         var request = new OllamaChatRequest(
                 "gemma3",
@@ -71,6 +84,8 @@ class OllamaServiceTest {
     }
 
     @Test
+    @Tag(TestCategories.LOCAL)
+    @Tag(TestCategories.SLOW)
     void testStreamingRequest() {
         var request = new OllamaTextRequest("gemma3", "Why is the sky blue?", true);
         var response = service.generateStreamingResponse(request);
