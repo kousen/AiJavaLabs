@@ -8,33 +8,52 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ## Current State
 
-### Recent Updates (December 2024)
-- ✅ Updated all AI models to latest versions (gemma2→gemma3, GPT models→gpt-4.1-nano)
-- ✅ Updated dependencies to latest versions (Spotless 7.0.4, JUnit 5.13.0, etc.)
+### Recent Updates (December 2024 / January 2025)
+- ✅ Updated all AI models to latest versions (gemma2→gemma3, GPT models→gpt-4o-mini)
+- ✅ Updated LangChain4j to 1.4.0 (major version upgrade)
+- ✅ Configured Java 21 using Gradle's toolchain support
+- ✅ Refactored HttpClient usage from try-with-resources to static class attributes
+- ✅ Created standalone demo classes for training presentations
+- ✅ Implemented test categorization with JUnit tags for cost management
+- ✅ Added cleaner streaming patterns using LambdaStreamingResponseHandler
+- ✅ Created comprehensive Slidev presentation (38 slides with interactive demos)
+- ✅ Exported slides to PDF and PPTX formats for training materials
 - ✅ Fixed critical bugs (file extension .png→.mp3 in TextToSpeechService)
-- ✅ Added comprehensive table of contents to labs.md
 - ✅ Applied consistent code formatting with Spotless
 - ✅ Removed duplicate test methods
 
 ### Key Technologies & Versions
-- **Java**: 17+ (uses modern features like records, sealed interfaces, pattern matching)
-- **LangChain4j**: 1.0.1 (primary AI framework)
+- **Java**: 21 (configured via Gradle toolchain, uses records, sealed interfaces, pattern matching)
+- **LangChain4j**: 1.4.0 (primary AI framework with streaming enhancements)
 - **Gradle**: 8.4+ with Kotlin DSL
+- **Slidev**: For interactive presentations
 - **AI Models**:
-  - OpenAI: gpt-4.1-nano, dall-e-3, tts-1, whisper-1
+  - OpenAI: gpt-4o-mini, dall-e-3, tts-1, whisper-1
   - Ollama: gemma3 (text), moondream (vision)
+  - Google: gemini-2.0-flash-exp
 
 ### Project Structure
 ```
 src/main/java/com/kousenit/
+├── demos/                     # Standalone demo classes
+│   ├── QuickChatDemo.java    # Basic chat example
+│   ├── TextToSpeechDemo.java # TTS demonstration
+│   ├── MultiModelDemo.java   # Compare multiple providers
+│   └── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
 ├── DalleService.java          # DALL-E image generation
 ├── EasyRAGDemo.java           # RAG implementation
 ├── OllamaService.java         # Ollama integration
 ├── OpenAiService.java         # OpenAI API wrapper
 ├── TextToSpeechService.java   # TTS implementation
 ├── Utils.java                 # Utility functions
+├── TestCategories.java        # JUnit test tags
 ├── OllamaRecords.java         # Ollama data models
 └── OpenAiRecords.java         # OpenAI data models
+
+Training Materials:
+├── slides.md                  # Slidev source (38 interactive slides)
+├── slides.pdf                 # PDF export (775 KB)
+└── slides.pptx                # PowerPoint export (28 MB)
 ```
 
 ## Development Guidelines
@@ -74,9 +93,10 @@ Uses Java records for API data modeling:
 - **JSON mapping**: Gson with field naming policies
 
 ### HTTP Client Usage
-- Static HttpClient instances (educational simplicity)
-- Try-with-resources for AutoCloseable clients (Java 21+)
+- Static HttpClient instances for connection pooling and reuse
+- Avoided try-with-resources pattern (creates new instances inefficiently)
 - Direct exception wrapping in RuntimeException
+- Java 21's AutoCloseable HttpClient support acknowledged but not utilized for efficiency
 
 ## Common Tasks
 
@@ -101,7 +121,15 @@ Uses Java records for API data modeling:
 ### Test Categories
 - **Unit Tests**: Fast tests with minimal external dependencies
 - **Integration Tests**: Tests requiring external services (OpenAI, Ollama)
-- **Mixed Approach**: Current tests are primarily integration-focused
+- **Test Tags** (via TestCategories interface):
+  - `@Tag("local")`: No external services required
+  - `@Tag("cheap")`: Minimal API cost
+  - `@Tag("demo")`: Suitable for live demonstrations
+  - `@Tag("expensive")`: Higher API costs
+- **Custom Gradle Tasks**:
+  - `./gradlew localTests`: Run only local tests
+  - `./gradlew cheapTests`: Run low-cost API tests
+  - `./gradlew demoTests`: Run demonstration tests
 
 ### Known Test Issues
 - Some tests fail when external services are unavailable
@@ -143,11 +171,40 @@ This is primarily an educational repository. Changes should:
 3. **Update Documentation**: Ensure labs.md reflects any changes
 4. **Test Thoroughly**: Verify examples work as documented
 
+## Recent Architectural Decisions
+
+### Java 21 Adoption
+- Configured via Gradle toolchain for consistent builds
+- Leverages data-oriented programming features
+- Pattern matching for switch expressions
+- Enhanced sealed interfaces support
+
+### Streaming Improvements
+- Migrated to LambdaStreamingResponseHandler utilities
+- Cleaner lambda-based streaming patterns
+- Removed verbose anonymous inner classes
+- Examples: `onPartialResponse`, `onPartialResponseAndError`
+
+### Demo-First Approach
+- Created standalone demo classes separate from tests
+- Enables live coding during training sessions
+- Reduces dependency on test framework during presentations
+- Clear separation of concerns
+
+### Training Materials
+- Comprehensive Slidev presentation system
+- Interactive demos with progressive reveals
+- Export capabilities for multiple formats
+- Mermaid diagrams for architecture visualization
+
 ## Recent Commit History Context
 
 - **Model Updates**: Systematic update of AI models to latest versions
-- **Dependency Management**: Regular updates to latest stable versions
+- **LangChain4j 1.4.0**: Major version upgrade with streaming enhancements
+- **Java 21 Configuration**: Toolchain support for modern Java features
+- **Training Materials**: Created comprehensive slide deck with exports
+- **Code Organization**: Separated demos from tests for better presentation flow
 - **Bug Fixes**: Addressed critical issues found in code review
 - **Documentation**: Enhanced README and added comprehensive lab instructions
 
-This project demonstrates practical AI integration patterns while maintaining educational clarity and hands-on learning opportunities.
+This project demonstrates practical AI integration patterns while maintaining educational clarity and hands-on learning opportunities. The recent refactoring emphasizes training effectiveness and live demonstration capabilities.

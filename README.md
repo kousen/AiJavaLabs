@@ -43,16 +43,47 @@ This repository contains practical exercises and example implementations for wor
 ### Running Tests
 
 ```bash
+# Run all tests
 ./gradlew test
+
+# Run only local tests (no external services required)
+./gradlew localTests
+
+# Run cheap API tests (minimal cost)
+./gradlew cheapTests
+
+# Run demo tests (for presentations)
+./gradlew demoTests
 ```
 
 **Note**: Some tests require external services (OpenAI API, Ollama) to be available and properly configured.
+
+## Training Materials
+
+### Presentation Slides
+
+Comprehensive training slides are available in multiple formats:
+
+- **[slides.md](slides.md)** - Slidev source presentation (38 interactive slides)
+- **[slides.pdf](slides.pdf)** - PDF export for handouts and reference
+- **[slides.pptx](slides.pptx)** - PowerPoint format for compatibility
+
+To run the interactive Slidev presentation:
+```bash
+npm install
+npx slidev slides.md
+```
 
 ## Project Structure
 
 ```
 src/
 ├── main/java/com/kousenit/
+│   ├── demos/                     # Standalone demo classes for training
+│   │   ├── QuickChatDemo.java
+│   │   ├── TextToSpeechDemo.java
+│   │   ├── MultiModelDemo.java
+│   │   └── StreamingDemo.java
 │   ├── DalleService.java          # DALL-E image generation
 │   ├── EasyRAGDemo.java           # RAG implementation example
 │   ├── OllamaService.java         # Ollama AI service integration
@@ -91,11 +122,12 @@ RAG implementation for document-based question answering:
 
 ## Dependencies
 
-- **LangChain4j**: 1.0.1 (AI framework)
+- **LangChain4j**: 1.4.0 (AI framework)
 - **Apache POI**: 5.4.1 (Document processing)
 - **Gson**: 2.13.1 (JSON parsing)
 - **JUnit**: 5.13.0 (Testing)
 - **Spotless**: 7.0.4 (Code formatting)
+- **Playwright**: For Slidev export functionality
 
 ## Lab Exercises
 
