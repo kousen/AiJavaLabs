@@ -16,7 +16,12 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Created standalone demo classes for training presentations
 - ✅ Implemented test categorization with JUnit tags for cost management
 - ✅ Added cleaner streaming patterns using LambdaStreamingResponseHandler
-- ✅ Created comprehensive Slidev presentation (38 slides with interactive demos)
+- ✅ Created comprehensive Slidev presentation (40 slides with interactive demos)
+- ✅ Added Jackson dependency for JSON parsing with JsonNode
+- ✅ Created ResponsesApiDemo (Gson) and ResponsesApiJacksonDemo (Jackson)
+- ✅ Fixed Responses API to use 'input' parameter instead of 'messages'
+- ✅ Added JSON parsing comparison slides (Gson vs Jackson, JSON Pointer)
+- ✅ Fixed slide layout issues including vertical RAG diagram
 - ✅ Exported slides to PDF and PPTX formats for training materials
 - ✅ Fixed critical bugs (file extension .png→.mp3 in TextToSpeechService)
 - ✅ Applied consistent code formatting with Spotless
@@ -27,8 +32,11 @@ This file provides context for AI assistants working on the AI Java Labs project
 - **LangChain4j**: 1.4.0 (primary AI framework with streaming enhancements)
 - **Gradle**: 8.4+ with Kotlin DSL
 - **Slidev**: For interactive presentations
+- **JSON Parsing**:
+  - Gson 2.13.1 (primary, used throughout)
+  - Jackson 2.18.2 (for JsonNode and JSON Pointer support)
 - **AI Models**:
-  - OpenAI: gpt-4o-mini, dall-e-3, tts-1, whisper-1
+  - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), dall-e-3, tts-1, whisper-1
   - Ollama: gemma3 (text), moondream (vision)
   - Google: gemini-2.0-flash-exp
 
@@ -39,7 +47,9 @@ src/main/java/com/kousenit/
 │   ├── QuickChatDemo.java    # Basic chat example
 │   ├── TextToSpeechDemo.java # TTS demonstration
 │   ├── MultiModelDemo.java   # Compare multiple providers
-│   └── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
+│   ├── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
+│   ├── ResponsesApiDemo.java # Responses API with Gson parsing
+│   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
 ├── DalleService.java          # DALL-E image generation
 ├── EasyRAGDemo.java           # RAG implementation
 ├── OllamaService.java         # Ollama integration
@@ -185,6 +195,13 @@ This is primarily an educational repository. Changes should:
 - Removed verbose anonymous inner classes
 - Examples: `onPartialResponse`, `onPartialResponseAndError`
 
+### JSON Parsing Strategy
+- **Dual approach**: Gson (primary) and Jackson (alternative)
+- **Gson**: Used throughout existing services, JsonElement tree navigation
+- **Jackson**: Added for JsonNode with JSON Pointer support (`at("/path/to/element")`)
+- **Rationale**: Shows how to work with new APIs before framework support
+- **Demo classes**: ResponsesApiDemo (Gson) vs ResponsesApiJacksonDemo (Jackson)
+
 ### Demo-First Approach
 - Created standalone demo classes separate from tests
 - Enables live coding during training sessions
@@ -192,19 +209,23 @@ This is primarily an educational repository. Changes should:
 - Clear separation of concerns
 
 ### Training Materials
-- Comprehensive Slidev presentation system
+- Comprehensive Slidev presentation system (40 slides)
 - Interactive demos with progressive reveals
-- Export capabilities for multiple formats
+- Export capabilities for multiple formats (PDF, PPTX)
 - Mermaid diagrams for architecture visualization
+- JSON parsing comparison slides added
 
 ## Recent Commit History Context
 
 - **Model Updates**: Systematic update of AI models to latest versions
 - **LangChain4j 1.4.0**: Major version upgrade with streaming enhancements
 - **Java 21 Configuration**: Toolchain support for modern Java features
-- **Training Materials**: Created comprehensive slide deck with exports
+- **JSON Parsing**: Added Jackson alongside Gson for dual approach demonstration
+- **Responses API**: Created demos showing new OpenAI API with both parsers
+- **Training Materials**: Created comprehensive slide deck (40 slides) with exports
+- **Slide Enhancements**: Added JSON parsing comparison and fixed layout issues
 - **Code Organization**: Separated demos from tests for better presentation flow
-- **Bug Fixes**: Addressed critical issues found in code review
-- **Documentation**: Enhanced README and added comprehensive lab instructions
+- **Bug Fixes**: Addressed critical issues including Responses API parameter fix
+- **Documentation**: Enhanced README, CLAUDE.md, and added "Going Further" section to labs
 
-This project demonstrates practical AI integration patterns while maintaining educational clarity and hands-on learning opportunities. The recent refactoring emphasizes training effectiveness and live demonstration capabilities.
+This project demonstrates practical AI integration patterns while maintaining educational clarity and hands-on learning opportunities. The recent additions emphasize understanding fundamentals (HTTP + JSON) to work with cutting-edge APIs before framework support exists.

@@ -83,7 +83,9 @@ src/
 │   │   ├── QuickChatDemo.java
 │   │   ├── TextToSpeechDemo.java
 │   │   ├── MultiModelDemo.java
-│   │   └── StreamingDemo.java
+│   │   ├── StreamingDemo.java
+│   │   ├── ResponsesApiDemo.java  # New Responses API with Gson
+│   │   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
 │   ├── DalleService.java          # DALL-E image generation
 │   ├── EasyRAGDemo.java           # RAG implementation example
 │   ├── OllamaService.java         # Ollama AI service integration
@@ -125,6 +127,7 @@ RAG implementation for document-based question answering:
 - **LangChain4j**: 1.4.0 (AI framework)
 - **Apache POI**: 5.4.1 (Document processing)
 - **Gson**: 2.13.1 (JSON parsing)
+- **Jackson**: 2.18.2 (JSON parsing with JsonNode)
 - **JUnit**: 5.13.0 (Testing)
 - **Spotless**: 7.0.4 (Code formatting)
 - **Playwright**: For Slidev export functionality
@@ -141,6 +144,23 @@ Detailed step-by-step exercises are available in [labs.md](labs.md), covering:
 6. **Conversation Management** - Multi-turn chat implementations
 7. **Image Generation** - DALL-E integration
 
+## JSON Parsing Approaches
+
+The project demonstrates two JSON parsing strategies for working with AI APIs:
+
+### Gson (Google's JSON library)
+- Tree-based navigation with `JsonElement`, `JsonObject`, and `JsonArray`
+- Used in most service classes and `ResponsesApiDemo`
+- Already integrated throughout the project
+
+### Jackson (FasterXML)
+- `JsonNode` API with JSON Pointer support (RFC 6901)
+- Elegant path navigation: `root.at("/path/to/element")`
+- Demonstrated in `ResponsesApiJacksonDemo`
+- Spring Boot's default JSON processor
+
+Both approaches are shown side-by-side to help understand how to work with new APIs before framework support exists.
+
 ## Educational Goals
 
 This repository serves as a practical guide for:
@@ -148,6 +168,7 @@ This repository serves as a practical guide for:
 - Learning modern Java features (records, sealed interfaces, pattern matching)
 - Implementing error handling for external services
 - Working with different AI model types (text, vision, audio)
+- Working with JSON parsing for new API integration
 - Building production-ready AI applications
 
 ## Contributing
