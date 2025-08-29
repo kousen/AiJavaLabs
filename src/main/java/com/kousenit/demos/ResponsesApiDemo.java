@@ -44,8 +44,9 @@ public class ResponsesApiDemo {
             // Simple prompt without tools
             simpleResponse();
             
-            // Example with web search tool (if you want to show it)
-            // responseWithWebSearch();
+            // Example with web search tool
+            System.out.println(); // Add spacing between demos
+            responseWithWebSearch();
             
         } catch (Exception e) {
             System.err.printf("""
@@ -100,16 +101,17 @@ public class ResponsesApiDemo {
     }
     
     private static void responseWithWebSearch() throws IOException, InterruptedException {
-        System.out.println("\n2. Response with Web Search Tool:");
+        System.out.println("2. Response with Web Search Tool:");
         System.out.println("----------------------------------");
         
         // Build request with web search tool enabled
+        // This demonstrates the API's ability to search the web for current information
         var requestBody = Map.of(
             "model", "gpt-5-nano",
             "messages", List.of(
                 Map.of(
                     "role", "user",
-                    "content", "What's the latest news about Java 23?"
+                    "content", "What are the latest features in LangChain4j 1.4.0? Search for current information."
                 )
             ),
             "tools", List.of(
