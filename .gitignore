@@ -47,3 +47,4 @@ bin/
 .DS_Store
 /.idea/
 /.claude/
+node_modules/

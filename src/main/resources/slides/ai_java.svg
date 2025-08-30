@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="gg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="24" fill="#0b1220"/>
+  <g transform="translate(50,60)">
+    <path d="M50 180 C50 90, 150 90, 150 180 S250 270, 250 180" fill="none" stroke="url(#gg)" stroke-width="10"/>
+    <circle cx="50" cy="180" r="8" fill="#22d3ee"/>
+    <circle cx="150" cy="180" r="8" fill="#22d3ee"/>
+    <circle cx="250" cy="180" r="8" fill="#22d3ee"/>
+  </g>
+  <text x="200" y="330" text-anchor="middle" fill="#e2e8f0" font-size="28" font-family="Arial, Helvetica, sans-serif">Java × AI</text>
+</svg>

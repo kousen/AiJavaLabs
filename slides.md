@@ -1,6 +1,6 @@
 ---
 theme: seriph
-background: https://source.unsplash.com/1920x1080/?java,ai,technology
+background: /src/main/resources/slides/background.svg
 class: text-center
 highlighter: shiki
 lineNumbers: true
@@ -75,7 +75,7 @@ layout: two-cols
 ::right::
 
 <div class="mt-8">
-<img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=350&h=400&fit=crop&brightness=1.2" alt="AI and Java" class="rounded-lg opacity-80" />
+<img src="/src/main/resources/slides/ai_java.svg" alt="AI and Java" class="rounded-lg opacity-80" />
 </div>
 
 <!-- Presenter notes: Emphasize dual approach - understanding both raw HTTP and frameworks -->
@@ -193,6 +193,9 @@ graph LR
 ```bash
 # Required API keys
 export OPENAI_API_KEY=your_key
+# Optional providers used in demos/tests
+export GOOGLEAI_API_KEY=your_key
+export PERPLEXITY_API_KEY=your_key
 
 # Optional: Local AI models
 curl -fsSL https://ollama.com/install.sh | sh
@@ -203,6 +206,12 @@ ollama pull moondream  # For vision
 git clone <repo-url>
 ./gradlew build
 ./gradlew testDemo  # Quick validation
+
+# Slides
+npm install
+npx slidev slides.md
+# Export to PDF (requires Playwright)
+npx slidev export slides.md
 ```
 
 </div>
@@ -246,14 +255,14 @@ git clone <repo-url>
 
 <div>
 
-## **Model Costs**
+## **Model Costs (Approximate; subject to change)**
 
 <v-clicks>
 
-- **<span style="color: #00D4FF">gpt-4.1-nano</span>**: $0.150/1M input tokens
+- **<span style="color: #00D4FF">gpt-5-nano</span>**: very low per-token cost
 - **<span style="color: #00D4FF">gemma3 (local)</span>**: Free with Ollama
 - **<span style="color: #00D4FF">dall-e-3</span>**: $0.040 per image
-- **<span style="color: #00D4FF">tts-1</span>**: $0.015 per 1K chars
+- **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
 
 </v-clicks>
 
@@ -548,9 +557,9 @@ return gson.fromJson(response.body(), ResponseClass.class);
 ```java
 // High-level abstraction
 ChatModel model = OpenAiChatModel.builder()
-    .apiKey(System.getenv("OPENAI_API_KEY"))
-    .modelName("gpt-4.1-nano")
-    .build();
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-5-nano")
+        .build();
 
 // Simple method call
 String response = model.chat("Hello, world!");
@@ -716,7 +725,7 @@ public class QuickChatDemo {
 // Step 1: Build the model with fluent API
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-4.1-nano")
+        .modelName("gpt-5-nano")
         .logRequests(false)  // Toggle for debugging
         .logResponses(false) // Toggle for debugging
         .build();
@@ -728,7 +737,7 @@ public class QuickChatDemo {
     public static void main(String[] args) {
         ChatModel model = OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-4.1-nano")
+                .modelName("gpt-5-nano")
                 .build();
         
         String prompt = "Explain what LangChain4j is in 2-3 sentences.";
@@ -753,7 +762,7 @@ public class QuickChatDemo {
 // Step 1: OpenAI implementation
 ChatModel openai = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-4.1-nano")
+        .modelName("gpt-5-nano")
         .build();
         
 String response = openai.chat("What is the capital of France?");
@@ -801,7 +810,8 @@ System.out.println("Ollama: " + response);
 
 <v-clicks>
 
-- **OpenAI** • GPT-4.1-nano, DALL-E 3
+- **OpenAI** • gpt-5-nano, DALL-E 3
+- **Perplexity** • Sonar (OpenAI-compatible API)
 - **Google AI** • Gemini 2.0, PaLM
 - **Anthropic** • Claude 3.5 Sonnet
 - **Azure OpenAI** • Enterprise GPT
@@ -858,6 +868,44 @@ layout: section
 
 ---
 
+# Easy RAG with LangChain4j
+
+````md magic-move
+```java
+// Ingest documents and build a retriever
+InMemoryEmbeddingStore<TextSegment> store = new InMemoryEmbeddingStore<>();
+EmbeddingStoreIngestor.ingest(loadDocuments(path, glob("*.txt")), store);
+ContentRetriever retriever = EmbeddingStoreContentRetriever.from(store);
+```
+
+```java
+// Build an assistant wired to retriever and memory
+ChatModel model = OpenAiChatModel.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-5-nano")
+        .build();
+
+Assistant assistant = AiServices.builder(Assistant.class)
+        .chatModel(model)
+        .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+        .contentRetriever(retriever)
+        .build();
+```
+
+```java
+// Ask questions grounded in your documents
+System.out.println(assistant.chat("Summarize Chapter 1."));
+```
+````
+
+<v-click>
+
+See `EasyRAGDemo.java` for a complete, runnable example.
+
+</v-click>
+
+---
+
 # Demo 7: Clean Streaming with Lambda Handlers
 
 ````md magic-move
@@ -903,10 +951,10 @@ public class StreamingDemo {
 
 ```java
 // With error handling - still clean and functional
-var openai = OpenAiStreamingChatModel.builder()
-        .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-4o-mini")
-        .build();
+        var openai = OpenAiStreamingChatModel.builder()
+                .apiKey(System.getenv("OPENAI_API_KEY"))
+                .modelName("gpt-4o-mini")
+                .build();
 
 // Handle both tokens and errors elegantly        
 openai.chat("Why is the sky blue?", 
@@ -1074,7 +1122,7 @@ public class EasyRAGDemo {
         
         ChatModel chatModel = OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-4.1-nano")
+                .modelName("gpt-5-nano")
                 .build();
 
         Assistant assistant = AiServices.builder(Assistant.class)
@@ -1303,6 +1351,29 @@ void quickDemo() {
 <v-click>
 
 **Smart Development**: Use free local models for TDD, validate with cloud models before deployment
+
+---
+
+# Raw HTTP: Timeouts & Retries (Advanced)
+
+<v-clicks>
+
+- Add timeouts to `HttpClient` requests to avoid hanging calls
+- Implement simple retry with jitter for transient errors (429, 5xx)
+- Log request IDs and status to aid debugging
+- Prefer idempotency where possible for safe retries
+
+</v-clicks>
+
+```java
+HttpClient client = HttpClient.newBuilder()
+    .connectTimeout(Duration.ofSeconds(10))
+    .build();
+
+HttpRequest request = HttpRequest.newBuilder(uri)
+    .timeout(Duration.ofSeconds(30))
+    .build();
+```
 
 </v-click>
 
@@ -1593,7 +1664,7 @@ layout: section
 [kousenit.com](https://kousenit.com) | [@kenkousen](https://twitter.com/kenkousen)
 
 <div class="mt-8 mb-8">
-<img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=200&fit=crop&brightness=1.2" alt="AI Future" class="rounded-lg mx-auto opacity-60" />
+<img src="/src/main/resources/slides/ai_java.svg" alt="AI Future" class="rounded-lg mx-auto opacity-60" />
 </div>
 
 ### Ready to build intelligent Java applications!
