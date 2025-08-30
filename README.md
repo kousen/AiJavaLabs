@@ -27,6 +27,12 @@ This repository contains practical exercises and example implementations for wor
    export OPENAI_API_KEY=your_openai_api_key_here
    ```
 
+   Optional provider keys used by some demos/tests:
+   ```bash
+   export GOOGLEAI_API_KEY=your_google_ai_key_here
+   export PERPLEXITY_API_KEY=your_perplexity_key_here
+   ```
+
 2. **Ollama Setup**: Install Ollama and download the required models:
    ```bash
    # Install Ollama from https://ollama.com
@@ -64,14 +70,17 @@ This repository contains practical exercises and example implementations for wor
 
 Comprehensive training slides are available in multiple formats:
 
-- **[slides.md](slides.md)** - Slidev source presentation (38 interactive slides)
+- **[slides.md](slides.md)** - Slidev source presentation
 - **[slides.pdf](slides.pdf)** - PDF export for handouts and reference
 - **[slides.pptx](slides.pptx)** - PowerPoint format for compatibility
 
-To run the interactive Slidev presentation:
+To run or export the Slidev presentation:
 ```bash
 npm install
 npx slidev slides.md
+
+# Export to PDF (requires Playwright)
+npx slidev export slides.md
 ```
 
 ## Project Structure
@@ -99,8 +108,8 @@ src/
 
 ### 🎵 Text-to-Speech
 Generate MP3 audio files from text using OpenAI's TTS models:
-- Models: `tts-1`, `tts-1-hd`
-- Multiple voice options: alloy, echo, fable, onyx, nova, shimmer
+- Models: `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`
+- Multiple voice options: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer
 
 ### 🤖 Chat Interactions
 Support for both cloud and local AI models:
@@ -128,8 +137,8 @@ RAG implementation for document-based question answering:
 - **Apache POI**: 5.4.1 (Document processing)
 - **Gson**: 2.13.1 (JSON parsing)
 - **Jackson**: 2.18.2 (JSON parsing with JsonNode)
-- **JUnit**: 5.13.0 (Testing)
-- **Spotless**: 7.0.4 (Code formatting)
+- **JUnit**: 5.13.4 (Testing)
+- **Spotless**: 7.2.1 (Code formatting)
 - **Playwright**: For Slidev export functionality
 
 ## Lab Exercises
