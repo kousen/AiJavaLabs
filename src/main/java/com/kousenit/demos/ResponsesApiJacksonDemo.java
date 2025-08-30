@@ -65,8 +65,9 @@ public class ResponsesApiJacksonDemo {
         // Build request body
         var requestBody = Map.of(
             "model", "gpt-5-nano",
-            "input", "What's the main advantage of using Jackson's JsonNode over Map<String, Object>?"
-        );
+            "input", """
+                    What's the main advantage of using Jackson's JsonNode over Map<String, Object>?
+                    """);
         
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(RESPONSES_URL))
@@ -104,7 +105,7 @@ public class ResponsesApiJacksonDemo {
         // Build request with web search tool enabled
         var requestBody = Map.of(
             "model", "gpt-5-nano",
-            "input", "What are the latest features in Jackson 2.18? Search for current information.",
+            "input", "What are the latest features in Java 25? Search for current information.",
             "tools", new Object[]{Map.of("type", "web_search")}
         );
         

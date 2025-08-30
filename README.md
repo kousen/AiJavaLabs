@@ -15,7 +15,7 @@ This repository contains practical exercises and example implementations for wor
 
 ### Prerequisites
 
-- Java 17 or higher
+- Java 21 or higher
 - Gradle 8.4+ (included via wrapper)
 - OpenAI API key (for OpenAI services)
 - Ollama installation (for local AI models)
@@ -47,13 +47,13 @@ This repository contains practical exercises and example implementations for wor
 ./gradlew test
 
 # Run only local tests (no external services required)
-./gradlew localTests
+./gradlew testLocal
 
 # Run cheap API tests (minimal cost)
-./gradlew cheapTests
+./gradlew testCheap
 
 # Run demo tests (for presentations)
-./gradlew demoTests
+./gradlew testDemo
 ```
 
 **Note**: Some tests require external services (OpenAI API, Ollama) to be available and properly configured.
@@ -104,7 +104,7 @@ Generate MP3 audio files from text using OpenAI's TTS models:
 
 ### 🤖 Chat Interactions
 Support for both cloud and local AI models:
-- **OpenAI**: GPT-4.1-nano for advanced conversations
+- **OpenAI**: gpt-5-nano for advanced conversations
 - **Ollama**: Local gemma3 model for privacy-focused applications
 
 ### 🖼️ Vision Capabilities

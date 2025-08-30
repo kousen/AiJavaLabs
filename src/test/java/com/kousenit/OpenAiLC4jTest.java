@@ -11,6 +11,7 @@ import dev.langchain4j.model.openai.OpenAiImageModelName;
 import dev.langchain4j.model.output.Response;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 public class OpenAiLC4jTest {
 
@@ -22,6 +23,7 @@ public class OpenAiLC4jTest {
             .build();
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
     @Tag(TestCategories.INTEGRATION)
     @Tag(TestCategories.OPENAI)
     @Tag(TestCategories.CHEAP)
@@ -32,6 +34,7 @@ public class OpenAiLC4jTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "PERPLEXITY_API_KEY", matches = ".+")
     @Tag(TestCategories.INTEGRATION)
     @Tag(TestCategories.CHEAP)
     @Tag(TestCategories.QUICK)
@@ -53,6 +56,7 @@ public class OpenAiLC4jTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLEAI_API_KEY", matches = ".+")
     @Tag(TestCategories.INTEGRATION)
     @Tag(TestCategories.CHEAP)
     @Tag(TestCategories.QUICK)
@@ -71,6 +75,7 @@ public class OpenAiLC4jTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
     @Tag(TestCategories.INTEGRATION)
     @Tag(TestCategories.OPENAI)
     @Tag(TestCategories.EXPENSIVE)
