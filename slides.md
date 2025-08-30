@@ -116,6 +116,38 @@ AiJavaLabs/
 
 ---
 
+layout: two-cols
+---
+
+# Demo Map
+
+- Quick Chat: `com.kousenit.demos.QuickChatDemo`
+- Local Ollama: `com.kousenit.demos.LocalOllamaDemo`
+- Multi-Model: `com.kousenit.demos.MultiModelDemo`
+- Text-to-Speech: `com.kousenit.demos.TextToSpeechDemo`
+- Streaming: `com.kousenit.demos.StreamingDemo`
+- API Comparison: `com.kousenit.demos.ApiComparisonDemo`
+- Responses API (Gson): `com.kousenit.demos.ResponsesApiDemo`
+- Responses API (Jackson): `com.kousenit.demos.ResponsesApiJacksonDemo`
+- Easy RAG: `com.kousenit.EasyRAGDemo`
+
+::right::
+
+```bash
+# Run any demo
+./gradlew run -PmainClass=<fully.qualified.Class>
+
+# Examples
+./gradlew run -PmainClass=com.kousenit.demos.QuickChatDemo
+./gradlew run -PmainClass=com.kousenit.demos.LocalOllamaDemo
+
+# Prereqs
+# - OPENAI_API_KEY for cloud demos
+# - Ollama running locally for local demos
+```
+
+---
+
 # Course Philosophy: Understanding Both Levels
 
 <div class="grid grid-cols-2 gap-8">
