@@ -1,6 +1,5 @@
 ---
 theme: seriph
-background: /src/main/resources/slides/background.svg
 class: text-center
 highlighter: shiki
 lineNumbers: true
@@ -54,8 +53,6 @@ Kousen IT, Inc.
   - https://youtube.com/@talesfromthejarside
 
 ---
-layout: two-cols
----
 
 # What You'll Learn
 
@@ -72,37 +69,23 @@ layout: two-cols
 
 </v-clicks>
 
-::right::
-
-<div class="mt-8">
-<img src="/src/main/resources/slides/ai_java.svg" alt="AI and Java" class="rounded-lg opacity-80" />
-</div>
-
 <!-- Presenter notes: Emphasize dual approach - understanding both raw HTTP and frameworks -->
 
 ---
 
 # Repository Structure
 
-```bash
+```bash {maxHeight:'350px'}
 AiJavaLabs/
 ├── labs.md                    # 15 progressive lab exercises
-├── src/
-│   ├── main/java/com/kousenit/
-│   │   ├── demos/
-│   │   │   ├── QuickChatDemo.java      # Fast OpenAI demo
-│   │   │   ├── TextToSpeechDemo.java   # TTS generation
-│   │   │   ├── LocalOllamaDemo.java    # Local AI models
-│   │   │   ├── MultiModelDemo.java     # Provider comparison
-│   │   │   ├── ResponsesApiDemo.java   # Raw HTTP examples
-│   │   │   ├── ApiComparisonDemo.java  # Framework vs raw
-│   │   │   └── StreamingDemo.java      # Real-time responses
-│   │   ├── EasyRAGDemo.java           # Document Q&A
-│   │   ├── *Service.java              # Core implementations
-│   │   └── *Records.java              # Data models
-│   └── test/java/              # Comprehensive test suite
-├── build.gradle.kts           # Test categories for cost control
-└── slides.md                  # This presentation
+├── slides.md                  # This presentation  
+├── build.gradle.kts           # Dependencies & test categories
+└── src/
+    ├── main/java/com/kousenit/
+    │   ├── demos/             # 8 Live demo classes
+    │   ├── *Service.java      # Core implementations
+    │   └── *Records.java      # Data models
+    └── test/                  # Comprehensive test suite
 ```
 
 <v-clicks>
@@ -115,36 +98,37 @@ AiJavaLabs/
 </v-clicks>
 
 ---
-
 layout: two-cols
 ---
 
 # Demo Map
 
-- Quick Chat: `com.kousenit.demos.QuickChatDemo`
-- Local Ollama: `com.kousenit.demos.LocalOllamaDemo`
-- Multi-Model: `com.kousenit.demos.MultiModelDemo`
-- Text-to-Speech: `com.kousenit.demos.TextToSpeechDemo`
-- Streaming: `com.kousenit.demos.StreamingDemo`
-- API Comparison: `com.kousenit.demos.ApiComparisonDemo`
-- Responses API (Gson): `com.kousenit.demos.ResponsesApiDemo`
-- Responses API (Jackson): `com.kousenit.demos.ResponsesApiJacksonDemo`
-- Easy RAG: `com.kousenit.EasyRAGDemo`
+## **8 Live Demos**
+
+1. **QuickChatDemo** - Basic OpenAI chat
+2. **LocalOllamaDemo** - Local AI models
+3. **MultiModelDemo** - Compare providers
+4. **TextToSpeechDemo** - Generate audio
+5. **StreamingDemo** - Real-time responses
+6. **ApiComparisonDemo** - Raw vs Framework
+7. **ResponsesApiDemo** - Gson parsing
+8. **EasyRAGDemo** - Document Q&A
 
 ::right::
 
+## **Run Commands**
+
 ```bash
-# Run any demo
-./gradlew run -PmainClass=<fully.qualified.Class>
+# Pattern
+./gradlew run -PmainClass=com.kousenit.demos.DemoName
 
-# Examples
+# Quick start
 ./gradlew run -PmainClass=com.kousenit.demos.QuickChatDemo
-./gradlew run -PmainClass=com.kousenit.demos.LocalOllamaDemo
-
-# Prereqs
-# - OPENAI_API_KEY for cloud demos
-# - Ollama running locally for local demos
 ```
+
+**Prerequisites:**
+- `OPENAI_API_KEY` environment variable
+- Ollama installed for local demos
 
 ---
 
@@ -384,11 +368,7 @@ public Path generateMp3(String model, String input, String voice) {
 ```
 ````
 
-<v-click>
-
 **Live Demo**: Run `TextToSpeechDemo.java` to hear generated audio! 🎵
-
-</v-click>
 
 ---
 
@@ -442,11 +422,7 @@ public class OpenAiService {
 ```
 ````
 
-<v-click>
-
 **Key Learning**: JSON parsing with records + Gson provides type-safe API responses
-
-</v-click>
 
 ---
 
@@ -542,9 +518,6 @@ String text = root.at("/data/results/0/attributes/name").asText();
 String value = root.at("/missing/path").asText("default");
 ```
 
-</v-click>
-
-<v-click>
 
 ### **When to Use Which?**
 
@@ -618,10 +591,6 @@ layout: section
 
 # Demo 3: Ollama Setup and Architecture
 
-<div class="grid grid-cols-2 gap-8">
-
-<div>
-
 ## **Why Ollama?**
 
 <v-clicks>
@@ -633,19 +602,13 @@ layout: section
 
 </v-clicks>
 
-</div>
+<div class="mt-4">
 
-<div>
-
-```mermaid {scale: 0.8}
+```mermaid {scale: 0.6}
 graph LR
-    A[Ollama Server :11434] --> B[gemma3]
-    A --> C[moondream]
-    D[Java App] --> |HTTP| A
-    E[Documents] --> D
+    D[Documents] --> J[Java App]
+    J --> |HTTP| O[Ollama Server :11434]
 ```
-
-</div>
 
 </div>
 
@@ -723,11 +686,7 @@ public OllamaResponse generate(OllamaRequest request) {
 ```
 ````
 
-<v-click>
-
 **Modern Java Benefits**: Type safety, exhaustive pattern matching, compact constructors
-
-</v-click>
 
 ---
 layout: section
@@ -779,11 +738,7 @@ public class QuickChatDemo {
 ```
 ````
 
-<v-click>
-
 **Live Demo**: Run `QuickChatDemo.java` - from complex HTTP to simple method call!
-
-</v-click>
 
 ---
 
@@ -824,11 +779,7 @@ System.out.println("Ollama: " + response);
 ```
 ````
 
-<v-click>
-
 **Key Insight**: Same `ChatModel` interface = vendor-agnostic code!
-
-</v-click>
 
 ---
 
@@ -930,11 +881,7 @@ System.out.println(assistant.chat("Summarize Chapter 1."));
 ```
 ````
 
-<v-click>
-
 See `EasyRAGDemo.java` for a complete, runnable example.
-
-</v-click>
 
 ---
 
@@ -997,11 +944,7 @@ openai.chat("Why is the sky blue?",
 ```
 ````
 
-<v-click>
-
 **Live Demo**: Run `StreamingDemo.java` to see tokens appear in real-time!
-
-</v-click>
 
 ---
 
@@ -1170,11 +1113,7 @@ public class EasyRAGDemo {
 ```
 ````
 
-<v-click>
-
 **Live Demo**: Run `EasyRAGDemo.java` - AI answers questions about YOUR documents!
-
-</v-click>
 
 ---
 
@@ -1384,6 +1323,8 @@ void quickDemo() {
 
 **Smart Development**: Use free local models for TDD, validate with cloud models before deployment
 
+</v-click>
+
 ---
 
 # Raw HTTP: Timeouts & Retries (Advanced)
@@ -1406,8 +1347,6 @@ HttpRequest request = HttpRequest.newBuilder(uri)
     .timeout(Duration.ofSeconds(30))
     .build();
 ```
-
-</v-click>
 
 ---
 
@@ -1695,8 +1634,8 @@ layout: section
 
 [kousenit.com](https://kousenit.com) | [@kenkousen](https://twitter.com/kenkousen)
 
-<div class="mt-8 mb-8">
-<img src="/src/main/resources/slides/ai_java.svg" alt="AI Future" class="rounded-lg mx-auto opacity-60" />
+<div class="mt-8 mb-8 text-center">
+<div class="text-8xl">🚀</div>
 </div>
 
 ### Ready to build intelligent Java applications!
