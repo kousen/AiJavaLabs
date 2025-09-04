@@ -983,10 +983,10 @@ public class StreamingDemo {
 
 ```java
 // With error handling - still clean and functional
-        var openai = OpenAiStreamingChatModel.builder()
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-4o-mini")
-                .build();
+var openai = OpenAiStreamingChatModel.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-4o-mini")
+        .build();
 
 // Handle both tokens and errors elegantly        
 openai.chat("Why is the sky blue?", 
