@@ -28,6 +28,9 @@ dependencies {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
 
+    // Google Gen AI
+    implementation("com.google.genai:google-genai:1.15.0")
+
     // Security fix
     implementation("org.apache.poi:poi-ooxml:5.4.1")
 
