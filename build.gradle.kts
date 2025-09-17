@@ -17,12 +17,13 @@ java {
 }
 
 dependencies {
-    implementation(platform("dev.langchain4j:langchain4j-bom:1.4.0"))
+    implementation(platform("dev.langchain4j:langchain4j-bom:1.5.0"))
 
     // LangChain4j Easy RAG example
     implementation("dev.langchain4j:langchain4j")
     implementation("dev.langchain4j:langchain4j-open-ai")
     implementation("dev.langchain4j:langchain4j-ollama")
+    implementation("dev.langchain4j:langchain4j-anthropic")
     implementation("dev.langchain4j:langchain4j-google-ai-gemini")
     implementation("dev.langchain4j:langchain4j-easy-rag") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
