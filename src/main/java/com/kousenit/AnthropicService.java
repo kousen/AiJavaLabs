@@ -27,6 +27,16 @@ public class AnthropicService {
     // Using a single instance improves performance through connection pooling
     private static final HttpClient client = HttpClient.newHttpClient();
 
+    /**
+     * Fetches the list of available Anthropic models from the API.
+     *
+     * Sends an HTTP GET request to the Anthropic /v1/models endpoint using
+     * the API key and required headers. Parses the JSON response into a
+     * {@link ModelsResponse} object using Gson.
+     *
+     * @return ModelsResponse containing metadata about available models
+     * @throws RuntimeException if the HTTP request fails or is interrupted
+     */
     public ModelsResponse listModels() {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(MODELS_URL))
