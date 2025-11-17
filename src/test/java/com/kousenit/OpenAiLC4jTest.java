@@ -5,7 +5,6 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiImageModel;
 import dev.langchain4j.model.openai.OpenAiImageModelName;
 import dev.langchain4j.model.output.Response;
@@ -19,7 +18,7 @@ public class OpenAiLC4jTest {
             .apiKey(System.getenv("OPENAI_API_KEY"))
             .logRequests(true)
             .logResponses(true)
-            .modelName("gpt-5-nano")
+            .modelName("gpt-5.1-nano")
             .build();
 
     @Test
