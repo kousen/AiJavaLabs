@@ -54,7 +54,7 @@ Kousen IT, Inc.
 
 ---
 
-# What You'll Learn
+# What You'll Learn: Core Skills
 
 <v-clicks>
 
@@ -62,14 +62,23 @@ Kousen IT, Inc.
 - **<span style="color: #00D4FF">LangChain4j</span> Framework**: High-level AI abstractions
 - **Text Generation**: OpenAI and Ollama models
 - **Streaming Responses**: Real-time token-by-token output
+
+</v-clicks>
+
+<!-- Presenter notes: Emphasize dual approach - understanding both raw HTTP and frameworks -->
+
+---
+
+# What You'll Learn: Advanced Capabilities
+
+<v-clicks>
+
 - **Multimodal AI**: Vision, audio, and image generation
 - **RAG Systems**: Document-based question answering
 - **Cost Management**: Efficient testing and model selection
 - **Modern Java**: Records, sealed interfaces, pattern matching
 
 </v-clicks>
-
-<!-- Presenter notes: Emphasize dual approach - understanding both raw HTTP and frameworks -->
 
 ---
 
@@ -101,18 +110,14 @@ AiJavaLabs/
 layout: two-cols
 ---
 
-# Demo Map
+# Demo Map: Core Demos
 
-## **8 Live Demos**
+## **Demos 1-4**
 
 1. **QuickChatDemo** - Basic OpenAI chat
 2. **LocalOllamaDemo** - Local AI models
 3. **MultiModelDemo** - Compare providers
 4. **TextToSpeechDemo** - Generate audio
-5. **StreamingDemo** - Real-time responses
-6. **ApiComparisonDemo** - Raw vs Framework
-7. **ResponsesApiDemo** - Gson parsing
-8. **EasyRAGDemo** - Document Q&A
 
 ::right::
 
@@ -129,6 +134,32 @@ layout: two-cols
 **Prerequisites:**
 - `OPENAI_API_KEY` environment variable
 - Ollama installed for local demos
+
+---
+layout: two-cols
+---
+
+# Demo Map: Advanced Demos
+
+## **Demos 5-8**
+
+5. **StreamingDemo** - Real-time responses
+6. **ApiComparisonDemo** - Raw vs Framework
+7. **ResponsesApiDemo** - Gson parsing
+8. **EasyRAGDemo** - Document Q&A
+
+::right::
+
+## **Key Concepts**
+
+<v-clicks>
+
+- **Streaming**: Token-by-token output
+- **API Comparison**: HTTP vs Framework
+- **JSON Parsing**: Gson tree navigation
+- **RAG**: Document-powered AI
+
+</v-clicks>
 
 ---
 
@@ -194,7 +225,7 @@ graph LR
 
 - **Java 21+** (Records, sealed interfaces, pattern matching)
 - **Gradle 8.4+** (Kotlin DSL, test categories)
-- **<span style="color: #00D4FF">LangChain4j 1.4.0</span>** (Latest AI framework)
+- **<span style="color: #00D4FF">LangChain4j 1.10.0</span>** (Latest AI framework)
 - **Git** for repository management
 - **Ollama** (optional, for local AI models)
 
@@ -406,17 +437,6 @@ public class OpenAiService {
         HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString());
         return gson.fromJson(response.body(), ModelList.class);
-    }
-}
-            .build();
-
-        try {
-            HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString());
-            return gson.fromJson(response.body(), ModelList.class);
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
 ```
@@ -1276,29 +1296,9 @@ void quickDemo() {
 
 ---
 
-# Gradle Test Tasks
+# Advanced Test Selection
 
 <div class="grid grid-cols-2 gap-8">
-
-<div>
-
-## **Cost-Controlled Testing**
-
-```bash
-# Free tests only
-./gradlew testLocal
-
-# Low-cost tests
-./gradlew testCheap
-
-# Exclude expensive tests
-./gradlew testNotExpensive
-
-# Quick live demos
-./gradlew testDemo
-```
-
-</div>
 
 <div>
 
@@ -1313,6 +1313,22 @@ void quickDemo() {
 
 # Custom test selection
 ./gradlew test --tests "*OpenAi*"
+```
+
+</div>
+
+<div>
+
+## **Environment Guards**
+
+```java
+@Test
+@EnabledIfEnvironmentVariable(
+    named = "OPENAI_API_KEY",
+    matches = ".+")
+void testRequiresApiKey() {
+    // Only runs if key is set
+}
 ```
 
 </div>
@@ -1522,14 +1538,23 @@ layout: section
 
 ---
 
-# Key Takeaways
+# Key Takeaways: Foundation
 
 <v-clicks>
 
 1. **<span style="color: #00D4FF">Understand Both Levels</span>**: Raw HTTP gives you debugging superpowers, frameworks give you productivity
-2. **<span style="color: #00D4FF">Cost Management Matters</span>**: Use test categories and local models for development
-3. **<span style="color: #00D4FF">Modern Java Shines</span>**: Records, sealed interfaces, and pattern matching are perfect for AI APIs
-4. **<span style="color: #00D4FF">LangChain4j is Powerful</span>**: Unified API across all providers enables true portability
+2. **<span style="color: #00D4FF">Modern Java Shines</span>**: Records, sealed interfaces, and pattern matching are perfect for AI APIs
+3. **<span style="color: #00D4FF">LangChain4j is Powerful</span>**: Unified API across all providers enables true portability
+
+</v-clicks>
+
+---
+
+# Key Takeaways: Best Practices
+
+<v-clicks>
+
+4. **<span style="color: #00D4FF">Cost Management Matters</span>**: Use test categories and local models for development
 5. **<span style="color: #00D4FF">RAG Changes Everything</span>**: Give AI access to your documents and data
 6. **<span style="color: #00D4FF">Streaming Improves UX</span>**: Real-time responses feel much faster to users
 7. **<span style="color: #00D4FF">Test Smart, Not Hard</span>**: Use local models for TDD, cloud models for validation
