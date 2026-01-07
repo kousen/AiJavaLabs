@@ -20,7 +20,7 @@ class OllamaServiceTest {
     @Tag(TestCategories.QUICK)
     @Tag(TestCategories.DEMO)
     void generate_with_text_request() {
-        var ollamaRequest = new OllamaTextRequest("gemma3", "Why is the sky blue?", false);
+        var ollamaRequest = new OllamaTextRequest("gpt-oss", "Why is the sky blue?", false);
         OllamaResponse ollamaResponse = service.generate(ollamaRequest);
         System.out.println(ollamaResponse);
         String answer = ollamaResponse.response();
@@ -50,7 +50,7 @@ class OllamaServiceTest {
     @Tag(TestCategories.LOCAL)
     @Tag(TestCategories.QUICK)
     void generate_with_model_and_name() {
-        var ollamaResponse = service.generate("gemma3", "Why is the sky blue?");
+        var ollamaResponse = service.generate("gpt-oss", "Why is the sky blue?");
         String answer = ollamaResponse.response();
         System.out.println(answer);
         assertTrue(answer.contains("scattering"));
@@ -60,11 +60,10 @@ class OllamaServiceTest {
     @Tag(TestCategories.LOCAL)
     @Tag(TestCategories.SLOW)
     public void streaming_generate_request() {
-        var request = new OllamaTextRequest("gemma3", "Why is the sky blue?", true);
+        var request = new OllamaTextRequest("gpt-oss", "Why is the sky blue?", true);
         String response = service.generateStreaming(request);
         System.out.println(response);
     }
-
 
     @Test
     @Tag(TestCategories.LOCAL)
@@ -72,7 +71,7 @@ class OllamaServiceTest {
     @Tag(TestCategories.DEMO)
     void test_chat() {
         var request = new OllamaChatRequest(
-                "gemma3",
+                "gpt-oss",
                 List.of(
                         new OllamaMessage("user", "why is the sky blue?"),
                         new OllamaMessage("assistant", "due to rayleigh scattering."),
@@ -87,7 +86,7 @@ class OllamaServiceTest {
     @Tag(TestCategories.LOCAL)
     @Tag(TestCategories.SLOW)
     void testStreamingRequest() {
-        var request = new OllamaTextRequest("gemma3", "Why is the sky blue?", true);
+        var request = new OllamaTextRequest("gpt-oss", "Why is the sky blue?", true);
         var response = service.generateStreamingResponse(request);
         assertThat(response).isNotEmpty().containsIgnoringCase("sky").containsIgnoringCase("blue");
     }

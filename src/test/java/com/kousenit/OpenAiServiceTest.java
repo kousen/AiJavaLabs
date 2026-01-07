@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashSet;
 import java.util.List;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 class OpenAiServiceTest {
@@ -27,8 +27,8 @@ class OpenAiServiceTest {
                 .toList();
 
         models.forEach(System.out::println);
-        assertTrue(new HashSet<>(models).containsAll(
-                List.of("dall-e-3", "gpt-5-nano", "gpt-4o-mini-tts", "whisper-1")));
+        assertTrue(
+                new HashSet<>(models).containsAll(List.of("dall-e-3", "gpt-5-nano", "gpt-4o-mini-tts", "whisper-1")));
     }
 
     @Test

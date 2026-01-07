@@ -12,8 +12,7 @@ public class LMStudioRecords {
             int maxTokens,
             boolean stream,
             List<Tool> tools,
-            String toolChoice
-    ) {
+            String toolChoice) {
         // Constructor without tools for backward compatibility
         public ChatRequest(String model, List<Message> messages, double temperature, int maxTokens, boolean stream) {
             this(model, messages, temperature, maxTokens, stream, null, null);
@@ -28,49 +27,19 @@ public class LMStudioRecords {
             List<Choice> choices,
             Usage usage,
             Map<String, Object> stats,
-            String systemFingerprint
-    ) {}
+            String systemFingerprint) {}
 
-    public record Choice(
-            int index,
-            Message message,
-            Object logprobs,
-            String finishReason
-    ) {}
+    public record Choice(int index, Message message, Object logprobs, String finishReason) {}
 
-    public record Message(
-            String role,
-            String content,
-            String reasoning,
-            List<ToolCall> toolCalls
-    ) {}
+    public record Message(String role, String content, String reasoning, List<ToolCall> toolCalls) {}
 
-    public record ToolCall(
-            String id,
-            String type,
-            FunctionCall function
-    ) {}
+    public record ToolCall(String id, String type, FunctionCall function) {}
 
-    public record FunctionCall(
-            String name,
-            String arguments
-    ) {}
+    public record FunctionCall(String name, String arguments) {}
 
-    public record Usage(
-            int promptTokens,
-            int completionTokens,
-            int totalTokens
-    ) {}
+    public record Usage(int promptTokens, int completionTokens, int totalTokens) {}
 
-    public record Tool(
-            String type,
-            Function function
-    ) {}
+    public record Tool(String type, Function function) {}
 
-    public record Function(
-            String name,
-            String description,
-            Map<String, Object> parameters
-    ) {}
-
+    public record Function(String name, String description, Map<String, Object> parameters) {}
 }

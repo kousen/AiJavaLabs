@@ -17,7 +17,7 @@ java {
 }
 
 dependencies {
-    implementation(platform("dev.langchain4j:langchain4j-bom:1.5.0"))
+    implementation(platform("dev.langchain4j:langchain4j-bom:1.10.0"))
 
     // LangChain4j Easy RAG example
     implementation("dev.langchain4j:langchain4j")

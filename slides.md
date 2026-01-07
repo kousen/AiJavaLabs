@@ -5,9 +5,9 @@ highlighter: shiki
 lineNumbers: true
 info: |
   ## AI Java Labs Training Course
-  
+
   By Kenneth Kousen
-  
+
   A comprehensive hands-on training course for integrating AI services with Java applications using LangChain4j and raw HTTP APIs
 drawings:
   persist: false
@@ -78,7 +78,7 @@ Kousen IT, Inc.
 ```bash {maxHeight:'350px'}
 AiJavaLabs/
 ├── labs.md                    # 15 progressive lab exercises
-├── slides.md                  # This presentation  
+├── slides.md                  # This presentation
 ├── build.gradle.kts           # Dependencies & test categories
 └── src/
     ├── main/java/com/kousenit/
@@ -158,7 +158,7 @@ layout: two-cols
 <v-clicks>
 
 - **<span style="color: #00D4FF">Productivity</span>**: LangChain4j handles boilerplate
-- **<span style="color: #00D4FF">Best Practices</span>**: Proven patterns and abstractions  
+- **<span style="color: #00D4FF">Best Practices</span>**: Proven patterns and abstractions
 - **<span style="color: #00D4FF">Advanced Features</span>**: RAG, streaming, memory
 - **<span style="color: #00D4FF">Rapid Development</span>**: Focus on business logic
 
@@ -215,7 +215,7 @@ export PERPLEXITY_API_KEY=your_key
 
 # Optional: Local AI models
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull gemma3
+ollama pull gpt-oss
 ollama pull moondream  # For vision
 
 # Clone and start
@@ -276,7 +276,7 @@ npx slidev export slides.md
 <v-clicks>
 
 - **<span style="color: #00D4FF">gpt-5-nano</span>**: very low per-token cost
-- **<span style="color: #00D4FF">gemma3 (local)</span>**: Free with Ollama
+- **<span style="color: #00D4FF">gpt-oss (local)</span>**: Free with Ollama (OpenAI's open-source model)
 - **<span style="color: #00D4FF">dall-e-3</span>**: $0.040 per image
 - **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
 
@@ -309,7 +309,7 @@ layout: section
 public class TextToSpeechService {
     private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
     private static final HttpClient client = HttpClient.newHttpClient();
-    
+
     public Path generateMp3(String model, String input, String voice) {
         // TODO: How do we construct the request?
     }
@@ -321,7 +321,7 @@ public class TextToSpeechService {
 String payload = """
     {
         "model": "%s",
-        "input": "%s", 
+        "input": "%s",
         "voice": "%s"
     }
     """.formatted(model, input.replaceAll("\\s+", " ").trim(), voice);
@@ -348,7 +348,7 @@ public Path generateMp3(String model, String input, String voice) {
             "voice": "%s"
         }
         """.formatted(model, input.replaceAll("\\s+", " ").trim(), voice);
-    
+
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create("https://api.openai.com/v1/audio/speech"))
         .header("Authorization", "Bearer %s".formatted(OPENAI_API_KEY))
@@ -356,9 +356,9 @@ public Path generateMp3(String model, String input, String voice) {
         .header("Accept", "audio/mpeg")
         .POST(HttpRequest.BodyPublishers.ofString(payload))
         .build();
-        
+
     try {
-        HttpResponse<Path> response = 
+        HttpResponse<Path> response =
             client.send(request, HttpResponse.BodyHandlers.ofFile(getFilePath()));
         return response.body();
     } catch (IOException | InterruptedException e) {
@@ -395,23 +395,23 @@ public class OpenAiService {
     private final Gson gson = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
-            
+
     public ModelList listModels() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create("https://api.openai.com/v1/models"))
             .header("Authorization", "Bearer " + System.getenv("OPENAI_API_KEY"))
             .GET()
             .build();
-        
-        HttpResponse<String> response = client.send(request, 
+
+        HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString());
         return gson.fromJson(response.body(), ModelList.class);
     }
 }
             .build();
-            
+
         try {
-            HttpResponse<String> response = 
+            HttpResponse<String> response =
                 client.send(request, HttpResponse.BodyHandlers.ofString());
             return gson.fromJson(response.body(), ModelList.class);
         } catch (IOException | InterruptedException e) {
@@ -547,8 +547,8 @@ HttpRequest request = HttpRequest.newBuilder()
         gson.toJson(payload)))
     .build();
 
-// Manual response handling  
-HttpResponse<String> response = 
+// Manual response handling
+HttpResponse<String> response =
     client.send(request, HttpResponse.BodyHandlers.ofString());
 return gson.fromJson(response.body(), ResponseClass.class);
 ```
@@ -616,7 +616,7 @@ graph LR
 
 **Setup Commands**:
 ```bash
-ollama pull gemma3        # Text generation
+ollama pull gpt-oss       # Text generation (OpenAI open-source)
 ollama pull moondream     # Vision analysis
 ollama serve              # Start server (automatic on install)
 ```
@@ -632,13 +632,13 @@ ollama serve              # Start server (automatic on install)
 // Step 1: Model different request types with records
 public class OllamaRecords {
     public record OllamaTextRequest(
-            String model, 
-            String prompt, 
+            String model,
+            String prompt,
             boolean stream) {}
-            
+
     public record OllamaVisionRequest(
             String model,
-            String prompt, 
+            String prompt,
             boolean stream,
             List<String> images) {}
 }
@@ -646,17 +646,17 @@ public class OllamaRecords {
 
 ```java
 // Step 2: Use sealed interfaces for type safety (Java 17+)
-public sealed interface OllamaRequest 
+public sealed interface OllamaRequest
     permits OllamaTextRequest, OllamaVisionRequest {}
 
 public record OllamaTextRequest(
-        String model, String prompt, boolean stream) 
+        String model, String prompt, boolean stream)
         implements OllamaRequest {}
 
 public record OllamaVisionRequest(
-        String model, String prompt, boolean stream, List<String> images) 
+        String model, String prompt, boolean stream, List<String> images)
         implements OllamaRequest {
-        
+
     // Compact constructor with Base64 encoding
     public OllamaVisionRequest {
         images = images.stream()
@@ -674,12 +674,12 @@ public OllamaResponse generate(OllamaRequest request) {
             logger.log(INFO, "Text request: {0}", textRequest.prompt());
         }
         case OllamaVisionRequest visionRequest -> {
-            logger.log(INFO, "Vision request with {0} images", 
+            logger.log(INFO, "Vision request with {0} images",
                 visionRequest.images().size());
         }
         // Exhaustive - no default needed with sealed types!
     }
-    
+
     // Same HTTP logic for both request types
     return sendRequest(request);
 }
@@ -730,7 +730,7 @@ public class QuickChatDemo {
                 .apiKey(System.getenv("OPENAI_API_KEY"))
                 .modelName("gpt-5-nano")
                 .build();
-        
+
         String prompt = "Explain what LangChain4j is in 2-3 sentences.";
         System.out.println("Answer: " + model.chat(prompt));
     }
@@ -751,7 +751,7 @@ ChatModel openai = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
         .modelName("gpt-5-nano")
         .build();
-        
+
 String response = openai.chat("What is the capital of France?");
 System.out.println("OpenAI: " + response);
 ```
@@ -760,9 +760,9 @@ System.out.println("OpenAI: " + response);
 // Step 2: Switch to Google Gemini - same interface!
 ChatModel gemini = GoogleAiGeminiChatModel.builder()
         .apiKey(System.getenv("GOOGLEAI_API_KEY"))
-        .modelName("gemini-2.0-flash-exp")
+        .modelName("gemini-3-flash-preview")
         .build();
-        
+
 String response = gemini.chat("What is the capital of France?");
 System.out.println("Gemini: " + response);
 ```
@@ -771,9 +771,9 @@ System.out.println("Gemini: " + response);
 // Step 3: Or use local Ollama - still same interface!
 ChatModel ollama = OllamaChatModel.builder()
         .baseUrl("http://localhost:11434")
-        .modelName("gemma3")
+        .modelName("gpt-oss")
         .build();
-        
+
 String response = ollama.chat("What is the capital of France?");
 System.out.println("Ollama: " + response);
 ```
@@ -810,7 +810,7 @@ System.out.println("Ollama: " + response);
 
 <v-clicks>
 
-- **Ollama** • gemma3, llama3.1, mistral
+- **Ollama** • gpt-oss, llama3.1, mistral
 - **Hugging Face** • Open source models
 - **vLLM** • High-performance inference
 - **LocalAI** • OpenAI-compatible API
@@ -826,7 +826,7 @@ System.out.println("Ollama: " + response);
 <v-clicks>
 
 - **Vision** • moondream, LLaVA
-- **Audio** • Whisper, TTS models  
+- **Audio** • Whisper, TTS models
 - **Embeddings** • sentence-transformers
 - **Code** • CodeLlama, StarCoder
 
@@ -896,12 +896,12 @@ public void oldStreamingApproach() {
         public void onPartialResponse(String token) {
             System.out.print(token);
         }
-        
+
         @Override
         public void onError(Throwable error) {
             System.err.println("Error: " + error);
         }
-        
+
         @Override
         public void onCompleted() {
             System.out.println("\nDone!");
@@ -918,11 +918,11 @@ public class StreamingDemo {
     public static void main(String[] args) {
         var ollama = OllamaStreamingChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gemma3")
+                .modelName("gpt-oss")
                 .build();
-        
+
         // One-liner for simple streaming
-        ollama.chat("Tell me a haiku about Java", 
+        ollama.chat("Tell me a haiku about Java",
             onPartialResponse(System.out::print));
     }
 }
@@ -935,8 +935,8 @@ var openai = OpenAiStreamingChatModel.builder()
         .modelName("gpt-4o-mini")
         .build();
 
-// Handle both tokens and errors elegantly        
-openai.chat("Why is the sky blue?", 
+// Handle both tokens and errors elegantly
+openai.chat("Why is the sky blue?",
     onPartialResponseAndError(
         System.out::print,  // Handle each token
         error -> System.err.println("Error: " + error.getMessage())
@@ -1040,7 +1040,7 @@ graph TD
     C --> D[Enhanced Prompt]
     D --> E[AI Model]
     E --> F[Informed Response]
-    
+
     G[Document Store] --> H[Vector Embeddings]
     H --> B
 ```
@@ -1059,20 +1059,20 @@ graph TD
 import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocuments;
 
 List<Document> documents = loadDocuments(
-    toPath("documents/"), 
+    toPath("documents/"),
     glob("*.txt")
 );
 ```
 
 ```java
-// Step 2: Create vector store and ingest documents  
-InMemoryEmbeddingStore<TextSegment> embeddingStore = 
+// Step 2: Create vector store and ingest documents
+InMemoryEmbeddingStore<TextSegment> embeddingStore =
     new InMemoryEmbeddingStore<>();
 
 // Magic happens here - documents become searchable vectors
 EmbeddingStoreIngestor.ingest(documents, embeddingStore);
 
-ContentRetriever retriever = 
+ContentRetriever retriever =
     EmbeddingStoreContentRetriever.from(embeddingStore);
 ```
 
@@ -1094,7 +1094,7 @@ Assistant assistant = AiServices.builder(Assistant.class)
 public class EasyRAGDemo {
     public static void main(String[] args) {
         List<Document> documents = loadDocuments(toPath("documents/"), glob("*.txt"));
-        
+
         ChatModel chatModel = OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
                 .modelName("gpt-5-nano")
@@ -1231,7 +1231,7 @@ void testOllama() {
     // $0 cost
 }
 
-@Test  
+@Test
 @Tag("cheap")  // Low cost
 void testNano() {
     // ~$0.001
@@ -1288,7 +1288,7 @@ void quickDemo() {
 # Free tests only
 ./gradlew testLocal
 
-# Low-cost tests  
+# Low-cost tests
 ./gradlew testCheap
 
 # Exclude expensive tests
@@ -1370,10 +1370,10 @@ void shouldParseModelList() {
     assertThat(result.data()).hasSize(1);
 }
 
-@Test  
+@Test
 void shouldHandleApiError() {
     // Test error scenarios
-    assertThrows(RuntimeException.class, 
+    assertThrows(RuntimeException.class,
         () -> service.generateWithInvalidKey());
 }
 ```
@@ -1389,12 +1389,12 @@ void shouldHandleApiError() {
 @Tag("local")
 void shouldStreamTokens() {
     List<String> tokens = new ArrayList<>();
-    
-    ollamaService.generateStreaming("gemma3", 
-        "Count to 5", 
+
+    ollamaService.generateStreaming("gpt-oss",
+        "Count to 5",
         token -> tokens.add(token)
     );
-    
+
     assertThat(tokens).isNotEmpty();
     assertThat(String.join("", tokens))
         .containsPattern("1.*2.*3.*4.*5");
@@ -1424,11 +1424,11 @@ void shouldStreamTokens() {
 @Tag("cheap")
 void shouldAnswerSkyColorQuestion() {
     String response = chatModel.chat("Why is the sky blue?");
-    
+
     // Flexible content assertion
     assertThat(response.toLowerCase())
         .containsAnyOf("scattering", "wavelength", "atmosphere", "light");
-    
+
     // Structural assertion
     assertThat(response).hasSizeGreaterThan(10);
     assertThat(response).doesNotContain("I don't know");
@@ -1496,7 +1496,7 @@ layout: section
 
 ### **Core Demos**
 - **<span style="color: #00D4FF">QuickChatDemo</span>** - Fast OpenAI integration
-- **<span style="color: #00D4FF">TextToSpeechDemo</span>** - Audio generation  
+- **<span style="color: #00D4FF">TextToSpeechDemo</span>** - Audio generation
 - **<span style="color: #00D4FF">LocalOllamaDemo</span>** - Privacy-first AI
 - **<span style="color: #00D4FF">MultiModelDemo</span>** - Provider comparison
 
@@ -1549,7 +1549,7 @@ layout: section
 <v-clicks>
 
 - **Explore the repository**: Try all 8 demo classes
-- **Complete the labs**: 15 progressive exercises  
+- **Complete the labs**: 15 progressive exercises
 - **Build custom integrations**: Add your own AI providers
 - **Production deployment**: Scale with real applications
 
@@ -1629,7 +1629,7 @@ layout: section
 
 ## Questions?
 
-**Kenneth Kousen**  
+**Kenneth Kousen**
 *Java Champion, Author, Speaker*
 
 [kousenit.com](https://kousenit.com) | [@kenkousen](https://twitter.com/kenkousen)
@@ -1644,7 +1644,7 @@ layout: section
 
 </div>
 
-<!-- Final presenter notes: 
+<!-- Final presenter notes:
 - Emphasize the dual learning approach - HTTP fundamentals + framework mastery
 - Highlight the 8 ready-to-run demos for live demonstration
 - Point to cost management as a key differentiator

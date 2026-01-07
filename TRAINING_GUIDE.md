@@ -106,10 +106,10 @@ java -cp build/classes/java/main:build/libs/* com.kousenit.demos.QuickChatDemo
 2. **Use Test Categories**: Run `testDemo` for quick, cheap tests
 3. **Avoid DALL-E**: Image generation is expensive (~$0.04/image)
 4. **Cache Responses**: Consider recording demo outputs for replay
-5. **Use Cheap Models**: 
+5. **Use Cheap Models**:
    - gpt-5-nano for text
    - gpt-4o-mini-tts for speech
-   - gemini-2.0-flash-exp (Google's free tier)
+   - gemini-3-flash-preview (Google's free tier)
 
 ## Environment Variables Required
 
@@ -122,7 +122,7 @@ export PERPLEXITY_API_KEY="your-key-here"  # Optional
 ## Pre-Training Checklist
 
 - [ ] Install Ollama locally: `https://ollama.ai`
-- [ ] Pull Ollama models: `ollama pull gemma3`
+- [ ] Pull Ollama models: `ollama pull gpt-oss`
 - [ ] Set environment variables
 - [ ] Run `./gradlew testLocal` to verify setup
 - [ ] Run `./gradlew testDemo` to test API connections
@@ -136,8 +136,8 @@ export PERPLEXITY_API_KEY="your-key-here"  # Optional
 | gpt-5-nano | $0.00015/1K tokens | $0.0006/1K tokens | Cheapest OpenAI |
 | gpt-4o-mini-tts | ~$0.006/minute | N/A | Fast TTS |
 | dall-e-3 | $0.04/image | N/A | Expensive! |
-| gemma3 (Ollama) | FREE | FREE | Local model |
-| gemini-2.0-flash | FREE (limited) | FREE (limited) | Google's free tier |
+| gpt-oss (Ollama) | FREE | FREE | OpenAI's open-source model |
+| gemini-3-flash-preview | FREE (limited) | FREE (limited) | Google's free tier |
 
 ## Presentation Flow Suggestion
 

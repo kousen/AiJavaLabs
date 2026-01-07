@@ -20,7 +20,7 @@ HttpClient client = HttpClient.newBuilder()
 
 #### What MCP Promises vs Reality
 **Promise**: MCP servers automatically expose their capabilities to models
-**Reality**: 
+**Reality**:
 - Tools must be manually defined in every API request
 - No auto-discovery of MCP capabilities through the API
 - MCP configuration in `mcp.json` doesn't expose tools to the API automatically
@@ -39,7 +39,7 @@ HttpClient client = HttpClient.newBuilder()
 ```java
 // Tools must be explicitly defined - not auto-populated from MCP
 List<Tool> tools = List.of(
-    new Tool("function", 
+    new Tool("function",
         new Function(
             "web_search",
             "Search the web for information",

@@ -1,9 +1,10 @@
 package com.kousenit.demos;
 
+import static com.kousenit.demos.LMStudioRecords.*;
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,16 +13,11 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 
-import static com.kousenit.demos.LMStudioRecords.*;
-
 public class LMStudioService {
 
-    //record TextRequest(String model, String prompt, boolean stream) {}
+    // record TextRequest(String model, String prompt, boolean stream) {}
 
-    public record ModelListResponse(
-            List<Model> data,
-            String object
-    ) {}
+    public record ModelListResponse(List<Model> data, String object) {}
 
     public record Model(
             String id,
@@ -34,12 +30,10 @@ public class LMStudioService {
             String state,
             int max_context_length,
             Integer loaded_context_length,
-            List<String> capabilities
-    ) {}
-
+            List<String> capabilities) {}
 
     private final HttpClient client = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)  // Required for LM Studio (!)
+            .version(HttpClient.Version.HTTP_1_1) // Required for LM Studio (!)
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
@@ -53,8 +47,7 @@ public class LMStudioService {
             .create();
 
     public List<Model> getModels() {
-        logger.log(System.Logger.Level.INFO,
-                "Requesting models from: {0}", URL + "/v1/models");
+        logger.log(System.Logger.Level.INFO, "Requesting models from: {0}", URL + "/v1/models");
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(URL + "/v1/models"))
                 .header("Accept", "application/json")
@@ -89,5 +82,4 @@ public class LMStudioService {
             throw new RuntimeException(e);
         }
     }
-
 }

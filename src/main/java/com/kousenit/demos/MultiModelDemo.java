@@ -12,12 +12,14 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 public class MultiModelDemo {
     public static void main(String[] args) {
         String question = "What is the capital of France? Answer in exactly one word.";
-        System.out.printf("""
+        System.out.printf(
+                """
             === Multi-Model Comparison Demo ===
-            
+
             Question: %s
-            %n""", question);
-        
+            %n""",
+                question);
+
         // OpenAI
         try {
             System.out.print("OpenAI (gpt-5-nano): ");
@@ -29,33 +31,34 @@ public class MultiModelDemo {
         } catch (Exception e) {
             System.out.println("Not available - check OPENAI_API_KEY");
         }
-        
+
         // Google Gemini
         try {
-            System.out.print("Google (gemini-2.0-flash-exp): ");
+            System.out.print("Google (gemini-3-flash-preview): ");
             ChatModel gemini = GoogleAiGeminiChatModel.builder()
                     .apiKey(System.getenv("GOOGLEAI_API_KEY"))
-                    .modelName("gemini-2.0-flash-exp")
+                    .modelName("gemini-3-flash-preview")
                     .build();
             System.out.println(gemini.chat(question));
         } catch (Exception e) {
             System.out.println("Not available - check GOOGLEAI_API_KEY");
         }
-        
+
         // Local Ollama
         try {
-            System.out.print("Ollama (gemma3 - local): ");
+            System.out.print("Ollama (gpt-oss - local): ");
             ChatModel ollama = OllamaChatModel.builder()
                     .baseUrl("http://localhost:11434")
-                    .modelName("gemma3")
+                    .modelName("gpt-oss")
                     .build();
             System.out.println(ollama.chat(question));
         } catch (Exception e) {
             System.out.println("Not available - is Ollama running?");
         }
-        
-        System.out.println("""
-            
+
+        System.out.println(
+                """
+
             --- Demo Complete ---
             Notice: Same interface (ChatModel) for all providers!
             """);

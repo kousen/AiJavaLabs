@@ -15,7 +15,7 @@ import java.net.http.HttpResponse;
 public class OpenAiService {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
     private static final String MODELS_URL = "https://api.openai.com/v1/models";
-    
+
     // HttpClient is thread-safe and designed to be reused for multiple requests
     // Using a single instance improves performance through connection pooling
     private static final HttpClient client = HttpClient.newHttpClient();

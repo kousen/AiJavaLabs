@@ -65,10 +65,10 @@ HttpRequest request = HttpRequest.newBuilder()
 public class TextToSpeechService {
     // Reuse a single HttpClient instance for better performance
     private static final HttpClient client = HttpClient.newHttpClient();
-    
+
     public Path generateMp3(String model, String input, String voice) {
         // ... from before ...
-        
+
         try {
             HttpResponse<Path> response =
                 client.send(request, HttpResponse.BodyHandlers.ofFile(getFilePath()));
@@ -229,7 +229,7 @@ class OpenAiServiceTest {
 
 - Download the latest version of Ollama from the [Ollama website](https://ollama.com).
 - Run the installer and follow the instructions.
-- From a command prompt, enter `ollama run gemma3` to download and install the Gemma 3 model from Google (an open source model based on their Gemini model) locally.
+- From a command prompt, enter `ollama run gpt-oss` to download and install OpenAI's open-source GPT-OSS model locally.
 - Try out a couple of sample prompts at the command line, like `Why is the sky blue?` or `Given the power required to train large language models, how do companies ever expect to make money?`.
 - When you're finished, type `/bye` to exit.
 
@@ -237,7 +237,7 @@ class OpenAiServiceTest {
 
 - Ollama installs a small web server on your system. Verify that it is running by accessing [http://localhost:11434](http://localhost:11434) in a browser. You should get back the string, `Ollama is running`.
 - Ollama maintains a programmatic API accessible through a RESTful web service. The documentation is located [here](https://github.com/ollama/ollama/blob/main/docs/api.md).
-- We'll start by accessing the `api/generate` endpoint, as it is the simplest. It takes a JSON object with three fields: `model`, `prompt`, and `stream`. The `model` field is the name of the model you want to use (`gemma3` in our case), the `prompt` field is the question you want the model to answer, and the `stream` field is a boolean that determines whether the response should be streamed back to the client.
+- We'll start by accessing the `api/generate` endpoint, as it is the simplest. It takes a JSON object with three fields: `model`, `prompt`, and `stream`. The `model` field is the name of the model you want to use (`gpt-oss` in our case), the `prompt` field is the question you want the model to answer, and the `stream` field is a boolean that determines whether the response should be streamed back to the client.
 - Create a Java project (or simply add to the existing one) in your favorite IDE with either Gradle or Maven as your build tool.
 - Create a class called `OllamaService` in a package of your choosing.
 - Add a method called `generate` that takes a `String` and returns a `String`.
@@ -327,7 +327,7 @@ public class OllamaServiceTest {
 
     @Test
     public void testGenerate() {
-        var ollamaRequest = new OllamaTextRequest("gemma3", "Why is the sky blue?", false);
+        var ollamaRequest = new OllamaTextRequest("gpt-oss", "Why is the sky blue?", false);
         OllamaResponse ollamaResponse = service.generate(ollamaRequest);
         String answer = ollamaResponse.response();
         System.out.println(answer);
@@ -350,7 +350,7 @@ public OllamaResponse generate(String model, String prompt) {
 ```java
 @Test
 void generate_with_model_and_name() {
-    var ollamaResponse = service.generate("gemma3", "Why is the sky blue?");
+    var ollamaResponse = service.generate("gpt-oss", "Why is the sky blue?");
     String answer = ollamaResponse.response();
     System.out.println(answer);
     assertTrue(answer.contains("scattering"));
@@ -383,7 +383,7 @@ public String generateStreaming(OllamaTextRequest ollamaRequest) {
 ```java
 @Test
 public void streaming_generate_request() {
-    var request = new OllamaTextRequest("gemma3", "Why is the sky blue?", true);
+    var request = new OllamaTextRequest("gpt-oss", "Why is the sky blue?", true);
     String response = service.generateStreaming(request);
     System.out.println(response);
 }
@@ -392,12 +392,12 @@ public void streaming_generate_request() {
 * Run the test to see the streaming result. It will be similar to:
 
 ```json lines
-{"model":"gemma3","created_at":"2024-07-08T20:15:46.965689Z","response":"The","done":false}
-{"model":"gemma3","created_at":"2024-07-08T20:15:46.991009Z","response":" sky","done":false}
-{"model":"gemma3","created_at":"2024-07-08T20:15:47.019408Z","response":" appears","done":false}
-{"model":"gemma3","created_at":"2024-07-08T20:15:47.050245Z","response":" blue","done":false}
-{"model":"gemma3","created_at":"2024-07-08T20:15:47.095448Z","response":" due","done":false}
-{"model":"gemma3","created_at":"2024-07-08T20:15:47.126318Z","response":" to","done":false}
+{"model":"gpt-oss","created_at":"2024-07-08T20:15:46.965689Z","response":"The","done":false}
+{"model":"gpt-oss","created_at":"2024-07-08T20:15:46.991009Z","response":" sky","done":false}
+{"model":"gpt-oss","created_at":"2024-07-08T20:15:47.019408Z","response":" appears","done":false}
+{"model":"gpt-oss","created_at":"2024-07-08T20:15:47.050245Z","response":" blue","done":false}
+{"model":"gpt-oss","created_at":"2024-07-08T20:15:47.095448Z","response":" due","done":false}
+{"model":"gpt-oss","created_at":"2024-07-08T20:15:47.126318Z","response":" to","done":false}
 ```
 
 followed by lots more lines, until the `done` field is `true`.
@@ -606,7 +606,7 @@ public OllamaResponse generate(OllamaRequest ollamaRequest) {
 ```java
 @Test
 void generate_with_text_request() {
-  var ollamaRequest = new OllamaTextRequest("gemma3", "Why is the sky blue?", false);
+  var ollamaRequest = new OllamaTextRequest("gpt-oss", "Why is the sky blue?", false);
   OllamaResponse ollamaResponse = service.generate(ollamaRequest);
   System.out.println(ollamaResponse);
   String answer = ollamaResponse.response();
@@ -718,7 +718,7 @@ public record OllamaChatResponse(
 ```java
 @Test
 void test_chat() {
-    var request = new OllamaChatRequest("gemma3",
+    var request = new OllamaChatRequest("gpt-oss",
             List.of(new OllamaMessage("user", "why is the sky blue?"),
                     new OllamaMessage("assistant", "due to rayleigh scattering."),
                     new OllamaMessage("user", "how is that different than mie scattering?")),
@@ -787,7 +787,7 @@ public record ImageResponse(
 public class DalleService {
   private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
   private static final String API_KEY = System.getenv("OPENAI_API_KEY");
-  
+
   // Reuse HttpClient for better performance through connection pooling
   private static final HttpClient client = HttpClient.newHttpClient();
 
@@ -863,7 +863,7 @@ import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResp
 
 var model = OllamaStreamingChatModel.builder()
         .baseUrl("http://localhost:11434")
-        .modelName("gemma3")
+        .modelName("gpt-oss")
         .build();
 
 // One-liner for simple streaming

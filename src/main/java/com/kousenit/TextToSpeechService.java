@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 public class TextToSpeechService {
     private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
     public static final String RESOURCES_DIR = "src/main/resources";
-    
+
     // HttpClient is thread-safe and designed to be reused for multiple requests
     // Using a single instance improves performance through connection pooling
     private static final HttpClient client = HttpClient.newHttpClient();

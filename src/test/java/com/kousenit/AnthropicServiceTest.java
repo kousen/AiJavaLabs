@@ -1,8 +1,8 @@
 package com.kousenit;
 
-import org.junit.jupiter.api.Test;
-
 import static com.kousenit.AnthropicRecords.*;
+
+import org.junit.jupiter.api.Test;
 
 public class AnthropicServiceTest {
 
@@ -13,5 +13,4 @@ public class AnthropicServiceTest {
         ModelsResponse modelsResponse = service.listModels();
         modelsResponse.data().forEach(System.out::println);
     }
-
 }

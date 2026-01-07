@@ -9,8 +9,8 @@ This file provides context for AI assistants working on the AI Java Labs project
 ## Current State
 
 ### Recent Updates (December 2024 / January 2025)
-- ✅ Updated all AI models to latest versions (gemma2→gemma3, GPT models→gpt-4o-mini)
-- ✅ Updated LangChain4j to 1.4.0 (major version upgrade)
+- ✅ Updated all AI models to latest versions (local models→gpt-oss, GPT models→gpt-5-nano)
+- ✅ Updated LangChain4j to 1.10.0 (major version upgrade)
 - ✅ Configured Java 21 using Gradle's toolchain support
 - ✅ Refactored HttpClient usage from try-with-resources to static class attributes
 - ✅ Created standalone demo classes for training presentations
@@ -29,7 +29,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ### Key Technologies & Versions
 - **Java**: 21 (configured via Gradle toolchain, uses records, sealed interfaces, pattern matching)
-- **LangChain4j**: 1.4.0 (primary AI framework with streaming enhancements)
+- **LangChain4j**: 1.10.0 (primary AI framework with streaming enhancements)
 - **Gradle**: 8.4+ with Kotlin DSL
 - **Slidev**: For interactive presentations
 - **JSON Parsing**:
@@ -37,8 +37,8 @@ This file provides context for AI assistants working on the AI Java Labs project
   - Jackson 2.18.2 (for JsonNode and JSON Pointer support)
 - **AI Models**:
   - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), dall-e-3, tts-1, whisper-1
-  - Ollama: gemma3 (text), moondream (vision)
-  - Google: gemini-2.0-flash-exp
+  - Ollama: gpt-oss (text), moondream (vision)
+  - Google: gemini-3-flash-preview
 
 ### Project Structure
 ```
@@ -218,7 +218,7 @@ This is primarily an educational repository. Changes should:
 ## Recent Commit History Context
 
 - **Model Updates**: Systematic update of AI models to latest versions
-- **LangChain4j 1.4.0**: Major version upgrade with streaming enhancements
+- **LangChain4j 1.10.0**: Major version upgrade with streaming enhancements
 - **Java 21 Configuration**: Toolchain support for modern Java features
 - **JSON Parsing**: Added Jackson alongside Gson for dual approach demonstration
 - **Responses API**: Created demos showing new OpenAI API with both parsers
