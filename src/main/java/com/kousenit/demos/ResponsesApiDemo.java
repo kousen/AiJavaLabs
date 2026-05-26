@@ -18,7 +18,7 @@ import java.util.Map;
  * Demo of OpenAI's new Responses API (March 2025) using raw HTTP calls.
  * <p>
  * This demonstrates why understanding HTTP clients and JSON parsing is valuable:
- * - New APIs emerge faster than framework support
+ * - API features and response shapes change faster than courseware
  * - You're not blocked waiting for library updates
  * - You understand what frameworks do under the hood
  * <p>
@@ -27,8 +27,9 @@ import java.util.Map;
  * - Built-in tools (web search, code execution)
  * - Single endpoint design
  * <p>
- * Note: LangChain4j doesn't support this yet (as of Aug 2025),
- * which is why we're using raw HTTP calls here.
+ * LangChain4j also exposes Responses API support through OpenAI-specific
+ * abstractions. This demo keeps the raw HTTP version because it is useful
+ * for debugging, learning the endpoint shape, and adopting features directly.
  */
 public class ResponsesApiDemo {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
@@ -42,7 +43,7 @@ public class ResponsesApiDemo {
             === OpenAI Responses API Demo (Raw HTTP) ===
 
             This uses the NEW Responses API, not Chat Completions.
-            Frameworks like LangChain4j don't support this yet.
+            Raw HTTP shows the endpoint shape without framework abstraction.
             """);
 
         try {
@@ -58,8 +59,7 @@ public class ResponsesApiDemo {
                     """
                 Error: %s
 
-                Note: The Responses API may not be available yet
-                or the endpoint/format may have changed.
+                Note: The endpoint or request/response format may have changed.
                 %n""",
                     e.getMessage());
         }

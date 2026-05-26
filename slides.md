@@ -86,12 +86,12 @@ Kousen IT, Inc.
 
 ```bash {maxHeight:'350px'}
 AiJavaLabs/
-├── labs.md                    # 15 progressive lab exercises
+├── labs.md                    # Progressive lab exercises
 ├── slides.md                  # This presentation
 ├── build.gradle.kts           # Dependencies & test categories
 └── src/
     ├── main/java/com/kousenit/
-    │   ├── demos/             # 8 Live demo classes
+    │   ├── demos/             # 9+ live demo classes
     │   ├── *Service.java      # Core implementations
     │   └── *Records.java      # Data models
     └── test/                  # Comprehensive test suite
@@ -99,7 +99,7 @@ AiJavaLabs/
 
 <v-clicks>
 
-- **8 Live Demos**: Ready-to-run examples for each topic
+- **9+ Live Demos**: Ready-to-run examples for each topic
 - **Cost-Controlled Testing**: Free local tests, cheap API tests
 - **Modern Java 21**: Records, sealed interfaces, pattern matching
 - **Dual Learning Path**: Raw HTTP + LangChain4j frameworks
@@ -141,12 +141,13 @@ layout: two-cols
 
 # Demo Map: Advanced Demos
 
-## **Demos 5-8**
+## **Demos 7-11**
 
-5. **StreamingDemo** - Real-time responses
-6. **ApiComparisonDemo** - Raw vs Framework
-7. **ResponsesApiDemo** - Gson parsing
-8. **EasyRAGDemo** - Document Q&A
+7. **ToolCallingDemo** - Java methods as tools
+8. **StructuredOutputDemo** - Records from model output
+9. **StreamingDemo** - Real-time responses
+10. **ApiComparisonDemo** / **ResponsesApiDemo**
+11. **EasyRAGDemo** - Document Q&A
 
 ::right::
 
@@ -154,9 +155,10 @@ layout: two-cols
 
 <v-clicks>
 
+- **Tool Calling**: Model-selected Java methods
 - **Streaming**: Token-by-token output
 - **API Comparison**: HTTP vs Framework
-- **JSON Parsing**: Gson tree navigation
+- **JSON Parsing**: Gson and Jackson navigation
 - **RAG**: Document-powered AI
 
 </v-clicks>
@@ -225,7 +227,7 @@ graph LR
 
 - **Java 21+** (Records, sealed interfaces, pattern matching)
 - **Gradle 8.4+** (Kotlin DSL, test categories)
-- **<span style="color: #00D4FF">LangChain4j 1.10.0</span>** (Latest AI framework)
+- **<span style="color: #00D4FF">LangChain4j 1.15.0</span>** (current pinned framework)
 - **Git** for repository management
 - **Ollama** (optional, for local AI models)
 
@@ -308,7 +310,7 @@ npx slidev export slides.md
 
 - **<span style="color: #00D4FF">gpt-5-nano</span>**: very low per-token cost
 - **<span style="color: #00D4FF">gpt-oss (local)</span>**: Free with Ollama (OpenAI's open-source model)
-- **<span style="color: #00D4FF">dall-e-3</span>**: $0.040 per image
+- **<span style="color: #00D4FF">gpt-image-2</span>**: current GPT Image model
 - **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
 
 </v-clicks>
@@ -813,10 +815,10 @@ System.out.println("Ollama: " + response);
 
 <v-clicks>
 
-- **OpenAI** • gpt-5-nano, DALL-E 3
+- **OpenAI** • gpt-5-nano, GPT Image
 - **Perplexity** • Sonar (OpenAI-compatible API)
-- **Google AI** • Gemini 2.0, PaLM
-- **Anthropic** • Claude 3.5 Sonnet
+- **Google AI** • Gemini models
+- **Anthropic** • Claude models
 - **Azure OpenAI** • Enterprise GPT
 - **AWS Bedrock** • Multiple models
 
@@ -866,12 +868,130 @@ System.out.println("Ollama: " + response);
 layout: section
 ---
 
-# Demo 7: Streaming Responses
-## Real-Time AI Interactions
+# Demo 7: Tool Calling
+## Let the Model Call Java Code
 
 ---
 
-# Easy RAG with LangChain4j
+# Tool Calling with LangChain4j
+
+````md magic-move
+```java
+// Ordinary Java methods become tools
+public class TravelTools {
+    @Tool("Get a small weather summary for a city")
+    public String weather(@P("city name") String city) {
+        return "%s: %d F and %s".formatted(city, temp, summary);
+    }
+}
+```
+
+```java
+// Define the assistant interface
+interface TravelAssistant {
+    @SystemMessage("""
+        Use the provided Java tools whenever the user asks
+        about weather, distance, drive time, or travel cost.
+        """)
+    String chat(String message);
+}
+```
+
+```java
+// Register tools with the AI service
+TravelAssistant assistant = AiServices.builder(TravelAssistant.class)
+        .chatModel(model)
+        .tools(new TravelTools())
+        .build();
+
+String answer = assistant.chat("""
+    I am driving from Hartford to Boston.
+    What is the weather like at both ends,
+    how far is it, and what will fuel cost?
+    """);
+```
+````
+
+**Key idea**: The model chooses when to call a tool; Java still owns validation, side effects, and business rules.
+
+---
+
+# Tool Calling Guardrails
+
+<v-clicks>
+
+- Keep tools small, named clearly, and easy to explain
+- Validate all tool arguments before doing real work
+- Avoid dangerous side effects in first-pass tools
+- Log tool name, arguments, result, and failure separately
+- Treat tool outputs as data, not as proof the model reasoned correctly
+
+</v-clicks>
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.ToolCallingDemo
+```
+
+---
+
+# Demo 8: Structured Output Extraction
+
+````md magic-move
+```java
+// The application wants data, not prose
+public enum Priority { LOW, MEDIUM, HIGH }
+
+public record CourseInquiry(
+        String topic,
+        Priority priority,
+        boolean needsFollowUp,
+        List<String> actionItems) {}
+```
+
+```java
+// AI Service returns the record directly
+interface InquiryExtractor {
+    CourseInquiry extract(String message);
+}
+```
+
+```java
+// Enable JSON Schema support for the model
+ChatModel model = OpenAiChatModel.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-5-nano")
+        .temperature(0.0)
+        .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+        .strictJsonSchema(true)
+        .build();
+```
+
+```java
+InquiryExtractor extractor = AiServices.builder(InquiryExtractor.class)
+        .chatModel(model)
+        .build();
+
+CourseInquiry inquiry = extractor.extract(studentMessage);
+validate(inquiry);
+```
+````
+
+**Key idea**: Structured output turns model interpretation into Java data, but your application still validates the result.
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.StructuredOutputDemo
+```
+
+---
+layout: section
+---
+
+# Demo 9-11: Streaming and Retrieval
+## Real-Time and Document-Powered AI
+
+---
+
+# Demo 11: Easy RAG with LangChain4j
 
 ````md magic-move
 ```java
@@ -905,7 +1025,7 @@ See `EasyRAGDemo.java` for a complete, runnable example.
 
 ---
 
-# Demo 7: Clean Streaming with Lambda Handlers
+# Demo 9: Clean Streaming with Lambda Handlers
 
 ````md magic-move
 ```java
@@ -1018,7 +1138,7 @@ sequenceDiagram
 layout: section
 ---
 
-# Demo 8: Retrieval-Augmented Generation
+# Demo 11: Retrieval-Augmented Generation
 ## Document-Powered AI
 
 ---
@@ -1226,6 +1346,50 @@ graph LR
 </div>
 
 </div>
+
+---
+
+# Developer Integration Patterns to Explore
+
+<div class="grid grid-cols-2 gap-8">
+
+<div>
+
+## **Tool Calling**
+
+<v-clicks>
+
+- Model-selected Java methods
+- Application-owned validation and side effects
+- Natural path to APIs, databases, and services
+- Demo: `ToolCallingDemo`
+
+</v-clicks>
+
+</div>
+
+<div>
+
+## **Structured Outputs**
+
+<v-clicks>
+
+- Ask for data contracts, not prose, when code consumes the result
+- Map JSON output to records or DTOs
+- Validate required fields and enum values
+- Demo: `StructuredOutputDemo`
+
+</v-clicks>
+
+</div>
+
+</div>
+
+<v-click>
+
+**Why it matters**: Most production AI work is not chat. It is model-assisted control flow around ordinary application code.
+
+</v-click>
 
 ---
 layout: section
@@ -1488,7 +1652,7 @@ layout: section
 - **<span style="color: #00D4FF">Multi-Modal AI</span>**: Text, vision, audio integration
 - **<span style="color: #00D4FF">Streaming Responses</span>**: Real-time user experiences
 - **<span style="color: #00D4FF">RAG Systems</span>**: Document-powered AI
-- **<span style="color: #00D4FF">Production Patterns</span>**: Error handling, monitoring
+- **<span style="color: #00D4FF">Production Patterns</span>**: Error handling, structured outputs, monitoring
 
 </v-clicks>
 
@@ -1524,6 +1688,8 @@ layout: section
 - **<span style="color: #00D4FF">StreamingDemo</span>** - Real-time responses
 - **<span style="color: #00D4FF">ResponsesApiDemo</span>** - Raw HTTP patterns
 - **<span style="color: #00D4FF">ApiComparisonDemo</span>** - Framework vs raw
+- **<span style="color: #00D4FF">ToolCallingDemo</span>** - Java methods as tools
+- **<span style="color: #00D4FF">StructuredOutputDemo</span>** - Records from model output
 - **<span style="color: #00D4FF">EasyRAGDemo</span>** - Document Q&A
 
 </div>
@@ -1555,9 +1721,10 @@ layout: section
 <v-clicks>
 
 4. **<span style="color: #00D4FF">Cost Management Matters</span>**: Use test categories and local models for development
-5. **<span style="color: #00D4FF">RAG Changes Everything</span>**: Give AI access to your documents and data
+5. **<span style="color: #00D4FF">RAG Needs Guardrails</span>**: Give AI access to your documents and verify what it retrieves
 6. **<span style="color: #00D4FF">Streaming Improves UX</span>**: Real-time responses feel much faster to users
-7. **<span style="color: #00D4FF">Test Smart, Not Hard</span>**: Use local models for TDD, cloud models for validation
+7. **<span style="color: #00D4FF">Contracts Matter</span>**: Use tool calling and structured outputs when code consumes model results
+8. **<span style="color: #00D4FF">Test Smart, Not Hard</span>**: Use local models for TDD, cloud models for validation
 
 </v-clicks>
 
@@ -1573,8 +1740,8 @@ layout: section
 
 <v-clicks>
 
-- **Explore the repository**: Try all 8 demo classes
-- **Complete the labs**: 15 progressive exercises
+- **Explore the repository**: Try the demo classes
+- **Complete the labs**: Work through the progressive exercises
 - **Build custom integrations**: Add your own AI providers
 - **Production deployment**: Scale with real applications
 
@@ -1590,7 +1757,8 @@ layout: section
 
 - **Vector databases**: Redis, Pinecone, Weaviate
 - **Multi-agent systems**: Coordinated AI workflows
-- **Function calling**: Give AI access to your APIs
+- **Function calling**: Give AI controlled access to your APIs
+- **Structured outputs**: Turn model responses into validated Java data
 - **Custom embeddings**: Domain-specific models
 
 </v-clicks>

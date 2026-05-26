@@ -19,14 +19,14 @@ class ResponsesApiDemoTest {
     @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".*")
     void testResponsesApiDemo() {
         // This test runs the entire demo
-        // If the Responses API isn't available yet, it will catch the exception
+        // If the Responses API endpoint or format changes, the demo catches the exception
         // and print an informative message
         assertDoesNotThrow(() -> {
             System.out.println(
                     """
 
                 === Running Responses API Demo Test ===
-                Note: This tests the new Responses API which may still be in preview.
+                Note: This tests the Responses API using raw HTTP.
                 If it fails, the API might not be available yet.
                 """);
 

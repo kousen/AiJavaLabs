@@ -11,6 +11,8 @@
 - [Create a vision request](#create-a-vision-request)
 - [Refactor to sealed interfaces](#refactor-to-sealed-interfaces)
 - [Have a conversation](#have-a-conversation)
+- [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
+- [Extract structured output into Java records](#extract-structured-output-into-java-records)
 - [Generating Images](#generating-images)
 
 ## Generate Audio from Text
@@ -124,7 +126,7 @@ void testGenerateMp3() {
 
 ```kotlin
 dependencies {
-    implementation("com.google.code.gson:gson:2.13.1")
+    implementation("com.google.code.gson:gson:2.14.0")
 }
 ```
 
@@ -217,7 +219,7 @@ class OpenAiServiceTest {
 
     models.forEach(System.out::println);
     assertTrue(new HashSet<>(models).containsAll(
-            List.of("dall-e-3", "gpt-5-nano",
+            List.of("gpt-image-2", "gpt-5-nano",
                     "gpt-4o-mini-tts", "whisper-1")));
     }
 }
@@ -437,7 +439,7 @@ public record OllamaVisionRequest(
 ```
 
 * Fortunately, the output response from vision models is the same as from the text models, so you can reuse the `OllamaResponse` record.
-* Rather than require the client to submit the image in that form, let's provide a method to convert an image from a URL into the proper string. We'll call this method inside a _compact constructor_, a cool feature of records.
+* Rather than require the client to submit the image in that form, let's provide a method to convert a local image path into the proper string. We'll call this method inside a _compact constructor_, a cool feature of records.
 * Inside the `OllamaVisionRequest` record, add a compact constructor that takes a `String` path to a local image and converts it to a Base 64 encoded string.
 
 ```java
@@ -751,9 +753,270 @@ public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
 
 * Run the test to see it in action. In practice, you would extract the `assistant` response from each message and add it to the next request. Note that all the major framework (Spring AI, LangChain4j, etc) have ways of doing that for you.
 
+## Add tool calling with LangChain4j
+
+Tool calling lets the model ask your Java application to run specific methods. This is the bridge from "chatbot" to application integration: the model decides that it needs data or an action, but Java still owns the actual method, validation, and side effects.
+
+In this lab, create a small travel assistant that can call Java methods for weather, driving distance, and fuel cost.
+
+* Add these imports to a new class called `ToolCallingDemo` in your demos package:
+
+```java
+import dev.langchain4j.agent.tool.P;
+import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.SystemMessage;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Map;
+```
+
+* Add an AI service interface. The system message tells the model when tools are expected:
+
+```java
+interface TravelAssistant {
+    @SystemMessage("""
+        You are a practical travel assistant.
+        Use the provided Java tools whenever the user asks about
+        weather, distance, drive time, or estimated travel cost.
+        Explain which tool results shaped your answer.
+        """)
+    String chat(String message);
+}
+```
+
+* Add a `TravelTools` class with ordinary Java methods annotated with `@Tool`:
+
+```java
+public static class TravelTools {
+    private static final Map<String, Weather> WEATHER = Map.of(
+            "hartford", new Weather("Hartford, CT", 72, "partly cloudy"),
+            "boston", new Weather("Boston, MA", 66, "cool and breezy"),
+            "new york", new Weather("New York, NY", 75, "warm and humid"));
+
+    @Tool("Get a small weather summary for a city")
+    public String weather(@P("city name, such as Hartford or Boston") String city) {
+        Weather weather = WEATHER.get(city.toLowerCase().trim());
+        if (weather == null) {
+            return "No weather data available for " + city;
+        }
+        return "%s: %d F and %s".formatted(
+                weather.city(), weather.temperatureF(), weather.summary());
+    }
+
+    @Tool("Estimate fuel cost for a trip")
+    public String fuelCost(
+            @P("driving distance in miles") int miles,
+            @P("vehicle fuel economy in miles per gallon") double mpg,
+            @P("fuel price per gallon") double pricePerGallon) {
+        BigDecimal gallons = BigDecimal.valueOf(miles)
+                .divide(BigDecimal.valueOf(mpg), 2, RoundingMode.HALF_UP);
+        BigDecimal cost = gallons.multiply(BigDecimal.valueOf(pricePerGallon))
+                .setScale(2, RoundingMode.HALF_UP);
+        return "%s gallons, about $%s".formatted(gallons, cost);
+    }
+
+    private record Weather(String city, int temperatureF, String summary) {}
+}
+```
+
+* Add a distance tool. This is intentionally a Java method, not a prompt trick:
+
+```java
+@Tool("Estimate driving distance in miles between two supported cities")
+public int drivingDistance(
+        @P("starting city") String from,
+        @P("destination city") String to) {
+    if (from.equalsIgnoreCase("Hartford") && to.equalsIgnoreCase("Boston")) {
+        return 102;
+    }
+    if (from.equalsIgnoreCase("Hartford") && to.equalsIgnoreCase("New York")) {
+        return 116;
+    }
+    throw new IllegalArgumentException("Unsupported route: " + from + " to " + to);
+}
+```
+
+* Build the model and register the tools with `AiServices`:
+
+```java
+ChatModel model = OpenAiChatModel.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-5-nano")
+        .temperature(0.0)
+        .build();
+
+TravelAssistant assistant = AiServices.builder(TravelAssistant.class)
+        .chatModel(model)
+        .tools(new TravelTools())
+        .build();
+```
+
+* Ask a question that requires multiple tools:
+
+```java
+String answer = assistant.chat("""
+        I am driving from Hartford to Boston.
+        What is the weather like at both ends,
+        how far is the trip, and what would fuel cost
+        at 30 mpg and $3.65 per gallon?
+        """);
+System.out.println(answer);
+```
+
+* Run the completed demo:
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.ToolCallingDemo
+```
+
+The important design point is that the model does not get direct access to your system. It gets a tool specification. LangChain4j executes the selected Java method and returns the result to the model. In production, validate every argument, keep side effects explicit, and log each tool call separately from the model's final prose answer.
+
+## Extract structured output into Java records
+
+Tool calling is useful when the model needs your application to do something. Structured output is useful when your application needs the model to return data your code can consume safely.
+
+In this lab, extract a structured `CourseInquiry` record from an unstructured message. LangChain4j can generate a JSON Schema from the return type, ask the model for JSON that matches it, and parse the result back into a Java record.
+
+* Add a class called `StructuredOutputDemo` in the demos package.
+* Add these imports:
+
+```java
+import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.output.structured.Description;
+import dev.langchain4j.service.AiServices;
+import java.util.List;
+```
+
+* Add an enum for priority values:
+
+```java
+public enum Priority {
+    LOW,
+    MEDIUM,
+    HIGH
+}
+```
+
+* Add a record for the extracted data. Use `@JsonProperty(required = true)` for required schema fields and `@Description` to give the model field-level guidance:
+
+```java
+@Description("A structured summary of a student or customer request")
+public record CourseInquiry(
+        @JsonProperty(required = true)
+        @Description("Short topic label")
+        String topic,
+
+        @JsonProperty(required = true)
+        Priority priority,
+
+        @JsonProperty(required = true)
+        @Description("Whether a human should follow up")
+        boolean needsFollowUp,
+
+        @JsonProperty(required = true)
+        @Description("Concrete next actions")
+        List<String> actionItems) {}
+```
+
+* Add an AI service interface that returns the record rather than a `String`:
+
+```java
+interface InquiryExtractor {
+    CourseInquiry extract(String message);
+}
+```
+
+* Configure the model with JSON Schema support enabled:
+
+```java
+ChatModel model = OpenAiChatModel.builder()
+        .apiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-5-nano")
+        .temperature(0.0)
+        .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+        .strictJsonSchema(true)
+        .build();
+```
+
+* Build the AI service:
+
+```java
+InquiryExtractor extractor = AiServices.builder(InquiryExtractor.class)
+        .chatModel(model)
+        .build();
+```
+
+* Extract the record from an unstructured message:
+
+```java
+CourseInquiry inquiry = extractor.extract("""
+        A student says: I finished the tool calling lab, but I am still
+        confused about the difference between tool calling and structured
+        outputs. Could you add a small example before tomorrow?
+        """);
+
+System.out.println(inquiry);
+```
+
+* Add application-side validation. Structured output is not a substitute for validation:
+
+```java
+public static void validate(CourseInquiry inquiry) {
+    if (inquiry.topic() == null || inquiry.topic().isBlank()) {
+        throw new IllegalArgumentException("topic is required");
+    }
+    if (inquiry.priority() == null) {
+        throw new IllegalArgumentException("priority is required");
+    }
+    if (inquiry.actionItems() == null || inquiry.actionItems().isEmpty()) {
+        throw new IllegalArgumentException("at least one action item is required");
+    }
+}
+```
+
+* Run the completed demo:
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.StructuredOutputDemo
+```
+
+* Add a cheap unit test that does not call the model. This verifies the Java-side parse and validation behavior:
+
+```java
+private final ObjectMapper mapper = new ObjectMapper();
+
+@Test
+void parses_structured_output_into_record() throws Exception {
+    String json = """
+        {
+          "topic": "Tool calling versus structured outputs",
+          "priority": "HIGH",
+          "needsFollowUp": true,
+          "actionItems": [
+            "Add a small structured-output demo",
+            "Explain when to use tools versus JSON records"
+          ]
+        }
+        """;
+
+    CourseInquiry inquiry = mapper.readValue(json, CourseInquiry.class);
+    StructuredOutputDemo.validate(inquiry);
+    assertThat(inquiry.priority()).isEqualTo(Priority.HIGH);
+}
+```
+
+The design point is the same as with tool calling: let the model help with interpretation, but keep your application responsible for contracts. In production, validate the parsed object and decide what to do when required fields are missing, enum values are wrong, or the extracted data is semantically questionable.
+
 ## Generating Images
 
-* We now return to OpenAI to use it's DALL-E 3 image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. It turns out we can retrieve the response as either a URL or a Base 64 encoded string.
+* We now return to OpenAI to use the GPT Image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. GPT Image returns Base 64 encoded image data from the Image API.
 
 * Add records for image generation to the `OpenAiRecords` class:
 
@@ -763,28 +1026,27 @@ public record ImageRequest(
         String prompt,
         Integer n,
         String quality,
-        String responseFormat,
-        String size,
-        String style
+        String outputFormat,
+        String size
 ) {}
 ```
 
-* The response wraps either a URL to the generated image, or the actual Base 64 encoded data. For this exercise, we'll get the URL. Add the response record:
+* The response wraps the generated image as Base 64 encoded data. Add the response record:
 
 ```java
 public record ImageResponse(
         long created,
         List<Image> data) {
   public record Image(
-          String url,
+          String b64Json,
           String revisedPrompt) {}
 }
 ```
 
-* Add a class called `DalleService` with constants for the endpoint, the API key, an `HttpClient`, and a `Gson` object:
+* Add a class called `GptImageService` with constants for the endpoint, the API key, an `HttpClient`, and a `Gson` object:
 
 ```java
-public class DalleService {
+public class GptImageService {
   private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
   private static final String API_KEY = System.getenv("OPENAI_API_KEY");
 
@@ -798,7 +1060,7 @@ public class DalleService {
 }
 ```
 
-* Add a new method to `DalleService` called `generateImage` that takes a `ImageRequest` object and returns a `ImageResponse` object:
+* Add a new method to `GptImageService` called `generateImage` that takes a `ImageRequest` object and returns a `ImageResponse` object:
 
 ```java
 public ImageResponse generateImage(ImageRequest imageRequest) {
@@ -813,7 +1075,7 @@ public ImageResponse generateImage(ImageRequest imageRequest) {
             client.send(request, HttpResponse.BodyHandlers.ofString());
     return gson.fromJson(response.body(), ImageResponse.class);
   } catch (IOException | InterruptedException e) {
-    throw new RuntimeException("Error sending prompt prompt", e);
+    throw new RuntimeException("Error sending image prompt", e);
   }
 }
 ```
@@ -828,27 +1090,27 @@ import org.junit.jupiter.api.Test;
 import static com.kousenit.OpenAiRecords.*;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-class DalleServiceTest {
-    private final DalleService service = new DalleService();
+class GptImageServiceTest {
+    private final GptImageService service = new GptImageService();
 
     @Test
     void generate_image() {
         var imageRequest = new ImageRequest(
-            "dall-e-3",
+            "gpt-image-2",
             "Draw a picture of cats playing cards",
             1,
-            "standard",
-            "url",
-            "1024x1024",
-            "natural");
+            "medium",
+            "png",
+            "1024x1024");
         ImageResponse imageResponse = service.generateImage(imageRequest);
         System.out.println(imageResponse.data().getFirst().revisedPrompt());
-        System.out.println(imageResponse.data().getFirst().url());
+        System.out.println("Base64 image bytes: " +
+            imageResponse.data().getFirst().b64Json().length());
     }
 }
 ```
 
-* Run the test to see it in action. The response will contain a URL to the generated image, with you can either click on or copy and paste into a browser to download the image.
+* Run the test to see it in action. The response contains Base 64 encoded image data and the revised prompt. In a full application, decode the `b64Json` value and write the bytes to a `.png` file.
 
 ## Clean Streaming with LangChain4j
 
@@ -902,7 +1164,7 @@ Run the `StreamingDemo` class to see both patterns in action:
 
 ## Going Further: JSON Parsing Strategies
 
-If you're working with new APIs before framework support exists (like OpenAI's new Responses API), understanding JSON parsing becomes crucial. This project includes two demonstration approaches:
+If you're working with APIs directly, or with features that are awkward to reach through a framework abstraction, understanding JSON parsing becomes crucial. This project includes two demonstration approaches:
 
 ### Available Demos
 
@@ -922,6 +1184,7 @@ Understanding raw HTTP and JSON parsing lets you:
 - Use new APIs immediately without waiting for framework updates
 - Debug API responses when things go wrong
 - Build custom integrations when needed
+- Verify what a framework is sending or receiving when behavior is surprising
 
 ### Quick Example: JSON Pointer Magic
 

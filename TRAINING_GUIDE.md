@@ -10,7 +10,7 @@ All tests are categorized with JUnit 5 tags to control execution and costs durin
 |-----|-------------|------|----------|
 | `@Tag("local")` | Tests using local Ollama | FREE | Safe for unlimited demos |
 | `@Tag("cheap")` | Tests using low-cost models | $ | Good for frequent demos |
-| `@Tag("expensive")` | Tests using costly models (DALL-E) | $$$ | Use sparingly |
+| `@Tag("expensive")` | Tests using costly image models | $$$ | Use sparingly |
 | `@Tag("demo")` | Quick tests for live demos | Varies | Optimized for presentations |
 | `@Tag("integration")` | Tests calling external APIs | Varies | All non-local tests |
 | `@Tag("openai")` | Tests requiring OpenAI API | $ | OpenAI-specific features |
@@ -71,19 +71,31 @@ Located in `src/main/java/com/kousenit/demos/`:
 - **Runtime**: Interactive
 - **Good for**: Advanced features
 
-### 6. ResponsesApiDemo
+### 6. ToolCallingDemo
+- **Purpose**: Show LangChain4j tool calling with Java methods
+- **Cost**: Low (gpt-5-nano)
+- **Runtime**: ~3-6 seconds
+- **Good for**: Showing application integration beyond chat
+
+### 7. ResponsesApiDemo
 - **Purpose**: Show new OpenAI Responses API (raw HTTP)
 - **Cost**: Low (gpt-5-nano)
 - **Runtime**: ~2-3 seconds
 - **Good for**: Teaching why HTTP/JSON skills matter
 
-### 7. ApiComparisonDemo
+### 8. StructuredOutputDemo
+- **Purpose**: Extract validated Java records from unstructured text
+- **Cost**: Low (gpt-5-nano)
+- **Runtime**: ~2-4 seconds
+- **Good for**: Showing model output as application data
+
+### 9. ApiComparisonDemo
 - **Purpose**: Compare Framework vs Raw HTTP approaches
 - **Cost**: Low (3 quick calls)
 - **Runtime**: ~5 seconds
 - **Good for**: Demonstrating framework trade-offs
 
-### 8. StreamingDemo
+### 10. StreamingDemo
 - **Purpose**: Show clean streaming with LambdaStreamingResponseHandler
 - **Cost**: Low (gpt-4o-mini)
 - **Runtime**: ~3-5 seconds
@@ -104,7 +116,7 @@ java -cp build/classes/java/main:build/libs/* com.kousenit.demos.QuickChatDemo
 
 1. **Start with Local**: Use Ollama demos first (free)
 2. **Use Test Categories**: Run `testDemo` for quick, cheap tests
-3. **Avoid DALL-E**: Image generation is expensive (~$0.04/image)
+3. **Avoid image generation in live loops**: GPT Image calls are slower and more expensive than text demos
 4. **Cache Responses**: Consider recording demo outputs for replay
 5. **Use Cheap Models**:
    - gpt-5-nano for text
@@ -135,7 +147,7 @@ export PERPLEXITY_API_KEY="your-key-here"  # Optional
 |-------|------------|-------------|-------|
 | gpt-5-nano | $0.00015/1K tokens | $0.0006/1K tokens | Cheapest OpenAI |
 | gpt-4o-mini-tts | ~$0.006/minute | N/A | Fast TTS |
-| dall-e-3 | $0.04/image | N/A | Expensive! |
+| gpt-image-2 | Varies by image tokens | N/A | Current GPT Image model; expensive for live loops |
 | gpt-oss (Ollama) | FREE | FREE | OpenAI's open-source model |
 | gemini-3-flash-preview | FREE (limited) | FREE (limited) | Google's free tier |
 
@@ -146,18 +158,20 @@ export PERPLEXITY_API_KEY="your-key-here"  # Optional
 3. Show `LocalOllamaDemo` - free alternative
 4. Show `MultiModelDemo` - provider comparison
 5. Show `TextToSpeechDemo` - multimodal
-6. **Framework vs Raw API Discussion**:
+6. Show `ToolCallingDemo` - Java methods as model-callable tools
+7. Show `StructuredOutputDemo` - model output as Java records
+8. **Framework vs Raw API Discussion**:
    - Run `ApiComparisonDemo` - show all three approaches
    - Discuss trade-offs (convenience vs flexibility)
-   - Show `ResponsesApiDemo` - new API without framework support
-   - Key lesson: "Frameworks lag behind new APIs"
-7. Run `./gradlew testDemo` - show test organization
-8. Deep dive into specific features as needed
+   - Show `ResponsesApiDemo` - raw endpoint shape without framework abstraction
+   - Key lesson: "Frameworks are productive, but raw HTTP reveals the actual API contract"
+9. Run `./gradlew testDemo` - show test organization
+10. Deep dive into specific features as needed
 
 ## Key Teaching Point: Why Learn Both?
 
 Use the Responses API demos to illustrate:
 - **Frameworks are great** for common tasks and abstraction
-- **Raw HTTP/JSON skills** let you adopt new APIs immediately
-- **Real-world example**: Responses API launched March 2025, still no LC4j support (Aug 2025)
-- **Lesson**: Don't be blocked by framework limitations - know the fundamentals!
+- **Raw HTTP/JSON skills** let you inspect, debug, and adopt API features directly
+- **Real-world example**: Responses API launched March 2025 and has a different request/response shape from Chat Completions
+- **Lesson**: Frameworks are productive, but fundamentals keep you from being boxed in by abstraction details.

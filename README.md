@@ -6,9 +6,10 @@ A comprehensive educational repository demonstrating how to integrate various AI
 
 This repository contains practical exercises and example implementations for working with AI APIs in Java, including:
 
-- **OpenAI Services**: Text-to-speech, chat completions, image generation (DALL-E)
+- **OpenAI Services**: Text-to-speech, chat completions, image generation (GPT Image)
 - **Ollama Integration**: Local AI model interactions with text and vision capabilities
 - **LangChain4j**: Framework integration for AI-powered applications
+- **Tool Calling**: Java methods exposed safely as model-callable tools
 - **Retrieval-Augmented Generation (RAG)**: Document-based question answering
 
 ## Getting Started
@@ -92,10 +93,12 @@ src/
 │   │   ├── QuickChatDemo.java
 │   │   ├── TextToSpeechDemo.java
 │   │   ├── MultiModelDemo.java
+│   │   ├── ToolCallingDemo.java
+│   │   ├── StructuredOutputDemo.java
 │   │   ├── StreamingDemo.java
 │   │   ├── ResponsesApiDemo.java  # New Responses API with Gson
 │   │   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
-│   ├── DalleService.java          # DALL-E image generation
+│   ├── GptImageService.java       # GPT Image generation
 │   ├── EasyRAGDemo.java           # RAG implementation example
 │   ├── OllamaService.java         # Ollama AI service integration
 │   ├── OpenAiService.java         # OpenAI API interactions
@@ -122,9 +125,22 @@ Image analysis and description generation:
 - Base64 image encoding for API transmission
 
 ### 🎨 Image Generation
-Create images from text descriptions using DALL-E 3:
+Create images from text descriptions using GPT Image:
 - High-quality image generation
 - Customizable size, quality, and style parameters
+
+### 🛠️ Tool Calling
+Expose Java methods as model-callable tools through LangChain4j:
+- Annotate methods with `@Tool`
+- Document parameters with `@P`
+- Register tools through `AiServices`
+- Keep validation and side effects in Java application code
+
+### 🧾 Structured Output
+Extract Java records from unstructured text:
+- Enable JSON Schema support in LangChain4j
+- Return records from AI Service methods
+- Validate parsed objects before using them
 
 ### 📚 Document Processing
 RAG implementation for document-based question answering:
@@ -133,10 +149,11 @@ RAG implementation for document-based question answering:
 
 ## Dependencies
 
-- **LangChain4j**: 1.10.0 (AI framework)
-- **Apache POI**: 5.4.1 (Document processing)
-- **Gson**: 2.13.1 (JSON parsing)
-- **Jackson**: 2.18.2 (JSON parsing with JsonNode)
+- **LangChain4j**: 1.15.0 (AI framework)
+- **Google Gen AI SDK**: 1.55.0
+- **Apache POI**: 5.5.1 (Document processing)
+- **Gson**: 2.14.0 (JSON parsing)
+- **Jackson**: 2.21.3 (JSON parsing with JsonNode)
 - **JUnit**: 5.13.4 (Testing)
 - **Spotless**: 7.2.1 (Code formatting)
 - **Playwright**: For Slidev export functionality
@@ -151,7 +168,9 @@ Detailed step-by-step exercises are available in [labs.md](labs.md), covering:
 4. **Streaming Responses** - Real-time AI interactions
 5. **Vision Requests** - Image analysis capabilities
 6. **Conversation Management** - Multi-turn chat implementations
-7. **Image Generation** - DALL-E integration
+7. **Tool Calling** - Let the model call Java methods
+8. **Structured Output** - Extract validated Java records
+9. **Image Generation** - GPT Image integration
 
 ## JSON Parsing Approaches
 
@@ -168,7 +187,7 @@ The project demonstrates two JSON parsing strategies for working with AI APIs:
 - Demonstrated in `ResponsesApiJacksonDemo`
 - Spring Boot's default JSON processor
 
-Both approaches are shown side-by-side to help understand how to work with new APIs before framework support exists.
+Both approaches are shown side-by-side to help understand how to work directly with APIs, debug framework behavior, and adopt features that may not map cleanly to a high-level abstraction yet.
 
 ## Educational Goals
 

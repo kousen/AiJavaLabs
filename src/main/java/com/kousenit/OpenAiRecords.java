@@ -12,10 +12,10 @@ public class OpenAiRecords {
 
     // Generating images
     public record ImageRequest(
-            String model, String prompt, Integer n, String quality, String responseFormat, String size, String style) {}
+            String model, String prompt, Integer n, String quality, String outputFormat, String size) {}
 
     public record ImageResponse(long created, List<Image> data) {
-        public record Image(String url, String revisedPrompt) {}
+        public record Image(String b64Json, String revisedPrompt) {}
     }
 
     // Vector stores

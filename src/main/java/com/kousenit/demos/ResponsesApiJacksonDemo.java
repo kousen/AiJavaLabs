@@ -47,8 +47,7 @@ public class ResponsesApiJacksonDemo {
                     """
                 Error: %s
 
-                Note: The Responses API may not be available yet
-                or the endpoint/format may have changed.
+                Note: The endpoint or request/response format may have changed.
                 %n""",
                     e.getMessage());
         }

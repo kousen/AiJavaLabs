@@ -8,9 +8,10 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ## Current State
 
-### Recent Updates (December 2024 / January 2025)
+### Recent Updates (May 2026)
 - ✅ Updated all AI models to latest versions (local models→gpt-oss, GPT models→gpt-5-nano)
-- ✅ Updated LangChain4j to 1.10.0 (major version upgrade)
+- ✅ Updated LangChain4j to 1.15.0
+- ✅ Updated GPT Image examples from deprecated DALL-E 3 to gpt-image-2
 - ✅ Configured Java 21 using Gradle's toolchain support
 - ✅ Refactored HttpClient usage from try-with-resources to static class attributes
 - ✅ Created standalone demo classes for training presentations
@@ -29,14 +30,14 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ### Key Technologies & Versions
 - **Java**: 21 (configured via Gradle toolchain, uses records, sealed interfaces, pattern matching)
-- **LangChain4j**: 1.10.0 (primary AI framework with streaming enhancements)
+- **LangChain4j**: 1.15.0 (primary AI framework with streaming enhancements)
 - **Gradle**: 8.4+ with Kotlin DSL
 - **Slidev**: For interactive presentations
 - **JSON Parsing**:
-  - Gson 2.13.1 (primary, used throughout)
-  - Jackson 2.18.2 (for JsonNode and JSON Pointer support)
+  - Gson 2.14.0 (primary, used throughout)
+  - Jackson 2.21.3 (for JsonNode and JSON Pointer support)
 - **AI Models**:
-  - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), dall-e-3, tts-1, whisper-1
+  - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), gpt-image-2, gpt-4o-mini-tts, whisper-1
   - Ollama: gpt-oss (text), moondream (vision)
   - Google: gemini-3-flash-preview
 
@@ -47,10 +48,12 @@ src/main/java/com/kousenit/
 │   ├── QuickChatDemo.java    # Basic chat example
 │   ├── TextToSpeechDemo.java # TTS demonstration
 │   ├── MultiModelDemo.java   # Compare multiple providers
+│   ├── ToolCallingDemo.java  # LangChain4j tools backed by Java methods
+│   ├── StructuredOutputDemo.java # Java records from model output
 │   ├── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
 │   ├── ResponsesApiDemo.java # Responses API with Gson parsing
 │   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
-├── DalleService.java          # DALL-E image generation
+├── GptImageService.java       # GPT Image generation
 ├── EasyRAGDemo.java           # RAG implementation
 ├── OllamaService.java         # Ollama integration
 ├── OpenAiService.java         # OpenAI API wrapper
@@ -94,7 +97,7 @@ Each AI provider has a dedicated service class:
 - **TextToSpeechService**: OpenAI TTS API wrapper
 - **OpenAiService**: General OpenAI API operations
 - **OllamaService**: Local Ollama model interactions
-- **DalleService**: Image generation with DALL-E
+- **GptImageService**: Image generation with GPT Image
 
 ### Data Models
 Uses Java records for API data modeling:
@@ -199,8 +202,20 @@ This is primarily an educational repository. Changes should:
 - **Dual approach**: Gson (primary) and Jackson (alternative)
 - **Gson**: Used throughout existing services, JsonElement tree navigation
 - **Jackson**: Added for JsonNode with JSON Pointer support (`at("/path/to/element")`)
-- **Rationale**: Shows how to work with new APIs before framework support
+- **Rationale**: Shows how to inspect and debug API behavior outside framework abstractions
 - **Demo classes**: ResponsesApiDemo (Gson) vs ResponsesApiJacksonDemo (Jackson)
+
+### Tool Calling Strategy
+- **High-level approach**: LangChain4j AI Services with `@Tool` annotated Java methods
+- **Demo class**: ToolCallingDemo
+- **Teaching point**: The model chooses when to call a tool, but Java owns validation, execution, side effects, and logging
+- **Current example**: Travel assistant using weather, driving distance, and fuel-cost tools
+
+### Structured Output Strategy
+- **High-level approach**: LangChain4j AI Services returning Java records with JSON Schema support enabled
+- **Demo class**: StructuredOutputDemo
+- **Teaching point**: Structured outputs turn model interpretation into application data, but Java still validates before use
+- **Current example**: CourseInquiry record with priority, follow-up flag, and action items
 
 ### Demo-First Approach
 - Created standalone demo classes separate from tests
@@ -214,18 +229,22 @@ This is primarily an educational repository. Changes should:
 - Export capabilities for multiple formats (PDF, PPTX)
 - Mermaid diagrams for architecture visualization
 - JSON parsing comparison slides added
+- Tool calling lab and demo added with LangChain4j `@Tool` annotations
+- Structured output lab and demo added with LangChain4j JSON Schema support
 
 ## Recent Commit History Context
 
 - **Model Updates**: Systematic update of AI models to latest versions
-- **LangChain4j 1.10.0**: Major version upgrade with streaming enhancements
+- **LangChain4j 1.15.0**: Current pinned framework version for the course
 - **Java 21 Configuration**: Toolchain support for modern Java features
 - **JSON Parsing**: Added Jackson alongside Gson for dual approach demonstration
 - **Responses API**: Created demos showing new OpenAI API with both parsers
+- **Tool Calling**: Added runnable LangChain4j demo showing Java methods as model-callable tools
+- **Structured Output**: Added runnable LangChain4j demo showing model extraction into Java records
 - **Training Materials**: Created comprehensive slide deck (40 slides) with exports
 - **Slide Enhancements**: Added JSON parsing comparison and fixed layout issues
 - **Code Organization**: Separated demos from tests for better presentation flow
 - **Bug Fixes**: Addressed critical issues including Responses API parameter fix
 - **Documentation**: Enhanced README, CLAUDE.md, and added "Going Further" section to labs
 
-This project demonstrates practical AI integration patterns while maintaining educational clarity and hands-on learning opportunities. The recent additions emphasize understanding fundamentals (HTTP + JSON) to work with cutting-edge APIs before framework support exists.
+This project demonstrates practical AI integration patterns while maintaining educational clarity and hands-on learning opportunities. The recent additions emphasize understanding fundamentals (HTTP + JSON) so developers can inspect, debug, and extend framework-based integrations when API behavior changes.

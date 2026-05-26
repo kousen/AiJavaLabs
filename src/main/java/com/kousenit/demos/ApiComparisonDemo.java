@@ -16,13 +16,13 @@ import java.util.Map;
  * Comparison demo showing:
  * 1. Chat Completions API via LangChain4j (what we use in the course)
  * 2. Chat Completions API via raw HTTP (what LC4j does internally)
- * 3. Responses API via raw HTTP (new, not yet in LC4j)
+ * 3. Responses API via raw HTTP
  *
  * Key Teaching Points:
  * - Frameworks provide convenience and abstraction
  * - But understanding the underlying HTTP/JSON is valuable
- * - When new APIs emerge, you can use them immediately
- * - You're not blocked waiting for framework updates
+ * - When new APIs or features emerge, raw HTTP lets you verify behavior directly
+ * - Frameworks can support the same API through specialized abstractions
  */
 public class ApiComparisonDemo {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
@@ -79,20 +79,20 @@ public class ApiComparisonDemo {
         // 3. Using raw HTTP with new Responses API
         System.out.println(
                 """
-            3. Responses API via Raw HTTP (New, not in LC4j):
-            --------------------------------------------------""");
+            3. Responses API via Raw HTTP:
+            -------------------------------""");
         try {
             responsesApiRaw(prompt);
             System.out.println(
                     """
-                   Pros: Latest features immediately available
-                   Cons: No framework support yet
+                   Pros: Direct access to the current endpoint shape
+                   Cons: More parsing and feature-specific code
                 """);
         } catch (Exception e) {
             System.out.printf(
                     """
                 ✗ Error: %s
-                   (Responses API may not be available yet)
+                   (Responses API endpoint shape or request format may have changed)
                 %n""",
                     e.getMessage());
         }
@@ -103,7 +103,7 @@ public class ApiComparisonDemo {
             === Key Lessons ===
             1. Frameworks (LC4j) make common tasks easy
             2. Understanding HTTP/JSON gives you flexibility
-            3. You can adopt new APIs before frameworks catch up
+            3. You can verify API behavior directly, even when abstractions change
             4. Both skills are valuable for different situations
             """);
     }
@@ -137,10 +137,7 @@ public class ApiComparisonDemo {
     }
 
     private static void responsesApiRaw(String prompt) throws IOException, InterruptedException {
-        var requestBody = Map.of(
-                "model", "gpt-5-nano", "messages", List.of(Map.of("role", "user", "content", prompt))
-                // Note: Simpler API, server manages conversation state
-                );
+        var requestBody = Map.of("model", "gpt-5-nano", "input", prompt);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/responses"))
@@ -153,7 +150,8 @@ public class ApiComparisonDemo {
 
         if (response.statusCode() == 200) {
             var json = gson.fromJson(response.body(), Map.class);
-            System.out.println("✓ Response: " + json.get("content"));
+            System.out.println("✓ Response object id: " + json.get("id"));
+            System.out.println("  Raw JSON returned; parse output[] for message text in real code.");
         } else {
             System.out.println("✗ Status: " + response.statusCode());
         }

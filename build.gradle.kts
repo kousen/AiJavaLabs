@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("application")
     id("com.diffplug.spotless") version "7.2.1"
 }
 
@@ -16,8 +17,12 @@ java {
     }
 }
 
+application {
+    mainClass.set("com.kousenit.demos.QuickChatDemo")
+}
+
 dependencies {
-    implementation(platform("dev.langchain4j:langchain4j-bom:1.10.0"))
+    implementation(platform("dev.langchain4j:langchain4j-bom:1.15.0"))
 
     // LangChain4j Easy RAG example
     implementation("dev.langchain4j:langchain4j")
@@ -30,14 +35,14 @@ dependencies {
     }
 
     // Google Gen AI
-    implementation("com.google.genai:google-genai:1.15.0")
+    implementation("com.google.genai:google-genai:1.55.0")
 
     // Security fix
-    implementation("org.apache.poi:poi-ooxml:5.4.1")
+    implementation("org.apache.poi:poi-ooxml:5.5.1")
 
     // JSON parsers
-    implementation("com.google.code.gson:gson:2.13.1")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+    implementation("com.google.code.gson:gson:2.14.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.3")
 
     // Logging
     implementation("org.slf4j:slf4j-simple:2.0.17")
@@ -55,8 +60,19 @@ tasks.test {
     jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off")
 }
 
+tasks.named<JavaExec>("run") {
+    mainClass.set(providers.gradleProperty("mainClass").orElse(application.mainClass))
+}
+
+fun Test.useProjectTestClasses() {
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    shouldRunAfter(tasks.test)
+}
+
 // Test task for local Ollama tests only (free, no API costs)
 tasks.register<Test>("testLocal") {
+    useProjectTestClasses()
     useJUnitPlatform {
         includeTags("local")
     }
@@ -67,6 +83,7 @@ tasks.register<Test>("testLocal") {
 
 // Test task for cheap API tests
 tasks.register<Test>("testCheap") {
+    useProjectTestClasses()
     useJUnitPlatform {
         includeTags("cheap")
     }
@@ -77,6 +94,7 @@ tasks.register<Test>("testCheap") {
 
 // Test task for quick demo tests
 tasks.register<Test>("testDemo") {
+    useProjectTestClasses()
     useJUnitPlatform {
         includeTags("demo")
     }
@@ -87,16 +105,18 @@ tasks.register<Test>("testDemo") {
 
 // Test task excluding expensive tests
 tasks.register<Test>("testNotExpensive") {
+    useProjectTestClasses()
     useJUnitPlatform {
         excludeTags("expensive")
     }
     jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off")
-    description = "Run all tests except expensive ones (excludes DALL-E)"
+    description = "Run all tests except expensive ones (excludes image generation)"
     group = "verification"
 }
 
 // Test task for only OpenAI tests
 tasks.register<Test>("testOpenAI") {
+    useProjectTestClasses()
     useJUnitPlatform {
         includeTags("openai")
     }
