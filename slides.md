@@ -248,8 +248,7 @@ export PERPLEXITY_API_KEY=your_key
 
 # Optional: Local AI models
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull gpt-oss
-ollama pull moondream  # For vision
+ollama pull gemma4  # Multimodal: text + vision
 
 # Clone and start
 git clone <repo-url>
@@ -309,7 +308,7 @@ npx slidev export slides.md
 <v-clicks>
 
 - **<span style="color: #00D4FF">gpt-5-nano</span>**: very low per-token cost
-- **<span style="color: #00D4FF">gpt-oss (local)</span>**: Free with Ollama (OpenAI's open-source model)
+- **<span style="color: #00D4FF">gemma4 (local)</span>**: Free with Ollama (Google's open-source multimodal model)
 - **<span style="color: #00D4FF">gpt-image-2</span>**: current GPT Image model
 - **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
 
@@ -638,8 +637,7 @@ graph LR
 
 **Setup Commands**:
 ```bash
-ollama pull gpt-oss       # Text generation (OpenAI open-source)
-ollama pull moondream     # Vision analysis
+ollama pull gemma4        # Multimodal: text + vision (Google open-source)
 ollama serve              # Start server (automatic on install)
 ```
 
@@ -793,7 +791,7 @@ System.out.println("Gemini: " + response);
 // Step 3: Or use local Ollama - still same interface!
 ChatModel ollama = OllamaChatModel.builder()
         .baseUrl("http://localhost:11434")
-        .modelName("gpt-oss")
+        .modelName("gemma4")
         .build();
 
 String response = ollama.chat("What is the capital of France?");
@@ -832,7 +830,7 @@ System.out.println("Ollama: " + response);
 
 <v-clicks>
 
-- **Ollama** • gpt-oss, llama3.1, mistral
+- **Ollama** • gemma4, llama3.1, mistral
 - **Hugging Face** • Open source models
 - **vLLM** • High-performance inference
 - **LocalAI** • OpenAI-compatible API
@@ -847,7 +845,7 @@ System.out.println("Ollama: " + response);
 
 <v-clicks>
 
-- **Vision** • moondream, LLaVA
+- **Vision** • gemma4, LLaVA
 - **Audio** • Whisper, TTS models
 - **Embeddings** • sentence-transformers
 - **Code** • CodeLlama, StarCoder
@@ -1058,7 +1056,7 @@ public class StreamingDemo {
     public static void main(String[] args) {
         var ollama = OllamaStreamingChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gpt-oss")
+                .modelName("gemma4")
                 .build();
 
         // One-liner for simple streaming
@@ -1570,7 +1568,7 @@ void shouldHandleApiError() {
 void shouldStreamTokens() {
     List<String> tokens = new ArrayList<>();
 
-    ollamaService.generateStreaming("gpt-oss",
+    ollamaService.generateStreaming("gemma4",
         "Count to 5",
         token -> tokens.add(token)
     );
