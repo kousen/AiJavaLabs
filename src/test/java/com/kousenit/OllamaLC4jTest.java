@@ -18,7 +18,7 @@ public class OllamaLC4jTest {
     void testOllama() {
         ChatModel model = OllamaChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gpt-oss")
+                .modelName("gemma4")
                 .build();
         System.out.println(model.chat("Why is the sky blue?"));
     }
@@ -29,7 +29,7 @@ public class OllamaLC4jTest {
     void testOllamaStreaming() {
         var gemma = OllamaStreamingChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gpt-oss")
+                .modelName("gemma4")
                 .build();
 
         // Simple streaming with LambdaStreamingResponseHandler utility
@@ -42,7 +42,7 @@ public class OllamaLC4jTest {
     void testOllamaStreamingWithErrorHandling() {
         var gemma = OllamaStreamingChatModel.builder()
                 .baseUrl("http://localhost:11434")
-                .modelName("gpt-oss")
+                .modelName("gemma4")
                 .build();
 
         // Stream with both partial response and error handling

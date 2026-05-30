@@ -29,7 +29,7 @@ public class StreamingDemo {
         try {
             var ollama = OllamaStreamingChatModel.builder()
                     .baseUrl("http://localhost:11434")
-                    .modelName("gpt-oss")
+                    .modelName("gemma4")
                     .build();
 
             // Clean one-liner for simple streaming

@@ -46,10 +46,10 @@ public class MultiModelDemo {
 
         // Local Ollama
         try {
-            System.out.print("Ollama (gpt-oss - local): ");
+            System.out.print("Ollama (gemma4 - local): ");
             ChatModel ollama = OllamaChatModel.builder()
                     .baseUrl("http://localhost:11434")
-                    .modelName("gpt-oss")
+                    .modelName("gemma4")
                     .build();
             System.out.println(ollama.chat(question));
         } catch (Exception e) {

@@ -112,12 +112,14 @@ layout: two-cols
 
 # Demo Map: Core Demos
 
-## **Demos 1-4**
+## **Demos 1-6**
 
-1. **QuickChatDemo** - Basic OpenAI chat
-2. **LocalOllamaDemo** - Local AI models
-3. **MultiModelDemo** - Compare providers
-4. **TextToSpeechDemo** - Generate audio
+1. **TextToSpeechDemo** - Raw HTTP audio
+2. **OpenAiService** - Model discovery + JSON
+3. **LocalOllamaDemo** - Local AI models
+4. **OllamaService** - Sealed interfaces
+5. **QuickChatDemo** - LangChain4j chat
+6. **MultiModelDemo** - Compare providers
 
 ::right::
 
@@ -984,42 +986,8 @@ validate(inquiry);
 layout: section
 ---
 
-# Demo 9-11: Streaming and Retrieval
-## Real-Time and Document-Powered AI
-
----
-
-# Demo 11: Easy RAG with LangChain4j
-
-````md magic-move
-```java
-// Ingest documents and build a retriever
-InMemoryEmbeddingStore<TextSegment> store = new InMemoryEmbeddingStore<>();
-EmbeddingStoreIngestor.ingest(loadDocuments(path, glob("*.txt")), store);
-ContentRetriever retriever = EmbeddingStoreContentRetriever.from(store);
-```
-
-```java
-// Build an assistant wired to retriever and memory
-ChatModel model = OpenAiChatModel.builder()
-        .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
-        .build();
-
-Assistant assistant = AiServices.builder(Assistant.class)
-        .chatModel(model)
-        .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-        .contentRetriever(retriever)
-        .build();
-```
-
-```java
-// Ask questions grounded in your documents
-System.out.println(assistant.chat("Summarize Chapter 1."));
-```
-````
-
-See `EasyRAGDemo.java` for a complete, runnable example.
+# Demo 9: Streaming Responses
+## Real-Time AI
 
 ---
 

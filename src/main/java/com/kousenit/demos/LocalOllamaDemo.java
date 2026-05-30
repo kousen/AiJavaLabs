@@ -9,7 +9,7 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
  *
  * To set up:
  * 1. Install Ollama: https://ollama.ai
- * 2. Pull a model: ollama pull gpt-oss
+ * 2. Pull a model: ollama pull gemma4
  * 3. Ollama runs automatically on http://localhost:11434
  */
 public class LocalOllamaDemo {
@@ -19,7 +19,7 @@ public class LocalOllamaDemo {
         try {
             ChatModel model = OllamaChatModel.builder()
                     .baseUrl("http://localhost:11434")
-                    .modelName("gpt-oss")
+                    .modelName("gemma4")
                     .build();
 
             String prompt = "What are the benefits of using local AI models?";

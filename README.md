@@ -37,7 +37,7 @@ This repository contains practical exercises and example implementations for wor
 2. **Ollama Setup**: Install Ollama and download the required models:
    ```bash
    # Install Ollama from https://ollama.com
-   ollama pull gpt-oss
+   ollama pull gemma4
    ollama pull moondream  # For vision tasks
    ```
 
@@ -117,7 +117,7 @@ Generate MP3 audio files from text using OpenAI's TTS models:
 ### 🤖 Chat Interactions
 Support for both cloud and local AI models:
 - **OpenAI**: gpt-5-nano for advanced conversations
-- **Ollama**: Local gpt-oss model (OpenAI's open-source model)
+- **Ollama**: Local gemma4 model (Google's open-source multimodal model)
 
 ### 🖼️ Vision Capabilities
 Image analysis and description generation:
