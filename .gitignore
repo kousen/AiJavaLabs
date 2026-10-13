@@ -48,3 +48,6 @@ bin/
 /.idea/
 /.claude/
 node_modules/
+
+# CI builds this fresh and attaches it to the slides-latest release
+ai-java-labs-slides.pdf

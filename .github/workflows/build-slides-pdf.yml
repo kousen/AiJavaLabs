@@ -1,0 +1,62 @@
+name: Build & publish slides PDF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'slides.md'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-slides-pdf.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: slides-pdf
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Export slides to PDF
+        run: npm run export
+
+      - name: Verify PDF was produced
+        # Fail loudly: action-gh-release only warns on a missing file, so without
+        # this a failed export would publish a release with no asset.
+        run: |
+          test -s ai-java-labs-slides.pdf \
+            || { echo "::error::ai-java-labs-slides.pdf is missing or empty"; exit 1; }
+
+      - name: Recreate the release so its date and source archives track this commit
+        # Updating the asset in place leaves the release's publish date at the first build.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete slides-latest --cleanup-tag --yes || true
+
+      - name: Publish rolling "latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: slides-latest
+          name: Latest slides PDF
+          body: |
+            Auto-built from `slides.md` at commit ${{ github.sha }}.
+
+            Download: [`ai-java-labs-slides.pdf`](https://github.com/${{ github.repository }}/releases/latest/download/ai-java-labs-slides.pdf)
+          files: ai-java-labs-slides.pdf
+          make_latest: true

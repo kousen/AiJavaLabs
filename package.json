@@ -1,5 +1,13 @@
 {
+  "private": true,
+  "scripts": {
+    "dev": "slidev --open",
+    "build": "slidev build",
+    "export": "slidev export --output ai-java-labs-slides.pdf"
+  },
   "devDependencies": {
+    "@slidev/cli": "^53.0.0",
+    "@slidev/theme-seriph": "^0.25.0",
     "playwright-chromium": "^1.55.0"
   }
 }
