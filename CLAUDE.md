@@ -64,9 +64,7 @@ src/main/java/com/kousenit/
 └── OpenAiRecords.java         # OpenAI data models
 
 Training Materials:
-├── slides.md                  # Slidev source (38 interactive slides)
-├── slides.pdf                 # PDF export (775 KB)
-└── slides.pptx                # PowerPoint export (28 MB)
+└── slides.md                  # Slidev source; CI publishes the PDF release and GitHub Pages deck
 ```
 
 ## Development Guidelines

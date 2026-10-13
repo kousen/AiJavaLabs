@@ -74,8 +74,6 @@ Comprehensive training slides are available in multiple formats:
 - **Live deck:** <https://kousen.github.io/AiJavaLabs/> — rebuilt on every push to `main` by [`deploy-slides-pages.yml`](.github/workflows/deploy-slides-pages.yml)
 - **Latest PDF:** <https://github.com/kousen/AiJavaLabs/releases/latest/download/ai-java-labs-slides.pdf> — attached to a rolling release by [`build-slides-pdf.yml`](.github/workflows/build-slides-pdf.yml)
 - **[slides.md](slides.md)** - Slidev source presentation
-- **[slides.pdf](slides.pdf)** - PDF export for handouts and reference
-- **[slides.pptx](slides.pptx)** - PowerPoint format for compatibility
 
 To run or export the Slidev presentation:
 ```bash
