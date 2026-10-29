@@ -12,10 +12,10 @@
 - [Create a vision request](#create-a-vision-request)
 - [Refactor to sealed interfaces](#refactor-to-sealed-interfaces)
 - [Have a conversation](#have-a-conversation)
+- [Generating Images](#generating-images)
 - [Call cloud models through OpenRouter](#call-cloud-models-through-openrouter)
 - [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
 - [Extract structured output into Java records](#extract-structured-output-into-java-records)
-- [Generating Images](#generating-images)
 
 ## Generate Audio from Text
 
@@ -119,6 +119,8 @@ void testGenerateMp3() {
 ```
 
 - Run the test. The console should show the name of an mp3 file saved in the `src/main/resources` folder. You can play the file to hear the text you provided.
+
+- A note on cost before we write more tests: the solution repository tags every test with `@Tag("local")`, `@Tag("cheap")`, `@Tag("demo")`, or `@Tag("expensive")`, and `build.gradle.kts` defines Gradle tasks such as `testLocal` and `testCheap` that select by tag. A text-to-speech call costs a fraction of a cent; an image generation costs more. Tag your tests the same way as you go, and you can rerun the free ones as often as you like.
 
 - Now break it on purpose: change the `Authorization` header to use a bad key and run the test again. It still "passes" and still produces an mp3 file, but the file will not play. Open it in a text editor and you will find JSON: `{"error": {"message": "Incorrect API key provided: ..."}}`. The `ofFile` body handler saves whatever the server sends, and HTTP status codes are not exceptions. Any REST client has to check them. Add the check right after `send`:
 
@@ -960,7 +962,7 @@ public record OllamaMessage(String role,
 * Create a new record called `OllamaChatRequest` with the following fields:
   - `model` of type `String`
   - `messages` of type `List<OllamaMessage>`
-  - 'temperature' of type `double`
+  - `stream` of type `boolean`
 
 ```java
 public record OllamaChatRequest(
@@ -1022,6 +1024,107 @@ public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
 ```
 
 * Run the test to see it in action. In practice, you would extract the `assistant` response from each message and add it to the next request. Note that all the major framework (Spring AI, LangChain4j, etc) have ways of doing that for you.
+
+## Generating Images
+
+OpenAI's current image models are the GPT Image 2.5 pair: `gpt-image-2.5-flare` is the fast, everyday generator and `gpt-image-2.5-sunburst` is tuned for precise edits. The lab uses Flare. Both take the same request shape, so switching is a one-string change.
+
+* Back to OpenAI for one more raw-HTTP service, the GPT Image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. GPT Image returns Base 64 encoded image data from the Image API.
+
+* Add records for image generation to the `OpenAiRecords` class:
+
+```java
+public record ImageRequest(
+        String model,
+        String prompt,
+        Integer n,
+        String quality,
+        String outputFormat,
+        String size
+) {}
+```
+
+* The response wraps the generated image as Base 64 encoded data. Add the response record:
+
+```java
+public record ImageResponse(
+        long created,
+        List<Image> data) {
+  public record Image(
+          String b64Json,
+          String revisedPrompt) {}
+}
+```
+
+* Add a class called `GptImageService` with constants for the endpoint, the API key, an `HttpClient`, and an `ObjectMapper`. The `Integer n` component of `ImageRequest` may be null, and the API rejects `"n": null`, so this mapper also drops null fields when writing:
+
+```java
+public class GptImageService {
+  private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
+  private static final String API_KEY = System.getenv("OPENAI_API_KEY");
+
+  // Reuse HttpClient for better performance through connection pooling
+  private static final HttpClient client = HttpClient.newHttpClient();
+
+  // SNAKE_CASE writes outputFormat as output_format and reads b64_json into b64Json
+  private final ObjectMapper mapper = JsonMapper.builder()
+          .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+          .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+          .build();
+}
+```
+
+* Add a new method to `GptImageService` called `generateImage` that takes a `ImageRequest` object and returns a `ImageResponse` object:
+
+```java
+public ImageResponse generateImage(ImageRequest imageRequest) {
+  HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create(IMAGE_URL))
+          .header("Authorization", "Bearer %s".formatted(API_KEY))
+          .header("Content-Type", "application/json")
+          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(imageRequest)))
+          .build();
+  try {
+    HttpResponse<String> response =
+            requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
+    return mapper.readValue(response.body(), ImageResponse.class);
+  } catch (IOException | InterruptedException e) {
+    throw new RuntimeException("Error sending image prompt", e);
+  }
+}
+```
+
+* Add a test to try out the image generation model:
+
+```java
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Test;
+
+import static com.kousenit.OpenAiRecords.*;
+
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+class GptImageServiceTest {
+    private final GptImageService service = new GptImageService();
+
+    @Test
+    void generate_image() {
+        var imageRequest = new ImageRequest(
+            "gpt-image-2.5-flare",
+            "Draw a picture of cats playing cards",
+            1,
+            "medium",
+            "png",
+            "1024x1024");
+        ImageResponse imageResponse = service.generateImage(imageRequest);
+        System.out.println(imageResponse.data().getFirst().revisedPrompt());
+        System.out.println("Base64 image bytes: " +
+            imageResponse.data().getFirst().b64Json().length());
+    }
+}
+```
+
+* Run the test to see it in action. The response contains Base 64 encoded image data and the revised prompt. In a full application, decode the `b64Json` value and write the bytes to a `.png` file.
 
 ## Call cloud models through OpenRouter
 
@@ -1474,107 +1577,6 @@ void parses_structured_output_into_record() throws Exception {
 ```
 
 The design point is the same as with tool calling: let the model help with interpretation, but keep your application responsible for contracts. In production, validate the parsed object and decide what to do when required fields are missing, enum values are wrong, or the extracted data is semantically questionable.
-
-## Generating Images
-
-OpenAI's current image models are the GPT Image 2.5 pair: `gpt-image-2.5-flare` is the fast, everyday generator and `gpt-image-2.5-sunburst` is tuned for precise edits. The lab uses Flare. Both take the same request shape, so switching is a one-string change.
-
-* We now return to OpenAI to use the GPT Image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. GPT Image returns Base 64 encoded image data from the Image API.
-
-* Add records for image generation to the `OpenAiRecords` class:
-
-```java
-public record ImageRequest(
-        String model,
-        String prompt,
-        Integer n,
-        String quality,
-        String outputFormat,
-        String size
-) {}
-```
-
-* The response wraps the generated image as Base 64 encoded data. Add the response record:
-
-```java
-public record ImageResponse(
-        long created,
-        List<Image> data) {
-  public record Image(
-          String b64Json,
-          String revisedPrompt) {}
-}
-```
-
-* Add a class called `GptImageService` with constants for the endpoint, the API key, an `HttpClient`, and an `ObjectMapper`. The `Integer n` component of `ImageRequest` may be null, and the API rejects `"n": null`, so this mapper also drops null fields when writing:
-
-```java
-public class GptImageService {
-  private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
-  private static final String API_KEY = System.getenv("OPENAI_API_KEY");
-
-  // Reuse HttpClient for better performance through connection pooling
-  private static final HttpClient client = HttpClient.newHttpClient();
-
-  // SNAKE_CASE writes outputFormat as output_format and reads b64_json into b64Json
-  private final ObjectMapper mapper = JsonMapper.builder()
-          .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-          .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
-          .build();
-}
-```
-
-* Add a new method to `GptImageService` called `generateImage` that takes a `ImageRequest` object and returns a `ImageResponse` object:
-
-```java
-public ImageResponse generateImage(ImageRequest imageRequest) {
-  HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create(IMAGE_URL))
-          .header("Authorization", "Bearer %s".formatted(API_KEY))
-          .header("Content-Type", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(imageRequest)))
-          .build();
-  try {
-    HttpResponse<String> response =
-            requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-    return mapper.readValue(response.body(), ImageResponse.class);
-  } catch (IOException | InterruptedException e) {
-    throw new RuntimeException("Error sending image prompt", e);
-  }
-}
-```
-
-* Add a test to try out the image generation model:
-
-```java
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
-import org.junit.jupiter.api.Test;
-
-import static com.kousenit.OpenAiRecords.*;
-
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-class GptImageServiceTest {
-    private final GptImageService service = new GptImageService();
-
-    @Test
-    void generate_image() {
-        var imageRequest = new ImageRequest(
-            "gpt-image-2.5-flare",
-            "Draw a picture of cats playing cards",
-            1,
-            "medium",
-            "png",
-            "1024x1024");
-        ImageResponse imageResponse = service.generateImage(imageRequest);
-        System.out.println(imageResponse.data().getFirst().revisedPrompt());
-        System.out.println("Base64 image bytes: " +
-            imageResponse.data().getFirst().b64Json().length());
-    }
-}
-```
-
-* Run the test to see it in action. The response contains Base 64 encoded image data and the revised prompt. In a full application, decode the `b64Json` value and write the bytes to a `.png` file.
 
 ## Clean Streaming with LangChain4j
 

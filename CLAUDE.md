@@ -21,6 +21,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ MultiModelDemo fans out on virtual threads (newVirtualThreadPerTaskExecutor) and prints sequential vs concurrent timings; lab step and slide added
 - ✅ Request logging steps in the OpenRouter and tool-calling labs, with a wire-format slide built from a captured run
 - ✅ "Same pattern, other vendors" lab: OpenRouterService (catalog, no key), AnthropicService promoted from the test tree, optional ElevenLabsService; never commit a private voice id
+- ✅ Lab order is now raw HTTP first (audio, models, other vendors, Ollama, images), then LangChain4j (OpenRouter, tools, structured output, streaming); stale demo counts and the moondream reference fixed
 - ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)

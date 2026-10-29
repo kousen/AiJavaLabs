@@ -133,7 +133,7 @@ Support for both cloud and local AI models:
 
 ### 🖼️ Vision Capabilities
 Image analysis and description generation:
-- Multimodal support with Ollama's moondream model
+- Multimodal support with Ollama's gemma4 model (text and vision in one model)
 - Base64 image encoding for API transmission
 
 ### 🎨 Image Generation

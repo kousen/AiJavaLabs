@@ -91,7 +91,7 @@ AiJavaLabs/
 ├── build.gradle.kts           # Dependencies & test categories
 └── src/
     ├── main/java/com/kousenit/
-    │   ├── demos/             # 9+ live demo classes
+    │   ├── demos/             # 12 live demo classes
     │   ├── *Service.java      # Core implementations
     │   └── *Records.java      # Data models
     └── test/                  # Comprehensive test suite
@@ -99,7 +99,7 @@ AiJavaLabs/
 
 <v-clicks>
 
-- **9+ Live Demos**: Ready-to-run examples for each topic
+- **12 Live Demos**: Ready-to-run examples for each topic
 - **Cost-Controlled Testing**: Free local tests, cheap API tests
 - **Modern Java 21**: Records, sealed interfaces, pattern matching, virtual threads
 - **Dual Learning Path**: Raw HTTP + LangChain4j frameworks
@@ -182,7 +182,7 @@ layout: two-cols
 - **<span style="color: #00D4FF">True Understanding</span>**: Know what frameworks do under the hood
 - **<span style="color: #00D4FF">Debugging Skills</span>**: When frameworks fail, you can troubleshoot
 - **<span style="color: #00D4FF">Flexibility</span>**: Not locked into any single framework
-- **<span style="color: #00D4FF">Performance</span>**: Optimize for your specific needs
+- **<span style="color: #00D4FF">Portability</span>**: The next service you need will not have a Java SDK either
 
 </v-clicks>
 
@@ -1378,6 +1378,28 @@ sequenceDiagram
 </div>
 
 ---
+
+# Demo 10: Framework vs Raw, Side by Side
+
+Two demos that run the same question both ways, so the layers stay visible
+
+```bash
+# LangChain4j, then raw chat completions, then the raw Responses API
+./gradlew run -PmainClass=com.kousenit.demos.ApiComparisonDemo
+
+# The Responses API alone: JSON Pointer for fixed fields, a walk for the output array
+./gradlew run -PmainClass=com.kousenit.demos.ResponsesApiDemo
+```
+
+<v-clicks>
+
+- **ApiComparisonDemo**: one `chat()` call against a hand-built `HttpRequest` to the same endpoint
+- **ResponsesApiDemo**: prints the `output` item types it finds (`reasoning`, `web_search_call`, `message`) before extracting the text
+- **When to go raw**: a new endpoint the framework does not cover yet, or a framework call behaving strangely
+
+</v-clicks>
+
+---
 layout: section
 ---
 
@@ -2060,7 +2082,7 @@ layout: section
 
 <!-- Final presenter notes:
 - Emphasize the dual learning approach - HTTP fundamentals + framework mastery
-- Highlight the 8 ready-to-run demos for live demonstration
+- Highlight the 12 ready-to-run demos for live demonstration
 - Point to cost management as a key differentiator
 - Encourage hands-on exploration with local models first
 - Mention modern Java features as perfect fit for AI APIs
