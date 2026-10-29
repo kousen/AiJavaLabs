@@ -48,9 +48,9 @@ dependencies {
     // Security fix
     implementation("org.apache.poi:poi-ooxml:5.5.1")
 
-    // JSON parsers
-    implementation("com.google.code.gson:gson:2.14.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.3")
+    // JSON: Jackson 3 (tools.jackson), the line Spring Boot 4 ships. LangChain4j still uses
+    // Jackson 2 internally; the two coexist because 3.x moved to a new package.
+    implementation("tools.jackson.core:jackson-databind:3.2.4")
 
     // Logging
     implementation("org.slf4j:slf4j-simple:2.0.17")

@@ -103,8 +103,7 @@ src/
 │   │   ├── StructuredOutputDemo.java
 │   │   ├── StreamingDemo.java
 │   │   ├── DecisionModelDemo.java # Typed decisions with probabilities (experimental API)
-│   │   ├── ResponsesApiDemo.java  # New Responses API with Gson
-│   │   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
+│   │   └── ResponsesApiDemo.java  # Responses API with Jackson's tree model
 │   ├── GptImageService.java       # GPT Image generation
 │   ├── EasyRAGDemo.java           # RAG implementation example
 │   ├── OllamaService.java         # Ollama AI service integration
@@ -165,8 +164,7 @@ Typed yes/no, choice, and scale answers with probabilities instead of generated 
 - **LangChain4j**: 1.23.0 (AI framework)
 - **Google Gen AI SDK**: 1.55.0
 - **Apache POI**: 5.5.1 (Document processing)
-- **Gson**: 2.14.0 (JSON parsing)
-- **Jackson**: 2.21.3 (JSON parsing with JsonNode)
+- **Jackson**: 3.2.4 (`tools.jackson`, JSON data binding and tree model)
 - **JUnit**: 5.13.4 (Testing)
 - **Spotless**: 7.2.1 (Code formatting)
 - **Playwright**: For Slidev export functionality
@@ -189,18 +187,12 @@ Detailed step-by-step exercises are available in [labs.md](labs.md), covering:
 
 The project demonstrates two JSON parsing strategies for working with AI APIs:
 
-### Gson (Google's JSON library)
-- Tree-based navigation with `JsonElement`, `JsonObject`, and `JsonArray`
-- Used in most service classes and `ResponsesApiDemo`
-- Already integrated throughout the project
-
-### Jackson (FasterXML)
-- `JsonNode` API with JSON Pointer support (RFC 6901)
-- Elegant path navigation: `root.at("/path/to/element")`
-- Demonstrated in `ResponsesApiJacksonDemo`
-- Spring Boot's default JSON processor
-
-Both approaches are shown side-by-side to help understand how to work directly with APIs, debug framework behavior, and adopt features that may not map cleanly to a high-level abstraction yet.
+### Jackson 3 (`tools.jackson`)
+- Records bound directly from API responses with `mapper.readValue(json, Record.class)`
+- `SNAKE_CASE` naming strategy maps `created_at` to `createdAt` without annotations
+- `JsonNode` tree model with JSON Pointer (`at("/output/0/type")`) for responses whose shape varies
+- Immutable mappers built with `JsonMapper.builder()`, unchecked exceptions
+- Same line Spring Boot 4 uses; LangChain4j's internal Jackson 2 coexists on the classpath
 
 ## Educational Goals
 

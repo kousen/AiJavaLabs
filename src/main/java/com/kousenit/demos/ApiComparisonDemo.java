@@ -1,7 +1,5 @@
 package com.kousenit.demos;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import java.io.IOException;
@@ -11,6 +9,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Comparison demo showing:
@@ -27,7 +28,7 @@ import java.util.Map;
 public class ApiComparisonDemo {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
     private static final HttpClient client = HttpClient.newHttpClient();
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final ObjectMapper mapper = JsonMapper.builder().build();
 
     public static void main(String[] args) {
         String prompt = "Why is the sky blue? Answer in one sentence.";
@@ -109,30 +110,25 @@ public class ApiComparisonDemo {
     }
 
     private static void chatCompletionsRaw(String prompt) throws IOException, InterruptedException {
-        var requestBody = Map.of(
-                "model",
-                "gpt-5-nano",
-                "messages",
-                List.of(Map.of("role", "user", "content", prompt)),
-                "temperature",
-                0.7);
+        // A Map is enough for a one-off request body; records are better once the shape is stable
+        var requestBody = Map.of("model", "gpt-5-nano", "messages", List.of(Map.of("role", "user", "content", prompt)));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                 .header("Authorization", "Bearer " + API_KEY)
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(requestBody)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(requestBody)))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200) {
-            var json = gson.fromJson(response.body(), Map.class);
-            var choices = (List<Map>) json.get("choices");
-            var message = (Map) choices.get(0).get("message");
-            System.out.println("✓ Response: " + message.get("content"));
+            // JSON Pointer straight to the text: no intermediate Map casts
+            JsonNode root = mapper.readTree(response.body());
+            System.out.println(
+                    "✓ Response: " + root.at("/choices/0/message/content").asString());
         } else {
-            System.out.println("✗ Status: " + response.statusCode());
+            System.out.println("✗ Status: " + response.statusCode() + " " + response.body());
         }
     }
 
@@ -143,17 +139,17 @@ public class ApiComparisonDemo {
                 .uri(URI.create("https://api.openai.com/v1/responses"))
                 .header("Authorization", "Bearer " + API_KEY)
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(requestBody)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(requestBody)))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200) {
-            var json = gson.fromJson(response.body(), Map.class);
-            System.out.println("✓ Response object id: " + json.get("id"));
-            System.out.println("  Raw JSON returned; parse output[] for message text in real code.");
+            JsonNode root = mapper.readTree(response.body());
+            System.out.println("✓ Response object id: " + root.path("id").asString());
+            System.out.println("  Raw JSON returned; see ResponsesApiDemo for walking output[] to the message text.");
         } else {
-            System.out.println("✗ Status: " + response.statusCode());
+            System.out.println("✗ Status: " + response.statusCode() + " " + response.body());
         }
     }
 }

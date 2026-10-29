@@ -15,6 +15,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Removed `temperature(0.0)` from gpt-5-nano demos and labs (reasoning models reject non-default values)
 - ✅ Switched StreamingDemo to the `*Blocking` handler variants so main waits for the stream
 - ✅ Compile with `-parameters` so `@Tool` argument names reach the model
+- ✅ Replaced Gson with Jackson 3 (`tools.jackson`) throughout; merged the two Responses API demos into one
 - ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)
@@ -42,8 +43,8 @@ This file provides context for AI assistants working on the AI Java Labs project
 - **Gradle**: 8.4+ with Kotlin DSL
 - **Slidev**: For interactive presentations
 - **JSON Parsing**:
-  - Gson 2.14.0 (primary, used throughout)
-  - Jackson 2.21.3 (for JsonNode and JSON Pointer support)
+  - Jackson 3.2.4 (`tools.jackson.core:jackson-databind`); Gson removed in October 2026
+  - LangChain4j pulls in Jackson 2 (`com.fasterxml.jackson`) transitively; both coexist, annotations are shared
 - **AI Models**:
   - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), gpt-image-2.5-flare (gpt-image-2.5-sunburst for edits), gpt-4o-mini-tts, whisper-1
   - Ollama: gpt-oss (text), moondream (vision)
@@ -61,8 +62,7 @@ src/main/java/com/kousenit/
 │   ├── StructuredOutputDemo.java # Java records from model output
 │   ├── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
 │   ├── DecisionModelDemo.java # Experimental DecisionModel API: typed answers with probabilities
-│   ├── ResponsesApiDemo.java # Responses API with Gson parsing
-│   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
+│   └── ResponsesApiDemo.java # Responses API with Jackson's tree model (pointer + walk)
 ├── GptImageService.java       # GPT Image generation
 ├── EasyRAGDemo.java           # RAG implementation
 ├── OllamaService.java         # Ollama integration
@@ -112,7 +112,7 @@ Each AI provider has a dedicated service class:
 Uses Java records for API data modeling:
 - **Sealed interfaces**: `OllamaRequest` with permitted implementations
 - **Pattern matching**: Used for request type discrimination
-- **JSON mapping**: Gson with field naming policies
+- **JSON mapping**: Jackson 3 with the SNAKE_CASE naming strategy
 
 ### HTTP Client Usage
 - Static HttpClient instances for connection pooling and reuse
@@ -208,11 +208,11 @@ This is primarily an educational repository. Changes should:
 - Examples: `onPartialResponse`, `onPartialResponseAndError`
 
 ### JSON Parsing Strategy
-- **Dual approach**: Gson (primary) and Jackson (alternative)
-- **Gson**: Used throughout existing services, JsonElement tree navigation
-- **Jackson**: Added for JsonNode with JSON Pointer support (`at("/path/to/element")`)
-- **Rationale**: Shows how to inspect and debug API behavior outside framework abstractions
-- **Demo classes**: ResponsesApiDemo (Gson) vs ResponsesApiJacksonDemo (Jackson)
+- **Library**: Jackson 3 (`tools.jackson.databind`). Mappers are immutable: `JsonMapper.builder().propertyNamingStrategy(SNAKE_CASE).build()`. Exceptions are unchecked (`JacksonException`). `FAIL_ON_UNKNOWN_PROPERTIES` is off by default in 3.x.
+- **Why Jackson 3**: it is what Spring Boot 4 ships. Gson's README describes it as in maintenance mode. JEP 540 (Simple JSON API, incubator) is targeted at JDK 28 and is mentioned in the labs and slides, not used.
+- **Coexistence**: LangChain4j still depends on Jackson 2 (`com.fasterxml.jackson`). Different packages, shared `com.fasterxml.jackson.annotation` annotations, so both sit on the classpath. Course code imports `tools.jackson.*` only; `@JsonProperty` comes from the shared annotations package.
+- **Teaching split**: records (data binding) when the shape is known, `JsonNode` with `at()`/`path()` when it varies. ResponsesApiDemo shows both; its output array proves why `/output/0/...` is the wrong pointer for reasoning models.
+- **Request bodies**: records serialized with `writeValueAsString`; services whose records have nullable fields (GptImageService, LMStudioService) set NON_NULL inclusion.
 
 ### Tool Calling Strategy
 - **High-level approach**: LangChain4j AI Services with `@Tool` annotated Java methods

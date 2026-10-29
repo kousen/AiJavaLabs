@@ -162,7 +162,7 @@ layout: two-cols
 - **Tool Calling**: Model-selected Java methods
 - **Streaming**: Token-by-token output
 - **API Comparison**: HTTP vs Framework
-- **JSON Parsing**: Gson and Jackson navigation
+- **JSON Parsing**: Records and JsonNode navigation
 - **RAG**: Document-powered AI
 
 </v-clicks>
@@ -419,19 +419,19 @@ public class OpenAiRecords {
         public record Model(
                 String id,
                 long created,
-                @SerializedName("owned_by") String ownedBy) {
+                @JsonProperty("owned_by") String ownedBy) {
         }
     }
 }
 ```
 
 ```java
-// Service implementation with Gson parsing
+// Service implementation with Jackson 3 (tools.jackson)
 public class OpenAiService {
     private static final HttpClient client = HttpClient.newHttpClient();
-    private final Gson gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .create();
+    private final ObjectMapper mapper = JsonMapper.builder()   // immutable, built once
+            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .build();
 
     public ModelList listModels() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
@@ -442,43 +442,39 @@ public class OpenAiService {
 
         HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString());
-        return gson.fromJson(response.body(), ModelList.class);
+        return mapper.readValue(response.body(), ModelList.class);  // unchecked exceptions
     }
 }
 ```
 ````
 
-**Key Learning**: JSON parsing with records + Gson provides type-safe API responses
+**Key Learning**: Records + Jackson data binding give you type-safe API responses; unmapped fields are ignored
 
 ---
 
-# JSON Parsing: Gson vs Jackson
+# JSON Parsing: Records vs Tree Model
 
 <div class="grid grid-cols-2 gap-4">
 
 <div>
 
-## **Gson Approach**
+## **Records (data binding)**
 
 ```java
-// Using JsonElement tree navigation
-JsonElement root = JsonParser.parseString(json);
-JsonObject obj = root.getAsJsonObject();
-JsonArray outputs = obj.getAsJsonArray("output");
+// The shape is known: bind it
+ModelList models = mapper.readValue(
+        response.body(), ModelList.class);
 
-for (JsonElement elem : outputs) {
-    JsonObject item = elem.getAsJsonObject();
-    if ("message".equals(item.get("type").getAsString())) {
-        // Extract nested content...
-    }
-}
+models.data().stream()
+      .map(ModelList.Model::id)
+      .forEach(System.out::println);
 ```
 
 <v-click>
 
-- Type-safe navigation
-- Explicit type conversions
-- Manual null checking needed
+- One line, type-safe
+- Unknown fields are ignored
+- The default for every lab
 
 </v-click>
 
@@ -486,30 +482,24 @@ for (JsonElement elem : outputs) {
 
 <div>
 
-## **Jackson Approach**
+## **JsonNode (tree model)**
 
 ```java
-// Using JsonNode with at() method
-ObjectMapper mapper = new ObjectMapper();
-JsonNode root = mapper.readTree(json);
+// The shape varies: walk it
+JsonNode root = mapper.readTree(response.body());
 
-// Direct path with JSON Pointer!
-String text = root.at("/output/0/content/0/text")
-                  .asText();
-
-// Or safe navigation with path()
-root.path("output")
-    .path(0)
-    .path("content")
-    .path(0)
-    .path("text");
+for (JsonNode item : root.path("output")) {
+    if ("message".equals(item.path("type").asString())) {
+        String text = item.at("/content/0/text").asString();
+    }
+}
 ```
 
 <v-click>
 
-- JSON Pointer navigation (`at()`)
-- Safe chaining with `path()`
-- No null pointer exceptions
+- Responses API: `reasoning`, `web_search_call`, `message` items in varying order
+- `path()` and `at()` return a missing node, never throw
+- Use it to explore an API before you write the records
 
 </v-click>
 
@@ -545,11 +535,12 @@ String value = root.at("/missing/path").asText("default");
 ```
 
 
-### **When to Use Which?**
+### **Which library?**
 
-- **Gson**: Already in project, simpler API, Google ecosystem
-- **Jackson**: Spring Boot default, JSON Pointer support, more features
-- **Both**: Can coexist - use what fits your needs!
+- **Jackson 3** (`tools.jackson`): this course and Spring Boot 4. Immutable mappers, unchecked exceptions, `java.time` built in
+- **Jackson 2** (`com.fasterxml.jackson`): still inside LangChain4j; coexists because the package differs
+- **Gson**: works, but its README says maintenance mode
+- **JEP 540**: a Simple JSON API in the JDK, incubating, targeted at JDK 28
 
 </v-click>
 
@@ -570,13 +561,13 @@ HttpRequest request = HttpRequest.newBuilder()
     .header("Authorization", "Bearer " + key)
     .header("Content-Type", "application/json")
     .POST(HttpRequest.BodyPublishers.ofString(
-        gson.toJson(payload)))
+        mapper.writeValueAsString(payload)))
     .build();
 
 // Manual response handling
 HttpResponse<String> response =
     client.send(request, HttpResponse.BodyHandlers.ofString());
-return gson.fromJson(response.body(), ResponseClass.class);
+return mapper.readValue(response.body(), ResponseClass.class);
 ```
 
 </div>
@@ -1575,7 +1566,7 @@ void shouldParseModelList() {
             {"id": "gpt-4", "created": 123}
         ]}
         """;
-    ModelList result = gson.fromJson(json, ModelList.class);
+    ModelList result = mapper.readValue(json, ModelList.class);
     assertThat(result.data()).hasSize(1);
 }
 

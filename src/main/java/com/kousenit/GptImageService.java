@@ -2,14 +2,15 @@ package com.kousenit;
 
 import static com.kousenit.OpenAiRecords.*;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.json.JsonMapper;
 
 public class GptImageService {
     private static final String IMAGE_URL = "https://api.openai.com/v1/images/generations";
@@ -19,21 +20,22 @@ public class GptImageService {
     // Using a single instance improves performance through connection pooling
     private static final HttpClient client = HttpClient.newHttpClient();
 
-    private final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .create();
+    // SNAKE_CASE writes outputFormat as output_format and reads b64_json into b64Json
+    private final ObjectMapper mapper = JsonMapper.builder()
+            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+            .build();
 
     public ImageResponse generateImage(ImageRequest imageRequest) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(IMAGE_URL))
                 .header("Authorization", "Bearer %s".formatted(API_KEY))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(imageRequest)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(imageRequest)))
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return gson.fromJson(response.body(), ImageResponse.class);
+            return mapper.readValue(response.body(), ImageResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error sending image prompt", e);
         }

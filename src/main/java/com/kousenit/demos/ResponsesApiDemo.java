@@ -1,11 +1,5 @@
 package com.kousenit.demos;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,47 +7,47 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Demo of OpenAI's new Responses API (March 2025) using raw HTTP calls.
+ * Demo of OpenAI's Responses API using raw HTTP calls and Jackson's tree model.
  * <p>
  * This demonstrates why understanding HTTP clients and JSON parsing is valuable:
  * - API features and response shapes change faster than courseware
  * - You're not blocked waiting for library updates
  * - You understand what frameworks do under the hood
  * <p>
- * The Responses API offers:
- * - Server-side conversation management
- * - Built-in tools (web search, code execution)
- * - Single endpoint design
+ * The Responses API offers server-side conversation management, built-in tools such as
+ * web search, and a single endpoint. Its output is an array of items of different types
+ * (reasoning, web_search_call, message, ...), so this demo shows both ways to read a
+ * JsonNode tree: a JSON Pointer for values at a known location, and a walk over an array
+ * whose contents vary from one response to the next.
  * <p>
- * LangChain4j also exposes Responses API support through OpenAI-specific
- * abstractions. This demo keeps the raw HTTP version because it is useful
- * for debugging, learning the endpoint shape, and adopting features directly.
+ * LangChain4j also exposes Responses API support through OpenAI-specific abstractions.
+ * This demo keeps the raw HTTP version because it is useful for debugging, learning the
+ * endpoint shape, and adopting features directly.
  */
 public class ResponsesApiDemo {
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
     private static final String RESPONSES_URL = "https://api.openai.com/v1/responses";
     private static final HttpClient client = HttpClient.newHttpClient();
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final ObjectMapper mapper = JsonMapper.builder().build();
 
     public static void main(String[] args) {
         System.out.println(
                 """
             === OpenAI Responses API Demo (Raw HTTP) ===
 
-            This uses the NEW Responses API, not Chat Completions.
+            This uses the Responses API, not Chat Completions.
             Raw HTTP shows the endpoint shape without framework abstraction.
             """);
 
         try {
-            // Simple prompt without tools
             simpleResponse();
-
-            // Example with web search tool
-            System.out.println(); // Add spacing between demos
+            System.out.println();
             responseWithWebSearch();
-
         } catch (Exception e) {
             System.err.printf(
                     """
@@ -76,104 +70,67 @@ public class ResponsesApiDemo {
         System.out.println("1. Simple Response (no tools):");
         System.out.println("------------------------------");
 
-        // Build request body for Responses API
-        // Key difference: uses "input" instead of "messages"
+        // Key difference from Chat Completions: "input" instead of "messages"
         var requestBody = Map.of(
                 "model", "gpt-5-nano",
-                "input", "What's the main difference between the Responses API and Chat Completions API?"
-                // Note: No need to maintain conversation history client-side
-                );
+                "input", "What's the main difference between the Responses API and Chat Completions API?");
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(RESPONSES_URL))
-                .header("Authorization", "Bearer " + API_KEY)
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(requestBody)))
-                .build();
+        JsonNode root = post(requestBody);
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        // JSON Pointer (RFC 6901) for values whose location never changes
+        System.out.println("Response id: " + root.at("/id").asString());
+        System.out.println("Output tokens: " + root.at("/usage/output_tokens").asInt());
 
-        if (response.statusCode() == 200) {
-            // Alternative: Use JsonElement for cleaner navigation (similar to Jackson's JsonNode)
-            JsonElement root = JsonParser.parseString(response.body());
-            String responseText = extractMessageText(root);
-            if (responseText != null) {
-                System.out.println("Response: " + responseText);
-            }
-        } else {
-            System.out.println("Status: " + response.statusCode());
-            System.out.println("Body: " + response.body());
-        }
+        System.out.println("Response: " + extractMessageText(root));
     }
 
     private static void responseWithWebSearch() throws IOException, InterruptedException {
         System.out.println("2. Response with Web Search Tool:");
         System.out.println("----------------------------------");
 
-        // Build request with web search tool enabled
-        // This demonstrates the API's ability to search the web for current information
+        // The API runs the web search itself; the output array gains a web_search_call item
         var requestBody = Map.of(
                 "model", "gpt-5-nano",
-                "input", "What are the latest features in LangChain4j 1.4.0? Search for current information.",
+                "input", "What is the most recent LangChain4j release? Search for current information.",
                 "tools", List.of(Map.of("type", "web_search")));
 
+        JsonNode root = post(requestBody);
+
+        // The walk reports what kinds of items came back, which a fixed pointer could not
+        for (JsonNode item : root.path("output")) {
+            System.out.println("  output item type: " + item.path("type").asString());
+        }
+        System.out.println("Response with web search: " + extractMessageText(root));
+    }
+
+    private static JsonNode post(Map<String, ?> requestBody) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(RESPONSES_URL))
                 .header("Authorization", "Bearer " + API_KEY)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(requestBody)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(requestBody)))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() == 200) {
-            // Use JsonElement for cleaner navigation
-            JsonElement root = JsonParser.parseString(response.body());
-            String responseText = extractMessageText(root);
-            if (responseText != null) {
-                System.out.println("Response with web search: " + responseText);
-            }
-
-            // The API handles web search internally and returns the result
-            // No need for separate tool calls like Chat Completions API
-        } else {
-            System.out.println("Status: " + response.statusCode());
-            System.out.println("Body: " + response.body());
+        if (response.statusCode() != 200) {
+            throw new IllegalStateException("HTTP " + response.statusCode() + ": " + response.body());
         }
+        return mapper.readTree(response.body());
     }
 
     /**
-     * Helper method to extract message text from the Responses API JSON structure.
-     * This is similar to using Jackson's JsonNode.at() but with Gson's JsonElement.
-     *
-     * @param root The root JsonElement from the API response
-     * @return The extracted text content, or null if not found
+     * The output array holds items of several types, and the message is rarely first
+     * (reasoning models put a reasoning item ahead of it), so a pointer such as
+     * /output/0/content/0/text is the wrong tool. Walk the array, find the message,
+     * then use a pointer relative to it.
      */
-    private static String extractMessageText(JsonElement root) {
-        if (!root.isJsonObject()) return null;
-
-        JsonObject jsonObject = root.getAsJsonObject();
-        JsonArray outputs = jsonObject.getAsJsonArray("output");
-
-        if (outputs != null) {
-            // Iterate through output array to find message type
-            for (JsonElement outputElement : outputs) {
-                JsonObject outputItem = outputElement.getAsJsonObject();
-                String type = outputItem.has("type") ? outputItem.get("type").getAsString() : null;
-
-                if ("message".equals(type)) {
-                    JsonArray content = outputItem.getAsJsonArray("content");
-                    if (content != null && !content.isEmpty()) {
-                        JsonObject textContent = content.get(0).getAsJsonObject();
-                        if (textContent.has("text")) {
-                            return textContent.get("text").getAsString();
-                        }
-                    }
-                }
+    private static String extractMessageText(JsonNode root) {
+        for (JsonNode item : root.path("output")) {
+            if ("message".equals(item.path("type").asString())) {
+                return item.at("/content/0/text").asString("(no text)");
             }
         }
-        return null;
+        return "(no message item in output)";
     }
 }

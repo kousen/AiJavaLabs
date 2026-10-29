@@ -123,11 +123,11 @@ void testGenerateMp3() {
 
 - Whenever you access the OpenAI API, you need to specify a model. To know which models are available, the OpenAI API provides an endpoint to list them. Review the documentation for that endpoint [here](https://platform.openai.com/docs/api-reference/models).
 - You'll find that our task is to send an HTTP GET request to `https://api.openai.com/v1/models` with the required `Authorization` header, and that the result is a block of JSON data.
-- We're going to want to parse that JSON data, as well as generate JSON for other interactions. For that, we need a parser. We'll use the Gson library from Google. Add the following dependency to your build file:
+- We're going to want to parse that JSON data, as well as generate JSON for other interactions. For that, we need a JSON library. The JDK does not ship one yet: [JEP 540](https://openjdk.org/jeps/540) proposes a Simple JSON API as an incubator module, currently targeted at JDK 28. Until then, we'll use Jackson, the library Spring Boot uses. We use the Jackson 3 line, which lives in the `tools.jackson` package; Jackson 2 lives in `com.fasterxml.jackson`, and you will meet both in the wild. (Gson, the other common choice, describes itself as in maintenance mode: bugs are fixed, but large new features are not planned.) Add the following dependency to your build file:
 
 ```kotlin
 dependencies {
-    implementation("com.google.code.gson:gson:2.14.0")
+    implementation("tools.jackson.core:jackson-databind:3.2.4")
 }
 ```
 
@@ -135,7 +135,7 @@ dependencies {
 - Inside the `OpenAiRecords` class, add a record called `ModelList`, which itself contains a record called `Model`:
 
 ```java
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class OpenAiRecords {
@@ -144,11 +144,13 @@ public class OpenAiRecords {
     public record Model(
             String id,
             long created,
-            @SerializedName("owned_by") String ownedBy) {
+            @JsonProperty("owned_by") String ownedBy) {
     }
   }
 }
 ```
+
+- The annotation maps the JSON name `owned_by` to the record component `ownedBy`. Note the annotation package: Jackson 3 kept its annotations in `com.fasterxml.jackson.annotation`, so that import does not change between Jackson 2 and 3. Jackson ignores JSON fields that have no matching component (the response has more fields than we modeled), so records only need the fields you care about.
 
 - Create a new class called `OpenAiService` in a package of your choosing.
 - Add a private, static, final attribute called `OPENAI_API_KEY` of type `String` that reads the API key from the environment variable.
@@ -170,13 +172,19 @@ private static final String MODELS_URL = "https://api.openai.com/v1/models";
 private static final HttpClient client = HttpClient.newHttpClient();
 ```
 
-- Add a private, final attribute called `gson` of type `Gson` that creates a new `Gson` instance:
+- Add a private, final attribute called `mapper` of type `ObjectMapper`. Jackson 3 mappers are immutable, so all configuration goes through a builder:
 
 ```java
-private final Gson gson = new GsonBuilder()
-        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-        .create();
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.json.JsonMapper;
+
+private final ObjectMapper mapper = JsonMapper.builder()
+        .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+        .build();
 ```
+
+- The naming strategy converts every `snake_case` JSON name to a `camelCase` component name, which makes the `@JsonProperty` annotation above redundant. Keep it once so you have seen the explicit form; from here on we rely on the strategy.
 
 - Add a method called `listModels` that returns a `ModelList`. This method will send a GET request to the OpenAI API:
 
@@ -190,12 +198,14 @@ public ModelList listModels() {
     try {
         HttpResponse<String> response =
             client.send(request, HttpResponse.BodyHandlers.ofString());
-        return gson.fromJson(response.body(), ModelList.class);
+        return mapper.readValue(response.body(), ModelList.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
     }
 }
 ```
+
+- Only the HTTP call needs the `try`/`catch`: Jackson 3's exceptions are unchecked (`JacksonException`), so `readValue` adds no checked exception of its own.
 
 - Add a test to drive the system:
 
@@ -244,7 +254,7 @@ class OpenAiServiceTest {
 - Create a Java project (or simply add to the existing one) in your favorite IDE with either Gradle or Maven as your build tool.
 - Create a class called `OllamaService` in a package of your choosing.
 - Add a method called `generate` that takes a `String` and returns a `String`.
-- If you created a new project, add the Gson dependency to your build file and synchronize the project. If you added to an existing project, you can skip this step.
+- If you created a new project, add the Jackson dependency to your build file and synchronize the project. If you added to an existing project, you can skip this step.
 - Model the input and output JSON with Java records. To do so, add a class called `OllamaRecords` to your project.
 
 ```java
@@ -276,14 +286,14 @@ public class OllamaRecords {
 - Now we have enough to create the `OllamaService` class and use it to access the chat endpoint. Add the following code to the `OllamaService` class:
 
 ```java
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import static com.kousenit.OllamaRecords.*;
 
@@ -291,9 +301,9 @@ public class OllamaService {
     private static final HttpClient client = HttpClient.newHttpClient();
     private static final String URL = "http://localhost:11434";
 
-    private final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .create();
+    private final ObjectMapper mapper = JsonMapper.builder()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
 
     public OllamaResponse generate(OllamaTextRequest ollamaRequest) {
         HttpRequest request = HttpRequest.newBuilder()
@@ -301,18 +311,20 @@ public class OllamaService {
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(
-                    gson.toJson(ollamaRequest)))
+                    mapper.writeValueAsString(ollamaRequest)))
             .build();
         try {
             HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString());
-            return gson.fromJson(response.body(), OllamaResponse.class);
+            return mapper.readValue(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 }
 ```
+
+* This time the request body is a record too: `writeValueAsString` turns `OllamaTextRequest` into JSON, so you never hand-build a JSON string the way the text-to-speech lab did.
 
 * Create a test class to verify the `OllamaService` class works as expected. Here is a sample:
 
@@ -370,7 +382,7 @@ public String generateStreaming(OllamaTextRequest ollamaRequest) {
           .uri(URI.create(URL + "/api/generate"))
           .header("Content-Type", "application/json")
           .header("Accept", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(ollamaRequest)))
+          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
           .build();
   try {
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -407,19 +419,17 @@ followed by lots more lines, until the `done` field is `true`.
 
 ## Fix the camel case issue
 
-* The `created_at` field in the `OllamaResponse` record should be `createdAt`. Since we're already using `FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES` in our Gson configuration, the field will automatically be mapped correctly from `created_at` to `createdAt`.
-
-* Run one of the existing tests to see that the field is populated correctly.
-* The `Gson` object in `OllamaService` should be created using a builder with the field naming policy:
+* Print the full `OllamaResponse` in one of the tests and look at `createdAt`: it is `null`. The JSON field is called `created_at`, the record component is `createdAt`, and Jackson silently ignored the field it could not match.
+* You could annotate the component with `@JsonProperty("created_at")` as in the OpenAI lab, but every Ollama response has snake_case names, so set the naming strategy once on the mapper instead:
 
 ```java
-private final Gson gson = new GsonBuilder()
-    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-    .setPrettyPrinting()
-    .create();
+private final ObjectMapper mapper = JsonMapper.builder()
+    .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+    .enable(SerializationFeature.INDENT_OUTPUT)
+    .build();
 ```
 
-* Make sure the test prints the full `OllamaResponse`, then run the test again to see that the field is populated correctly. You may also want to add an assertion that the `createdAt` field of the response is not null.
+* Run the test again to see that the field is populated, and add an assertion that `createdAt` is not null. The strategy works in both directions, so record components named `maxTokens` would be written as `max_tokens` in requests as well.
 
 ## Create a vision request
 
@@ -500,11 +510,11 @@ public OllamaResponse generateVision(OllamaVisionRequest visionRequest) {
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(
-                gson.toJson(visionRequest)))
+                mapper.writeValueAsString(visionRequest)))
         .build();
     try {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return gson.fromJson(response.body(), OllamaResponse.class);
+        return mapper.readValue(response.body(), OllamaResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
     }
@@ -565,11 +575,11 @@ public OllamaResponse generate(OllamaRequest ollamaRequest) {
           .uri(URI.create(URL + "/api/generate"))
           .header("Content-Type", "application/json")
           .header("Accept", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(ollamaRequest)))
+          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
           .build();
     try {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return gson.fromJson(response.body(), OllamaResponse.class);
+        return mapper.readValue(response.body(), OllamaResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
     }
@@ -736,7 +746,7 @@ void test_chat() {
 
 ```java
 public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
-    String json = gson.toJson(chatRequest);
+    String json = mapper.writeValueAsString(chatRequest);
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(URL + "/api/chat"))
         .header("Content-Type", "application/json")
@@ -745,7 +755,7 @@ public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
         .build();
     try {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return gson.fromJson(response.body(), OllamaChatResponse.class);
+        return mapper.readValue(response.body(), OllamaChatResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
     }
@@ -1079,7 +1089,7 @@ public static void validate(CourseInquiry inquiry) {
 * Add a cheap unit test that does not call the model. This verifies the Java-side parse and validation behavior:
 
 ```java
-private final ObjectMapper mapper = new ObjectMapper();
+private final ObjectMapper mapper = JsonMapper.builder().build();  // tools.jackson.databind.json.JsonMapper
 
 @Test
 void parses_structured_output_into_record() throws Exception {
@@ -1134,7 +1144,7 @@ public record ImageResponse(
 }
 ```
 
-* Add a class called `GptImageService` with constants for the endpoint, the API key, an `HttpClient`, and a `Gson` object:
+* Add a class called `GptImageService` with constants for the endpoint, the API key, an `HttpClient`, and an `ObjectMapper`. The `Integer n` component of `ImageRequest` may be null, and the API rejects `"n": null`, so this mapper also drops null fields when writing:
 
 ```java
 public class GptImageService {
@@ -1144,10 +1154,11 @@ public class GptImageService {
   // Reuse HttpClient for better performance through connection pooling
   private static final HttpClient client = HttpClient.newHttpClient();
 
-  private final Gson gson = new GsonBuilder()
-          .setPrettyPrinting()
-          .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-          .create();
+  // SNAKE_CASE writes outputFormat as output_format and reads b64_json into b64Json
+  private final ObjectMapper mapper = JsonMapper.builder()
+          .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+          .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+          .build();
 }
 ```
 
@@ -1159,12 +1170,12 @@ public ImageResponse generateImage(ImageRequest imageRequest) {
           .uri(URI.create(IMAGE_URL))
           .header("Authorization", "Bearer %s".formatted(API_KEY))
           .header("Content-Type", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(imageRequest)))
+          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(imageRequest)))
           .build();
   try {
     HttpResponse<String> response =
             client.send(request, HttpResponse.BodyHandlers.ofString());
-    return gson.fromJson(response.body(), ImageResponse.class);
+    return mapper.readValue(response.body(), ImageResponse.class);
   } catch (IOException | InterruptedException e) {
     throw new RuntimeException("Error sending image prompt", e);
   }
@@ -1290,36 +1301,46 @@ Things to keep in mind if you take this further:
 
 ## Going Further: JSON Parsing Strategies
 
-If you're working with APIs directly, or with features that are awkward to reach through a framework abstraction, understanding JSON parsing becomes crucial. This project includes two demonstration approaches:
+Every lab so far mapped JSON straight into records, which is the right default when you know the shape of the data. Some APIs return shapes that vary from call to call. OpenAI's Responses API, for example, returns an `output` array whose items can be `reasoning`, `web_search_call`, or `message`, in an order that depends on the model and the tools it used. Jackson's tree model handles that case.
 
-### Available Demos
-
-- **`ResponsesApiDemo.java`** - Uses Gson's JsonElement API
-  - Tree-based navigation with `JsonObject` and `JsonArray`
-  - Explicit type checking and conversions
-  - Already included in the project dependencies
-
-- **`ResponsesApiJacksonDemo.java`** - Uses Jackson's JsonNode with JSON Pointer
-  - Elegant navigation with `at("/path/to/element")` syntax
-  - Safe chaining with `path()` method
-  - RFC 6901 JSON Pointer standard support
-
-### Key Takeaway
-
-Understanding raw HTTP and JSON parsing lets you:
-- Use new APIs immediately without waiting for framework updates
-- Debug API responses when things go wrong
-- Build custom integrations when needed
-- Verify what a framework is sending or receiving when behavior is surprising
-
-### Quick Example: JSON Pointer Magic
+### Records when the shape is known
 
 ```java
-// Instead of nested loops and null checks:
-JsonNode root = mapper.readTree(response.body());
-String text = root.at("/output/0/content/0/text").asText("default");
-
-// One line to navigate deep JSON structures!
+ModelList models = mapper.readValue(response.body(), ModelList.class);
 ```
 
-If time permits in class, we can explore these demos to see how to work with bleeding-edge APIs before LangChain4j or other frameworks catch up.
+One line, type-safe, and unknown fields are ignored. This is data binding, and it is what the labs use.
+
+### JsonNode when the shape varies
+
+```java
+JsonNode root = mapper.readTree(response.body());
+
+// JSON Pointer (RFC 6901) for a value whose location never changes
+String id = root.at("/id").asString();
+int outputTokens = root.at("/usage/output_tokens").asInt();
+
+// A walk for an array whose contents vary
+for (JsonNode item : root.path("output")) {
+    if ("message".equals(item.path("type").asString())) {
+        String text = item.at("/content/0/text").asString("(no text)");
+    }
+}
+```
+
+`at()` takes a pointer and returns a missing node rather than throwing when the path does not exist; `path()` does the same one step at a time. Resist the temptation to write `root.at("/output/0/content/0/text")` for the Responses API: with a reasoning model, item 0 is the reasoning block, and the pointer quietly returns nothing.
+
+The `ResponsesApiDemo` class uses both styles against the live API and prints the item types it found:
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.ResponsesApiDemo
+```
+
+### Which library?
+
+- **Jackson 3** (`tools.jackson`) is what this course and Spring Boot 4 use. Mappers are immutable and built with `JsonMapper.builder()`, exceptions are unchecked, and `java.time` types work without extra modules.
+- **Jackson 2** (`com.fasterxml.jackson`) is still everywhere, including inside LangChain4j. The two lines coexist on one classpath because the packages differ, and the annotations are shared.
+- **Gson** works fine for the patterns in these labs, but its README describes it as in maintenance mode.
+- **JEP 540** proposes a Simple JSON API in the JDK itself as an incubator module, currently targeted at JDK 28. Expect it to cover the tree-model style first.
+
+Understanding raw HTTP and JSON parsing lets you use new APIs immediately without waiting for framework updates, debug responses when things go wrong, and verify what a framework is sending when its behavior is surprising.

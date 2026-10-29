@@ -2,9 +2,7 @@ package com.kousenit.demos;
 
 import static com.kousenit.demos.LMStudioRecords.*;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,6 +10,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class LMStudioService {
 
@@ -41,10 +43,11 @@ public class LMStudioService {
 
     private final System.Logger logger = System.getLogger(LMStudioService.class.getName());
 
-    private final Gson gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .setPrettyPrinting()
-            .create();
+    private final ObjectMapper mapper = JsonMapper.builder()
+            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
 
     public List<Model> getModels() {
         logger.log(System.Logger.Level.INFO, "Requesting models from: {0}", URL + "/v1/models");
@@ -58,7 +61,7 @@ public class LMStudioService {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
-            return gson.fromJson(response.body(), ModelListResponse.class).data();
+            return mapper.readValue(response.body(), ModelListResponse.class).data();
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -66,18 +69,18 @@ public class LMStudioService {
 
     public ChatCompletionResponse chat(ChatRequest chatRequest) {
 
-        logger.log(System.Logger.Level.INFO, "Request: {0}", gson.toJson(chatRequest));
+        logger.log(System.Logger.Level.INFO, "Request: {0}", mapper.writeValueAsString(chatRequest));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(URL + "/v1/chat/completions"))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(chatRequest)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(chatRequest)))
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
-            return gson.fromJson(response.body(), ChatCompletionResponse.class);
+            return mapper.readValue(response.body(), ChatCompletionResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

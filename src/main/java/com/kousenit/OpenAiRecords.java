@@ -1,13 +1,14 @@
 package com.kousenit;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 
 public class OpenAiRecords {
-    // Listing the models
+    // Listing the models. The explicit @JsonProperty shows the mapping once;
+    // the mapper's SNAKE_CASE naming strategy would handle it on its own.
     public record ModelList(List<Model> data) {
-        public record Model(String id, long created, @SerializedName("owned_by") String ownedBy) {}
+        public record Model(String id, long created, @JsonProperty("owned_by") String ownedBy) {}
     }
 
     // Generating images
@@ -18,31 +19,22 @@ public class OpenAiRecords {
         public record Image(String b64Json, String revisedPrompt) {}
     }
 
-    // Vector stores
+    // Vector stores: every snake_case field maps through the naming strategy
     public record VectorStoreList(
-            @SerializedName("object") String object,
-            @SerializedName("data") List<VectorStore> data,
-            @SerializedName("first_id") String firstId,
-            @SerializedName("last_id") String lastId,
-            @SerializedName("has_more") boolean hasMore) {}
+            String object, List<VectorStore> data, String firstId, String lastId, boolean hasMore) {}
 
     public record VectorStore(
-            @SerializedName("id") String id,
-            @SerializedName("object") String object,
-            @SerializedName("name") String name,
-            @SerializedName("status") String status,
-            @SerializedName("usage_bytes") long usageBytes,
-            @SerializedName("created_at") long createdAt,
-            @SerializedName("file_counts") FileCounts fileCounts,
-            @SerializedName("metadata") Map<String, Object> metadata,
-            @SerializedName("expires_after") Object expiresAfter,
-            @SerializedName("expires_at") Object expiresAt,
-            @SerializedName("last_active_at") long lastActiveAt) {}
+            String id,
+            String object,
+            String name,
+            String status,
+            long usageBytes,
+            long createdAt,
+            FileCounts fileCounts,
+            Map<String, Object> metadata,
+            Object expiresAfter,
+            Object expiresAt,
+            long lastActiveAt) {}
 
-    public record FileCounts(
-            @SerializedName("in_progress") int inProgress,
-            @SerializedName("completed") int completed,
-            @SerializedName("failed") int failed,
-            @SerializedName("cancelled") int cancelled,
-            @SerializedName("total") int total) {}
+    public record FileCounts(int inProgress, int completed, int failed, int cancelled, int total) {}
 }

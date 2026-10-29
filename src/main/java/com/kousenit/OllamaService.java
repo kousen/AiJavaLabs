@@ -2,15 +2,16 @@ package com.kousenit;
 
 import static com.kousenit.OllamaRecords.*;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.stream.Stream;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class OllamaService {
     // HttpClient is thread-safe and designed to be reused for multiple requests
@@ -20,10 +21,11 @@ public class OllamaService {
 
     private final System.Logger logger = System.getLogger(OllamaService.class.getName());
 
-    private final Gson gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .setPrettyPrinting()
-            .create();
+    // SNAKE_CASE maps created_at <-> createdAt without annotating every record
+    private final ObjectMapper mapper = JsonMapper.builder()
+            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
 
     public OllamaResponse generate(OllamaRequest ollamaRequest) {
         switch (ollamaRequest) {
@@ -45,12 +47,12 @@ public class OllamaService {
                 .uri(URI.create(URL + "/api/generate"))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(ollamaRequest)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
-            return gson.fromJson(response.body(), OllamaResponse.class);
+            return mapper.readValue(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -66,7 +68,7 @@ public class OllamaService {
                 .uri(URI.create(URL + "/api/generate"))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(ollamaTextRequest)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaTextRequest)))
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -88,18 +90,18 @@ public class OllamaService {
                 .uri(URI.create(URL + "/api/generate"))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(visionRequest)))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(visionRequest)))
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return gson.fromJson(response.body(), OllamaResponse.class);
+            return mapper.readValue(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
-        String json = gson.toJson(chatRequest);
+        String json = mapper.writeValueAsString(chatRequest);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(URL + "/api/chat"))
                 .header("Content-Type", "application/json")
@@ -108,7 +110,7 @@ public class OllamaService {
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return gson.fromJson(response.body(), OllamaChatResponse.class);
+            return mapper.readValue(response.body(), OllamaChatResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -116,7 +118,7 @@ public class OllamaService {
 
     public String generateStreamingResponse(OllamaTextRequest ollamaRequest) {
         try {
-            var requestBody = gson.toJson(ollamaRequest);
+            var requestBody = mapper.writeValueAsString(ollamaRequest);
             var httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(URL + "/api/generate"))
                     .header("Content-Type", "application/json")
@@ -137,7 +139,7 @@ public class OllamaService {
         var accumulatedResponse = new StringBuilder();
         response.body().forEach(line -> {
             try {
-                var ollamaResponse = gson.fromJson(line, OllamaResponse.class);
+                var ollamaResponse = mapper.readValue(line, OllamaResponse.class);
                 System.out.print(ollamaResponse.response());
                 accumulatedResponse.append(ollamaResponse.response());
 
