@@ -1657,6 +1657,48 @@ graph LR
 </v-click>
 
 ---
+
+# Where Agents Fit
+
+An agent is the tool-calling loop plus two decisions: what runs next, and what each step gets to see. You have already built every primitive.
+
+<div class="grid grid-cols-5 gap-4">
+
+<div class="col-span-3 text-sm">
+
+| Agent problem | Primitive you used | Demo |
+|---|---|---|
+| Act on the world | The loop: send, read `finish_reason`, run, append | ToolCallingDemo |
+| Pass data between steps | Typed contracts: records via structured output | StructuredOutputDemo |
+| Decide what runs next | A probability, not prose | DecisionModelDemo |
+| Run independent workers | Virtual-thread fan-out | MultiModelDemo |
+| Keep steps from oversharing | Artifacts in files or a store, not shared memory | EasyRAGDemo |
+
+</div>
+
+<div class="col-span-2 text-sm">
+
+**Frameworks, as of October 2026**
+
+<v-clicks>
+
+- **LangChain4j** `langchain4j-agentic`: richest feature set, still labeled experimental, beta artifact
+- **Embabel**: Rod Johnson's GOAP planner, GA since July 2026, releasing often
+- **Spring AI**: patterns documented, orchestration left to you or community libraries
+
+</v-clicks>
+
+</div>
+
+</div>
+
+<v-click>
+
+**Same pipeline, four ways**: [github.com/kousen/OperaGenerator](https://github.com/kousen/OperaGenerator), with hand-written orchestration, a LangChain4j supervisor, Embabel, and Claude Code teams. The hand-written branch is still the one to ship. Agents took shortcuts in every framework.
+
+</v-click>
+
+---
 layout: section
 ---
 
@@ -1999,7 +2041,7 @@ layout: section
 <v-clicks>
 
 - **Vector databases**: Redis, Pinecone, Weaviate
-- **Multi-agent systems**: Coordinated AI workflows
+- **Agents**: the four-way comparison at github.com/kousen/OperaGenerator
 - **Function calling**: Give AI controlled access to your APIs
 - **Structured outputs**: Turn model responses into validated Java data
 - **Custom embeddings**: Domain-specific models

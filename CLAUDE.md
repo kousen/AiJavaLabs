@@ -22,6 +22,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Request logging steps in the OpenRouter and tool-calling labs, with a wire-format slide built from a captured run
 - ✅ "Same pattern, other vendors" lab: OpenRouterService (catalog, no key), AnthropicService promoted from the test tree, optional ElevenLabsService; never commit a private voice id
 - ✅ Lab order is now raw HTTP first (audio, models, other vendors, Ollama, images), then LangChain4j (OpenRouter, tools, structured output, streaming); stale demo counts and the moondream reference fixed
+- ✅ "Where Agents Fit" slide and a "Going Further: Agents" lab section map agent problems to the course's primitives and point to github.com/kousen/OperaGenerator; no agent lab by design
 - ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)
@@ -245,6 +246,11 @@ This is primarily an educational repository. Changes should:
 - **Teaching point**: Structured output gives one answer; a decision model gives a probability for every option, so thresholds and escalation rules live in Java
 - **Current example**: Triage of training inquiries with a choice question (course), a yes/no question (asks for a next step), and a scale question (urgency)
 - **Caveat**: The API is marked experimental; re-verify method names when upgrading LangChain4j
+
+### Agents Position
+- **Stance**: an agent is the tool-calling loop plus "what runs next" and "what each step sees"; the course teaches the primitives (tool loop, structured output contracts, decision models, virtual-thread fan-out, artifacts over shared memory) and points to OperaGenerator for the four-way framework comparison
+- **Framework status is dated** (October 2026): LangChain4j agentic experimental/beta, Embabel GA since July 2026, Spring AI patterns only. Re-verify all three before each delivery; the slide and lab text carry the date on purpose
+- **No agent lab**: frameworks move faster than course material; the slide is the cheap thing to update
 
 ### Demo-First Approach
 - Created standalone demo classes separate from tests

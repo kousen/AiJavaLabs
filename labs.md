@@ -1663,6 +1663,18 @@ Things to keep in mind if you take this further:
 - The input is sent to the model provider like any other request. Send only what the decision needs.
 - A decision model is not a security control on its own. Inputs can contain text written to influence the answer.
 
+## Going Further: Agents
+
+Agent frameworks come up in every conversation about AI in Java, so it is worth being precise about what one is. An agent is the tool-calling loop from the tool-calling lab, wrapped in two decisions: what runs next, and what each step is allowed to see. Every framework is an opinion about those two decisions. The hard problems, coordinating steps and passing information between them, are old problems with answers you have already used in these labs:
+
+- **Acting on the world** is the loop you watched in the request log: send, check `finish_reason`, run the method, append a `tool` message, send again.
+- **Passing data between steps** wants a typed contract, which is structured output into a record. A step that hands prose to the next step is where pipelines break; in a real multi-step system the formatting mismatch between two steps was the bug that took longest to find.
+- **Deciding what runs next** wants a probability rather than a prose answer, which is the decision model from the previous section. A low margin is your signal to ask a human.
+- **Running independent workers** is the virtual-thread fan-out from the OpenRouter lab. Nothing about it changes when the workers are agents instead of models.
+- **Keeping steps from oversharing** means handing artifacts (files, a store, a record) from one step to the next rather than a growing shared memory. Workers that see everything take shortcuts.
+
+As of October 2026 the Java options are: LangChain4j's `langchain4j-agentic` module, which has the richest feature set (shared scope, workflow patterns, a supervisor, human-in-the-loop, A2A and MCP adapters) and still describes itself as experimental; Embabel, Rod Johnson's goal-oriented planner, GA since July 2026 and releasing frequently; and Spring AI, which documents the patterns and leaves orchestration to your code or community libraries. The same pipeline is built four ways at [github.com/kousen/OperaGenerator](https://github.com/kousen/OperaGenerator), one branch per approach, each with a walkthrough and lessons learned. The hand-written orchestration branch is still the one to ship, and in every framework the agents found shortcuts: role-playing a step instead of running it, summarizing instead of producing, or claiming provenance they did not have. Learn the patterns, which outlive the frameworks, and re-check the framework status before you commit to one; it will have changed by the time you read this.
+
 ## Going Further: JSON Parsing Strategies
 
 Every lab so far mapped JSON straight into records, which is the right default when you know the shape of the data. Some APIs return shapes that vary from call to call. OpenAI's Responses API, for example, returns an `output` array whose items can be `reasoning`, `web_search_call`, or `message`, in an order that depends on the model and the tools it used. Jackson's tree model handles that case.
