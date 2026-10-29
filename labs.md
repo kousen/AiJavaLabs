@@ -943,7 +943,28 @@ public class QuickChatDemo {
 }
 ```
 
-* Run the class. Compare this to the `HttpClient` code from the first labs: the request body, headers, and JSON parsing are all handled by the builder and the `chat` method. Set `.logRequests(true)` and `.logResponses(true)` on the builder if you want to see the HTTP traffic LangChain4j sends on your behalf.
+* Run the class. Compare this to the `HttpClient` code from the first labs: the request body, headers, and JSON parsing are all handled by the builder and the `chat` method.
+
+* Now look at what the builder did for you. Add `.logRequests(true)` and `.logResponses(true)` to the builder and run it again. LangChain4j logs the exact HTTP exchange:
+
+```
+HTTP request:
+- method: POST
+- url: https://openrouter.ai/api/v1/chat/completions
+- headers: [Authorization: Beare...4f], [Content-Type: application/json], [User-Agent: langchain4j-openai]
+- body: {
+  "model" : "openai/gpt-5-nano",
+  "messages" : [ {
+    "role" : "user",
+    "content" : "Explain what LangChain4j is in 2-3 sentences."
+  } ],
+  "stream" : false
+}
+```
+
+* That is the same request you built by hand in the Ollama conversation lab: a model name and a list of `role`/`content` messages, posted as JSON with a bearer token. The framework saved you the records, the mapper, and the status check, but it did not do anything you could not do yourself. Note that the key is masked in the log.
+
+* Read the response log too. Beyond `choices[0].message.content`, the `usage` block separates `completion_tokens` from `reasoning_tokens` (gpt-5-nano is a reasoning model, and the reasoning can cost more than the answer), and OpenRouter adds a `cost` field in dollars. When a framework call behaves strangely, this log is the first place to look.
 
 * Now create `MultiModelDemo` in the same package. Add a helper that builds a model for any OpenRouter model id:
 
@@ -1146,6 +1167,60 @@ System.out.println(answer);
 ```
 
 The important design point is that the model does not get direct access to your system. It gets a tool specification. LangChain4j executes the selected Java method and returns the result to the model. In production, validate every argument, keep side effects explicit, and log each tool call separately from the model's final prose answer.
+
+* To see exactly what that means, set `.logRequests(true)` and `.logResponses(true)` on the model builder and run the demo again. Three HTTP exchanges go by. The first request carries your Java methods as a `tools` array, a JSON Schema that LangChain4j derived from the `@Tool` and `@P` annotations and the parameter types:
+
+```json
+"tools" : [ {
+  "type" : "function",
+  "function" : {
+    "name" : "drivingDistance",
+    "description" : "Estimate driving distance in miles between two supported cities",
+    "parameters" : {
+      "type" : "object",
+      "properties" : {
+        "from" : { "type" : "string", "description" : "starting city" },
+        "to" :   { "type" : "string", "description" : "destination city" }
+      },
+      "required" : [ "from", "to" ]
+    }
+  }
+}, ... ]
+```
+
+* The first response has no answer. Its `finish_reason` is `tool_calls`, and the message asks your application to run three methods, with the arguments as a JSON string:
+
+```json
+"message": {
+  "role": "assistant",
+  "content": null,
+  "tool_calls": [
+    { "id": "call_nWgr...", "type": "function",
+      "function": { "name": "weather", "arguments": "{\"city\": \"Hartford\"}" } },
+    { "id": "call_O8fc...", "type": "function",
+      "function": { "name": "weather", "arguments": "{\"city\": \"Boston\"}" } },
+    { "id": "call_NqbU...", "type": "function",
+      "function": { "name": "drivingDistance", "arguments": "{\"from\": \"Hartford\", \"to\": \"Boston\"}" } }
+  ]
+},
+"finish_reason": "tool_calls"
+```
+
+* LangChain4j calls the Java methods, then sends the whole conversation back with the assistant's request and one `tool` message per result, each tied to its call by id:
+
+```json
+{ "role" : "assistant", "tool_calls" : [ ... the three calls above ... ] },
+{ "role" : "tool", "tool_call_id" : "call_nWgr...", "content" : "Hartford, CT: 72 F and partly cloudy" },
+{ "role" : "tool", "tool_call_id" : "call_O8fc...", "content" : "Boston, MA: 66 F and cool and breezy" },
+{ "role" : "tool", "tool_call_id" : "call_NqbU...", "content" : "102" }
+```
+
+* The model now has the distance, so the second response asks for `fuelCost` with `miles` set to 102. The third exchange returns the prose answer. Three things to take away:
+  - The model never executes anything. It emits JSON saying which method it wants and with what arguments. Your code decides whether to run it.
+  - The "loop" is a plain HTTP loop: send, read `finish_reason`, run methods, append `tool` messages, send again. LangChain4j wrote it so you do not have to, but there is no magic in it.
+  - Every argument arrives as a string the model composed. `drivingDistance("Hartford", "Boston")` worked because the model chose well; validate as if a user typed it.
+
+* Turn the logging back off before moving on, or leave it on while you work through the next lab: the structured output request carries a `response_format` with the JSON Schema that LangChain4j generated from the `CourseInquiry` record, which is worth a look.
 
 ## Extract structured output into Java records
 

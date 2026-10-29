@@ -980,6 +980,66 @@ String answer = assistant.chat("""
 
 ---
 
+# Tool Calling: What's on the Wire
+
+`.logRequests(true)` shows the loop LangChain4j runs for you. Three HTTP exchanges:
+
+<div class="grid grid-cols-2 gap-4 text-sm">
+
+<div>
+
+**1. Request: your methods as JSON Schema**
+```json
+"tools": [{ "type": "function", "function": {
+  "name": "drivingDistance",
+  "description": "Estimate driving distance ...",
+  "parameters": { "type": "object",
+    "properties": { "from": {"type": "string"},
+                    "to":   {"type": "string"} },
+    "required": ["from", "to"] } } }, ...]
+```
+
+**1. Response: no answer, a request to call**
+```json
+"message": { "role": "assistant", "content": null,
+  "tool_calls": [{ "id": "call_NqbU...",
+    "function": { "name": "drivingDistance",
+      "arguments": "{\"from\":\"Hartford\",\"to\":\"Boston\"}" }}]},
+"finish_reason": "tool_calls"
+```
+
+</div>
+
+<div>
+
+**2. Request: Java ran it, results go back by id**
+```json
+{ "role": "assistant", "tool_calls": [ ... ] },
+{ "role": "tool", "tool_call_id": "call_NqbU...",
+  "content": "102" }
+```
+
+**3. Response: prose, once the model has the data**
+```json
+"message": { "role": "assistant",
+  "content": "Hartford to Boston is about 102 miles ..." },
+"finish_reason": "stop"
+```
+
+<v-clicks>
+
+- The model emits JSON; **your code executes**
+- The loop is send, check `finish_reason`, run, append, send
+- Arguments are strings the model composed: validate them
+
+</v-clicks>
+
+</div>
+
+</div>
+
+---
+
 # Tool Calling Guardrails
 
 <v-clicks>
