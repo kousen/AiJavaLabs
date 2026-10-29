@@ -38,6 +38,8 @@ This repository contains practical exercises and example implementations for wor
    ```bash
    export GOOGLEAI_API_KEY=your_google_ai_key_here
    export PERPLEXITY_API_KEY=your_perplexity_key_here
+   export ANTHROPIC_API_KEY=your_anthropic_key_here      # AnthropicService (models list)
+   export ELEVENLABS_API_KEY=your_elevenlabs_key_here    # ElevenLabsService (optional lab)
    ```
 
 2. **Ollama Setup**: Install Ollama and download the required models:
@@ -105,6 +107,10 @@ src/
 │   │   ├── DecisionModelDemo.java # Typed decisions with probabilities (experimental API)
 │   │   └── ResponsesApiDemo.java  # Responses API with Jackson's tree model
 │   ├── GptImageService.java       # GPT Image generation
+│   ├── OpenRouterService.java     # OpenRouter model catalog (no key needed)
+│   ├── AnthropicService.java      # Anthropic models list (x-api-key header)
+│   ├── ElevenLabsService.java     # ElevenLabs voices and text-to-speech (no Java SDK)
+│   ├── HttpSupport.java           # Status-code checks shared by the raw services
 │   ├── EasyRAGDemo.java           # RAG implementation example
 │   ├── OllamaService.java         # Ollama AI service integration
 │   ├── OpenAiService.java         # OpenAI API interactions
@@ -152,6 +158,12 @@ Extract Java records from unstructured text:
 RAG implementation for document-based question answering:
 - LangChain4j integration
 - Vector store support for efficient document retrieval
+
+### 🔌 Services Without a Java SDK
+The same HttpClient + records + Jackson pattern against vendors that ship no Java library:
+- OpenRouter's model catalog with modalities and per-token pricing (no key required)
+- Anthropic's models list with its `x-api-key` and version headers
+- ElevenLabs voices and text-to-speech, the OpenAI audio lab with different headers
 
 ### 🧭 Decision Models (experimental)
 Typed yes/no, choice, and scale answers with probabilities instead of generated text:

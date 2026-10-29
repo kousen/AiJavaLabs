@@ -5,7 +5,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -41,16 +40,8 @@ public class TextToSpeechService {
         Path filePath = getFilePath();
         try {
             HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(filePath));
-            if (response.statusCode() / 100 != 2) {
-                // The file handler saved the error JSON as if it were audio: read it back and remove it
-                String body = Files.readString(filePath);
-                Files.deleteIfExists(filePath);
-                throw new ApiException(
-                        response.statusCode(),
-                        "HTTP %d from %s: %s"
-                                .formatted(response.statusCode(), response.uri(), HttpSupport.errorMessage(body)));
-            }
-            return response.body();
+            // The file handler saves an error body as if it were audio; the helper reads it back and removes the file
+            return HttpSupport.requireSuccessFile(response).body();
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

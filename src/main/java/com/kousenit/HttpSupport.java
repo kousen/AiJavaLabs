@@ -1,6 +1,10 @@
 package com.kousenit;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.core.JacksonException;
@@ -44,6 +48,21 @@ public final class HttpSupport {
         }
         String body = response.body().collect(Collectors.joining("\n"));
         throw new ApiException(status, "HTTP %d from %s: %s".formatted(status, response.uri(), errorMessage(body)));
+    }
+
+    /** For ofFile handlers: a failed request wrote its error JSON into the file, so read it back and delete it. */
+    public static HttpResponse<Path> requireSuccessFile(HttpResponse<Path> response) {
+        int status = response.statusCode();
+        if (status / 100 == 2) {
+            return response;
+        }
+        try {
+            String body = Files.readString(response.body());
+            Files.deleteIfExists(response.body());
+            throw new ApiException(status, "HTTP %d from %s: %s".formatted(status, response.uri(), errorMessage(body)));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** The message inside an {"error": {...}} envelope, or the raw body when there is none. */

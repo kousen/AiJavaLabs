@@ -4,6 +4,7 @@
 
 - [Generate Audio from Text](#generate-audio-from-text)
 - [List the OpenAI Models](#list-the-openai-models)
+- [Same pattern, other vendors](#same-pattern-other-vendors)
 - [Install Ollama](#install-ollama)
 - [Access Ollama programmatically](#access-ollama-programmatically)
 - [Streaming Results](#streaming-results)
@@ -320,6 +321,119 @@ class OpenAiServiceTest {
 ```
 
 - Run the test. You should see a list of model names in the console, and the assertion should pass.
+
+## Same pattern, other vendors
+
+Everything in the last lab was: build a request, send it, check the status, bind the JSON to records. That pattern does not care who is on the other end. This lab applies it to three vendors with no Java SDK, or none worth the dependency. Only the details change: which header carries the key, and what the JSON looks like.
+
+### OpenRouter: a catalog with no key required
+
+[OpenRouter](https://openrouter.ai) routes requests to hundreds of models from many vendors behind one OpenAI-compatible API, which we use later with LangChain4j. Its model catalog is a public GET, and the JSON is richer than OpenAI's list: each model carries its input and output modalities and its prices per token.
+
+* Review the [models endpoint](https://openrouter.ai/docs/guides/overview/models). Note the `output_modalities` query parameter: the default view lists text models, and `image`, `audio`, `video`, `decisions`, or `all` widen it.
+* Add `OpenRouterRecords` with just the fields we care about. Jackson ignores the rest:
+
+```java
+public class OpenRouterRecords {
+    public record ModelList(List<Model> data, int totalCount) {}
+
+    public record Model(String id, String name, int contextLength, Architecture architecture, Pricing pricing) {}
+
+    public record Architecture(List<String> inputModalities, List<String> outputModalities) {}
+
+    // Prices arrive as strings in dollars per token, so convert once and keep the precision
+    public record Pricing(String prompt, String completion) {
+        private static final BigDecimal MILLION = BigDecimal.valueOf(1_000_000);
+
+        public BigDecimal promptPerMillion() {
+            return prompt == null ? BigDecimal.ZERO : new BigDecimal(prompt).multiply(MILLION).stripTrailingZeros();
+        }
+    }
+}
+```
+
+* Records can carry behavior. `promptPerMillion` turns `"0.00000025"` into the `$0.25 per million tokens` figure the pricing pages quote, and it lives next to the data it describes.
+* Add `OpenRouterService` with a `listModels(String outputModalities)` method. There is no key, so there is no `Authorization` header:
+
+```java
+public List<Model> listModels(String outputModalities) {
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://openrouter.ai/api/v1/models?output_modalities=" + outputModalities))
+            .header("Accept", "application/json")
+            .build();
+    try {
+        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
+        return mapper.readValue(response.body(), ModelList.class).data();
+    } catch (IOException | InterruptedException e) {
+        throw new RuntimeException(e);
+    }
+}
+```
+
+* Test it twice: once with `"text"`, asserting the ids `openai/gpt-5-nano` and `google/gemini-3-flash-preview` are present, and once with `"image"`, printing each model's modalities and prompt price per million and asserting every result lists `image` among its output modalities.
+
+### Anthropic: a different header, the same shape
+
+Anthropic's API uses an `x-api-key` header instead of a bearer token, plus a required `anthropic-version` header. Its models endpoint returns `created_at` as an ISO-8601 timestamp, which Jackson 3 reads into a `java.time.Instant` with no extra configuration.
+
+```java
+public record ModelsResponse(List<Model> data, String firstId, boolean hasMore, String lastId) {}
+public record Model(Instant createdAt, String displayName, String id, String type) {}
+```
+
+```java
+HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("https://api.anthropic.com/v1/models"))
+        .header("x-api-key", System.getenv("ANTHROPIC_API_KEY"))
+        .header("anthropic-version", "2023-06-01")
+        .header("Accept", "application/json")
+        .build();
+```
+
+* If you have an Anthropic key, add `AnthropicService.listModels()` on this pattern and print the display names and creation dates. If not, read the solution's `AnthropicService` and note how little differs from `OpenAiService`.
+
+### Optional: ElevenLabs, text to speech without an SDK
+
+[ElevenLabs](https://elevenlabs.io) is a popular text-to-speech service with official SDKs for Python and JavaScript and none for Java. The API is two calls: a GET for the available voices and a POST that returns audio bytes, the same shape as the OpenAI text-to-speech lab. Skip this section if you do not want another account; it costs nothing to read.
+
+* Create an account, generate a key, and set `ELEVENLABS_API_KEY`. Review the [text-to-speech endpoint](https://elevenlabs.io/docs/api-reference/text-to-speech/convert): the key travels in an `xi-api-key` header, the voice id is part of the URL, and the model id goes in the body.
+* Add the records:
+
+```java
+public class ElevenLabsRecords {
+    public record VoiceList(List<Voice> voices) {}
+    public record Voice(String voiceId, String name, String category) {}
+    public record SpeechRequest(String text, String modelId) {}
+}
+```
+
+* Add `ElevenLabsService` with `listVoices()` (a GET to `/v1/voices` with the header) and a `textToSpeech` method. The audio handling is the text-to-speech lab again, with the status check from the helper:
+
+```java
+public Path textToSpeech(String voiceId, String text) {
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://api.elevenlabs.io/v1/text-to-speech/" + voiceId))
+            .header("xi-api-key", API_KEY)
+            .header("Content-Type", "application/json")
+            .header("Accept", "audio/mpeg")
+            .POST(HttpRequest.BodyPublishers.ofString(
+                    mapper.writeValueAsString(new SpeechRequest(text, "eleven_multilingual_v2"))))
+            .build();
+    Path filePath = outputPath();
+    try {
+        HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(filePath));
+        return HttpSupport.requireSuccessFile(response).body();
+    } catch (IOException | InterruptedException e) {
+        throw new RuntimeException(e);
+    }
+}
+```
+
+* Every account includes ElevenLabs' premade voices (George, Sarah, Charlie, and others). Call `listVoices()` first, pick one by name, and pass its id. Never hardcode a voice id from someone else's account into a shared repository; cloned voices are private.
+* Write a test that lists the voices, generates a sentence with a premade voice, checks the file is more than a few kilobytes, and deletes the file afterwards so generated audio stays out of version control.
+* `GET /v1/models` lists the speech models if you want to try a newer one than the default.
+
+Three vendors, three header schemes, one pattern. That is the whole argument for learning the HTTP layer: the next service you need will not have a Java library either, and it will not matter.
 
 ## Install Ollama
 

@@ -19,6 +19,8 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Added HttpSupport.requireSuccess and ApiException; every raw HTTP service now checks status codes, with a lab step that provokes a real 401
 - ✅ Raw streaming is now taught: OllamaService.generateStreaming(model, prompt, Consumer) uses sendAsync + BodyHandlers.ofLines, with a lab step, a slide, and an SSE note for OpenAI
 - ✅ MultiModelDemo fans out on virtual threads (newVirtualThreadPerTaskExecutor) and prints sequential vs concurrent timings; lab step and slide added
+- ✅ Request logging steps in the OpenRouter and tool-calling labs, with a wire-format slide built from a captured run
+- ✅ "Same pattern, other vendors" lab: OpenRouterService (catalog, no key), AnthropicService promoted from the test tree, optional ElevenLabsService; never commit a private voice id
 - ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)
@@ -67,6 +69,10 @@ src/main/java/com/kousenit/
 │   ├── DecisionModelDemo.java # Experimental DecisionModel API: typed answers with probabilities
 │   └── ResponsesApiDemo.java # Responses API with Jackson's tree model (pointer + walk)
 ├── GptImageService.java       # GPT Image generation
+├── OpenRouterService.java     # Raw HTTP: OpenRouter model catalog, output_modalities filter, no key
+├── AnthropicService.java      # Raw HTTP: Anthropic models list (x-api-key + anthropic-version headers)
+├── ElevenLabsService.java     # Raw HTTP: ElevenLabs voices + text-to-speech (optional lab, ELEVENLABS_API_KEY)
+├── HttpSupport.java           # requireSuccess / requireSuccessLines / requireSuccessFile + ApiException
 ├── EasyRAGDemo.java           # RAG implementation
 ├── OllamaService.java         # Ollama integration
 ├── OpenAiService.java         # OpenAI API wrapper
@@ -93,6 +99,7 @@ Training Materials:
 - **Required for QuickChatDemo/MultiModelDemo**: OpenRouter API key (OPENROUTER_API_KEY environment variable)
 - **Optional**: Ollama installation for local AI models
 - **Testing**: Some tests require external services to be available
+- **Optional keys**: ANTHROPIC_API_KEY (AnthropicServiceTest), ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name; generated audio is deleted after the test)
 
 ### Build Commands
 ```bash

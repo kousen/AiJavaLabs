@@ -250,6 +250,8 @@ export OPENAI_API_KEY=your_key
 # Optional providers used in demos/tests
 export GOOGLEAI_API_KEY=your_key
 export PERPLEXITY_API_KEY=your_key
+export ANTHROPIC_API_KEY=your_key    # models lab, other vendors
+export ELEVENLABS_API_KEY=your_key   # optional text-to-speech lab
 
 # Optional: Local AI models
 curl -fsSL https://ollama.com/install.sh | sh
@@ -628,6 +630,68 @@ public static HttpResponse<String> requireSuccess(HttpResponse<String> response)
 </v-clicks>
 
 ---
+
+# Services Without a Java SDK
+
+Same pattern, three vendors. Only the headers and the JSON change.
+
+<div class="grid grid-cols-3 gap-4 text-sm">
+
+<div>
+
+**OpenRouter catalog** (no key)
+```java
+HttpRequest.newBuilder()
+  .uri(URI.create(MODELS_URL
+      + "?output_modalities=image"))
+  .header("Accept", "application/json")
+  .build();
+```
+Richer JSON than OpenAI's list: modalities and per-token prices, bound to records with a `promptPerMillion()` method
+
+</div>
+
+<div>
+
+**Anthropic** (`x-api-key`)
+```java
+HttpRequest.newBuilder()
+  .uri(URI.create(MODELS_URL))
+  .header("x-api-key", API_KEY)
+  .header("anthropic-version",
+          "2023-06-01")
+  .build();
+```
+`created_at` binds straight to `java.time.Instant`
+
+</div>
+
+<div>
+
+**ElevenLabs** (`xi-api-key`)
+```java
+HttpRequest.newBuilder()
+  .uri(URI.create(BASE + "/text-to-speech/"
+      + voiceId))
+  .header("xi-api-key", API_KEY)
+  .header("Accept", "audio/mpeg")
+  .POST(ofString(mapper.writeValueAsString(
+      new SpeechRequest(text, model))))
+  .build();
+```
+Python and JS SDKs only. Doesn't matter.
+
+</div>
+
+</div>
+
+<v-click>
+
+**The argument**: the next service you need will not have a Java library either. `HttpClient` + records + a mapper is the library.
+
+</v-click>
+
+---
 layout: section
 ---
 
@@ -912,7 +976,7 @@ answers.forEach((name, future) ->
 <v-clicks>
 
 - **Vision** • gemma4, LLaVA
-- **Audio** • Whisper, TTS models
+- **Audio** • Whisper, OpenAI TTS, ElevenLabs (raw HTTP)
 - **Embeddings** • sentence-transformers
 - **Code** • CodeLlama, StarCoder
 
