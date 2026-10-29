@@ -15,6 +15,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Removed `temperature(0.0)` from gpt-5-nano demos and labs (reasoning models reject non-default values)
 - ✅ Switched StreamingDemo to the `*Blocking` handler variants so main waits for the stream
 - ✅ Compile with `-parameters` so `@Tool` argument names reach the model
+- ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)
 - ✅ Updated all AI models to latest versions (local models→gpt-oss, GPT models→gpt-5-nano)
@@ -44,7 +45,7 @@ This file provides context for AI assistants working on the AI Java Labs project
   - Gson 2.14.0 (primary, used throughout)
   - Jackson 2.21.3 (for JsonNode and JSON Pointer support)
 - **AI Models**:
-  - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), gpt-image-2, gpt-4o-mini-tts, whisper-1
+  - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), gpt-image-2.5-flare (gpt-image-2.5-sunburst for edits), gpt-4o-mini-tts, whisper-1
   - Ollama: gpt-oss (text), moondream (vision)
   - Google: gemini-3-flash-preview
   - OpenRouter (QuickChatDemo, MultiModelDemo): openai/gpt-5-nano, google/gemini-3-flash-preview via `OpenAiChatModel` with base URL `https://openrouter.ai/api/v1`

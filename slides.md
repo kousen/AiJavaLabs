@@ -314,7 +314,7 @@ npx slidev export slides.md
 
 - **<span style="color: #00D4FF">gpt-5-nano</span>**: very low per-token cost
 - **<span style="color: #00D4FF">gemma4 (local)</span>**: Free with Ollama (Google's open-source multimodal model)
-- **<span style="color: #00D4FF">gpt-image-2</span>**: current GPT Image model
+- **<span style="color: #00D4FF">gpt-image-2.5-flare</span>**: fast GPT Image model (sunburst for precise edits)
 - **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
 
 </v-clicks>

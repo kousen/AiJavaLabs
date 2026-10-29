@@ -28,7 +28,7 @@ class OpenAiServiceTest {
 
         models.forEach(System.out::println);
         assertTrue(new HashSet<>(models)
-                .containsAll(List.of("gpt-image-2", "gpt-5-nano", "gpt-4o-mini-tts", "whisper-1")));
+                .containsAll(List.of("gpt-image-2.5-flare", "gpt-5-nano", "gpt-4o-mini-tts", "whisper-1")));
     }
 
     @Test

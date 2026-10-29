@@ -220,7 +220,7 @@ class OpenAiServiceTest {
 
     models.forEach(System.out::println);
     assertTrue(new HashSet<>(models).containsAll(
-            List.of("gpt-image-2", "gpt-5-nano",
+            List.of("gpt-image-2.5-flare", "gpt-5-nano",
                     "gpt-4o-mini-tts", "whisper-1")));
     }
 }
@@ -1105,6 +1105,8 @@ The design point is the same as with tool calling: let the model help with inter
 
 ## Generating Images
 
+OpenAI's current image models are the GPT Image 2.5 pair: `gpt-image-2.5-flare` is the fast, everyday generator and `gpt-image-2.5-sunburst` is tuned for precise edits. The lab uses Flare. Both take the same request shape, so switching is a one-string change.
+
 * We now return to OpenAI to use the GPT Image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. GPT Image returns Base 64 encoded image data from the Image API.
 
 * Add records for image generation to the `OpenAiRecords` class:
@@ -1185,7 +1187,7 @@ class GptImageServiceTest {
     @Test
     void generate_image() {
         var imageRequest = new ImageRequest(
-            "gpt-image-2",
+            "gpt-image-2.5-flare",
             "Draw a picture of cats playing cards",
             1,
             "medium",

@@ -6,7 +6,6 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
-import dev.langchain4j.model.openai.OpenAiImageModelName;
 import dev.langchain4j.model.output.Response;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -82,7 +81,8 @@ public class OpenAiLC4jTest {
     void generateImage() {
         ImageModel model = OpenAiImageModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName(OpenAiImageModelName.DALL_E_3)
+                .modelName(
+                        "gpt-image-2.5-flare") // newer than the OpenAiImageModelName enum, so pass the id as a string
                 .build();
 
         Response<Image> response = model.generate(

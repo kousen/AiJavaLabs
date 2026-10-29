@@ -20,7 +20,7 @@ class GptImageServiceTest {
     @Tag(TestCategories.SLOW)
     void generate_image() {
         var imageRequest = new ImageRequest(
-                "gpt-image-2", "Generate a picture of cats playing cards", 1, "medium", "png", "1024x1024");
+                "gpt-image-2.5-flare", "Generate a picture of cats playing cards", 1, "medium", "png", "1024x1024");
         ImageResponse imageResponse = service.generateImage(imageRequest);
         System.out.println(imageResponse.data().getFirst().revisedPrompt());
         System.out.println("Base64 image bytes: "
