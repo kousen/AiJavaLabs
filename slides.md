@@ -134,7 +134,8 @@ layout: two-cols
 ```
 
 **Prerequisites:**
-- `OPENAI_API_KEY` environment variable
+- `OPENROUTER_API_KEY` environment variable (QuickChat, MultiModel)
+- `OPENAI_API_KEY` environment variable (other OpenAI demos)
 - Ollama installed for local demos
 
 ---
@@ -243,6 +244,7 @@ graph LR
 
 ```bash
 # Required API keys
+export OPENROUTER_API_KEY=your_key  # one key for OpenAI, Gemini, and more
 export OPENAI_API_KEY=your_key
 # Optional providers used in demos/tests
 export GOOGLEAI_API_KEY=your_key
