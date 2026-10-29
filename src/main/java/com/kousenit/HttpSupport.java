@@ -1,6 +1,8 @@
 package com.kousenit;
 
 import java.net.http.HttpResponse;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -32,6 +34,16 @@ public final class HttpSupport {
         throw new ApiException(
                 status,
                 "HTTP %d from %s: %s%s".formatted(status, response.uri(), errorMessage(response.body()), retryAfter));
+    }
+
+    /** The streaming counterpart: a failed streaming request still delivers its error body as lines. */
+    public static HttpResponse<Stream<String>> requireSuccessLines(HttpResponse<Stream<String>> response) {
+        int status = response.statusCode();
+        if (status / 100 == 2) {
+            return response;
+        }
+        String body = response.body().collect(Collectors.joining("\n"));
+        throw new ApiException(status, "HTTP %d from %s: %s".formatted(status, response.uri(), errorMessage(body)));
     }
 
     /** The message inside an {"error": {...}} envelope, or the raw body when there is none. */

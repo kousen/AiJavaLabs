@@ -501,6 +501,67 @@ public void streaming_generate_request() {
 
 followed by lots more lines, until the `done` field is `true`.
 
+* That shows what a streaming response looks like, but waiting for the whole body and printing it at the end defeats the purpose. The JDK's `HttpClient` can hand you the body as it arrives: `sendAsync` returns a `CompletableFuture` immediately, and `BodyHandlers.ofLines()` delivers the body as a `Stream<String>` of lines while the response is still in flight. Each Ollama line is a complete JSON object, so each line maps to an `OllamaResponse`. Add this method, which takes a `Consumer<String>` to call for every token and returns the full text at the end:
+
+```java
+public String generateStreaming(String model, String prompt, Consumer<String> onToken) {
+    var ollamaRequest = new OllamaTextRequest(model, prompt, true);
+    var request = HttpRequest.newBuilder()
+            .uri(URI.create(URL + "/api/generate"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
+            .build();
+
+    CompletableFuture<String> fullText = client.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
+            .thenApply(HttpSupport::requireSuccessLines)
+            .thenApply(response -> {
+                var text = new StringBuilder();
+                response.body()
+                        .map(line -> mapper.readValue(line, OllamaResponse.class))
+                        .forEach(chunk -> {
+                            onToken.accept(chunk.response());
+                            text.append(chunk.response());
+                        });
+                return text.toString();
+            });
+
+    return fullText.join();
+}
+```
+
+* `requireSuccessLines` is the streaming twin of `requireSuccess`: a failed request still delivers its error body, just as lines. Add it to `HttpSupport`:
+
+```java
+public static HttpResponse<Stream<String>> requireSuccessLines(HttpResponse<Stream<String>> response) {
+    int status = response.statusCode();
+    if (status / 100 == 2) {
+        return response;
+    }
+    String body = response.body().collect(Collectors.joining("\n"));
+    throw new ApiException(status, "HTTP %d from %s: %s".formatted(status, response.uri(), errorMessage(body)));
+}
+```
+
+* Add a test that collects the tokens and watches them print one at a time:
+
+```java
+@Test
+void streaming_tokens_arrive_one_at_a_time() {
+    List<String> tokens = new ArrayList<>();
+    String full = service.generateStreaming("gemma4", "Count from 1 to 5, digits only.", token -> {
+        System.out.print(token);
+        tokens.add(token);
+    });
+
+    assertThat(tokens).hasSizeGreaterThan(1);
+    assertThat(String.join("", tokens)).isEqualTo(full);
+}
+```
+
+* The `join()` at the end blocks until the stream finishes, which is what a test or a `main` method wants. In a server you would return the `CompletableFuture` and let the caller decide. Either way, the streaming itself is done by the JDK: no library was needed.
+
+* Cloud providers stream a little differently. OpenAI's chat endpoint uses server-sent events: each line starts with `data: `, the payload after the prefix is JSON, and the stream ends with `data: [DONE]`. The code is the same shape as above with one extra `filter` and a `substring` to strip the prefix. LangChain4j's streaming models do exactly this for you, which we see later in the course.
+
 ## Fix the camel case issue
 
 * Print the full `OllamaResponse` in one of the tests and look at `createdAt`: it is `null`. The JSON field is called `created_at`, the record component is `createdAt`, and Jackson silently ignored the field it could not match.

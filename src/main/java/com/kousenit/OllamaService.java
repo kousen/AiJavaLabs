@@ -8,7 +8,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.SerializationFeature;
@@ -117,41 +118,36 @@ public class OllamaService {
         }
     }
 
-    public String generateStreamingResponse(OllamaTextRequest ollamaRequest) {
-        try {
-            var requestBody = mapper.writeValueAsString(ollamaRequest);
-            var httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(URL + "/api/generate"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .build();
+    /**
+     * Streams a response, handing each token to the consumer as it arrives, and returns the
+     * whole text once the server sends done=true.
+     *
+     * The JDK does the streaming for us: sendAsync returns a CompletableFuture immediately,
+     * and BodyHandlers.ofLines() delivers the body as a Stream of lines while the response is
+     * still arriving. Ollama sends one JSON object per line, so each line maps to a record.
+     * join() blocks until the stream ends; return the future instead if the caller should not wait.
+     */
+    public String generateStreaming(String model, String prompt, Consumer<String> onToken) {
+        var ollamaRequest = new OllamaTextRequest(model, prompt, true);
+        var request = HttpRequest.newBuilder()
+                .uri(URI.create(URL + "/api/generate"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
+                .build();
 
-            var responseFuture = client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofLines())
-                    .thenApply(this::handleLines);
+        CompletableFuture<String> fullText = client.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
+                .thenApply(HttpSupport::requireSuccessLines)
+                .thenApply(response -> {
+                    var text = new StringBuilder();
+                    response.body()
+                            .map(line -> mapper.readValue(line, OllamaResponse.class))
+                            .forEach(chunk -> {
+                                onToken.accept(chunk.response());
+                                text.append(chunk.response());
+                            });
+                    return text.toString();
+                });
 
-            return responseFuture.join();
-        } catch (Exception e) {
-            System.err.println("Error generating streaming response: " + e.getMessage());
-            return "";
-        }
-    }
-
-    private String handleLines(HttpResponse<Stream<String>> response) {
-        var accumulatedResponse = new StringBuilder();
-        response.body().forEach(line -> {
-            try {
-                var ollamaResponse = mapper.readValue(line, OllamaResponse.class);
-                System.out.print(ollamaResponse.response());
-                accumulatedResponse.append(ollamaResponse.response());
-
-                if (ollamaResponse.done()) {
-                    System.out.println();
-                    System.out.println("Final response metadata: " + line);
-                }
-            } catch (Exception e) {
-                System.err.println("Error processing JSON: " + e.getMessage());
-            }
-        });
-        return accumulatedResponse.toString();
+        return fullText.join();
     }
 }

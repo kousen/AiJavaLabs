@@ -17,6 +17,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Compile with `-parameters` so `@Tool` argument names reach the model
 - ✅ Replaced Gson with Jackson 3 (`tools.jackson`) throughout; merged the two Responses API demos into one
 - ✅ Added HttpSupport.requireSuccess and ApiException; every raw HTTP service now checks status codes, with a lab step that provokes a real 401
+- ✅ Raw streaming is now taught: OllamaService.generateStreaming(model, prompt, Consumer) uses sendAsync + BodyHandlers.ofLines, with a lab step, a slide, and an SSE note for OpenAI
 - ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)

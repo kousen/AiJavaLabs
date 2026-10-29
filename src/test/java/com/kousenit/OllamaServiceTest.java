@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -85,9 +86,12 @@ class OllamaServiceTest {
     @Test
     @Tag(TestCategories.LOCAL)
     @Tag(TestCategories.SLOW)
-    void testStreamingRequest() {
-        var request = new OllamaTextRequest("gemma4", "Why is the sky blue?", true);
-        var response = service.generateStreamingResponse(request);
-        assertThat(response).isNotEmpty().containsIgnoringCase("sky").containsIgnoringCase("blue");
+    void streaming_tokens_arrive_one_at_a_time() {
+        List<String> tokens = new ArrayList<>();
+        String full = service.generateStreaming("gemma4", "Count from 1 to 5, digits only.", tokens::add);
+
+        System.out.println(tokens.size() + " tokens: " + full);
+        assertThat(tokens).hasSizeGreaterThan(1);
+        assertThat(String.join("", tokens)).isEqualTo(full).containsSubsequence("1", "2", "3", "4", "5");
     }
 }

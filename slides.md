@@ -1073,6 +1073,42 @@ layout: section
 
 ---
 
+# Streaming with the JDK: sendAsync + ofLines
+
+No library needed: the JDK client delivers the body as it arrives
+
+```java
+public String generateStreaming(String model, String prompt, Consumer<String> onToken) {
+    var request = HttpRequest.newBuilder()
+            .uri(URI.create(URL + "/api/generate"))
+            .header("Content-Type", "application/json")
+            .POST(BodyPublishers.ofString(mapper.writeValueAsString(
+                    new OllamaTextRequest(model, prompt, true))))
+            .build();
+
+    return client.sendAsync(request, HttpResponse.BodyHandlers.ofLines())  // CompletableFuture
+            .thenApply(HttpSupport::requireSuccessLines)
+            .thenApply(response -> {
+                var text = new StringBuilder();
+                response.body()                                              // Stream<String>, live
+                        .map(line -> mapper.readValue(line, OllamaResponse.class))
+                        .forEach(chunk -> { onToken.accept(chunk.response()); text.append(chunk.response()); });
+                return text.toString();
+            })
+            .join();                                                        // or return the future
+}
+```
+
+<v-clicks>
+
+- **Ollama**: one JSON object per line. **OpenAI**: server-sent events, `data: {...}` lines ending in `data: [DONE]`
+- **`join()`** blocks for a `main` or a test; a server returns the future instead
+- This is the shape every framework's streaming handler wraps
+
+</v-clicks>
+
+---
+
 # Demo 9: Clean Streaming with Lambda Handlers
 
 ````md magic-move
@@ -1598,13 +1634,13 @@ void shouldStreamTokens() {
     List<String> tokens = new ArrayList<>();
 
     ollamaService.generateStreaming("gemma4",
-        "Count to 5",
-        token -> tokens.add(token)
+        "Count from 1 to 5, digits only.",
+        tokens::add
     );
 
-    assertThat(tokens).isNotEmpty();
+    assertThat(tokens).hasSizeGreaterThan(1);
     assertThat(String.join("", tokens))
-        .containsPattern("1.*2.*3.*4.*5");
+        .containsSubsequence("1", "2", "3", "4", "5");
 }
 ```
 
