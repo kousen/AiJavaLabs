@@ -736,9 +736,11 @@ public class QuickChatDemo {
 
 ```java
 // Step 1: Build the model with fluent API
+// OpenRouter speaks the OpenAI API, so only the base URL, key, and model id change
 ChatModel model = OpenAiChatModel.builder()
-        .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
+        .baseUrl("https://openrouter.ai/api/v1")
+        .apiKey(System.getenv("OPENROUTER_API_KEY"))
+        .modelName("openai/gpt-5-nano")
         .logRequests(false)  // Toggle for debugging
         .logResponses(false) // Toggle for debugging
         .build();
@@ -749,8 +751,9 @@ ChatModel model = OpenAiChatModel.builder()
 public class QuickChatDemo {
     public static void main(String[] args) {
         ChatModel model = OpenAiChatModel.builder()
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-5-nano")
+                .baseUrl("https://openrouter.ai/api/v1")
+                .apiKey(System.getenv("OPENROUTER_API_KEY"))
+                .modelName("openai/gpt-5-nano")
                 .build();
 
         String prompt = "Explain what LangChain4j is in 2-3 sentences.";
@@ -768,10 +771,11 @@ public class QuickChatDemo {
 
 ````md magic-move
 ```java
-// Step 1: OpenAI implementation
+// Step 1: OpenAI through OpenRouter
 ChatModel openai = OpenAiChatModel.builder()
-        .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
+        .baseUrl("https://openrouter.ai/api/v1")
+        .apiKey(System.getenv("OPENROUTER_API_KEY"))
+        .modelName("openai/gpt-5-nano")
         .build();
 
 String response = openai.chat("What is the capital of France?");
@@ -779,10 +783,11 @@ System.out.println("OpenAI: " + response);
 ```
 
 ```java
-// Step 2: Switch to Google Gemini - same interface!
-ChatModel gemini = GoogleAiGeminiChatModel.builder()
-        .apiKey(System.getenv("GOOGLEAI_API_KEY"))
-        .modelName("gemini-3-flash-preview")
+// Step 2: Switch to Google Gemini - same key, just a new model id!
+ChatModel gemini = OpenAiChatModel.builder()
+        .baseUrl("https://openrouter.ai/api/v1")
+        .apiKey(System.getenv("OPENROUTER_API_KEY"))
+        .modelName("google/gemini-3-flash-preview")
         .build();
 
 String response = gemini.chat("What is the capital of France?");
