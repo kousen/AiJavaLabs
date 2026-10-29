@@ -1,7 +1,7 @@
 package com.kousenit.demos;
 
-import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponse;
-import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndError;
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndErrorBlocking;
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseBlocking;
 
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
@@ -9,6 +9,10 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 /**
  * Demonstrates the clean streaming API using LambdaStreamingResponseHandler utilities.
  * Shows how to use lambda expressions instead of anonymous inner classes.
+ *
+ * Streaming is asynchronous: chat(...) returns before the tokens arrive. In a
+ * standalone main that would exit before anything prints, so this demo uses the
+ * *Blocking variants, which wait for the stream to complete.
  */
 public class StreamingDemo {
 
@@ -32,8 +36,8 @@ public class StreamingDemo {
                     .modelName("gemma4")
                     .build();
 
-            // Clean one-liner for simple streaming
-            ollama.chat("Tell me a haiku about Java", onPartialResponse(System.out::print));
+            // Clean one-liner for simple streaming; blocks until the response is complete
+            onPartialResponseBlocking(ollama, "Tell me a haiku about Java", System.out::print);
             System.out.println("\n");
         } catch (Exception e) {
             System.out.println("Ollama not available - is it running?");
@@ -52,12 +56,12 @@ public class StreamingDemo {
                     .build();
 
             // Handle both partial responses and errors
-            openai.chat(
+            onPartialResponseAndErrorBlocking(
+                    openai,
                     "Why is the sky blue? Answer in exactly one sentence.",
-                    onPartialResponseAndError(
-                            System.out::print, // Handle each token
-                            error -> System.err.println("\nError: " + error.getMessage()) // Handle errors
-                            ));
+                    System.out::print, // Handle each token
+                    error -> System.err.println("\nError: " + error.getMessage())); // Handle errors
+            System.out.println();
         } catch (Exception e) {
             System.out.println("OpenAI not available - check OPENAI_API_KEY");
         }

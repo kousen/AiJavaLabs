@@ -21,8 +21,13 @@ application {
     mainClass.set("com.kousenit.demos.QuickChatDemo")
 }
 
+tasks.withType<JavaCompile> {
+    // Keep parameter names in the bytecode so LangChain4j can send real names for @Tool arguments
+    options.compilerArgs.add("-parameters")
+}
+
 dependencies {
-    implementation(platform("dev.langchain4j:langchain4j-bom:1.15.0"))
+    implementation(platform("dev.langchain4j:langchain4j-bom:1.23.0"))
 
     // LangChain4j Easy RAG example
     implementation("dev.langchain4j:langchain4j")
@@ -33,6 +38,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-easy-rag") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
+
+    // Decision models (experimental API): typed answers with probabilities instead of text
+    implementation("dev.langchain4j:langchain4j-typesafe")
 
     // Google Gen AI
     implementation("com.google.genai:google-genai:1.55.0")

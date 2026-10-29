@@ -100,7 +100,6 @@ public class ToolCallingDemo {
         ChatModel model = OpenAiChatModel.builder()
                 .apiKey(apiKey)
                 .modelName("gpt-5-nano")
-                .temperature(0.0)
                 .logRequests(false)
                 .logResponses(false)
                 .build();

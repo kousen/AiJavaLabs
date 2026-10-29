@@ -144,13 +144,14 @@ layout: two-cols
 
 # Demo Map: Advanced Demos
 
-## **Demos 7-11**
+## **Demos 7-12**
 
 7. **ToolCallingDemo** - Java methods as tools
 8. **StructuredOutputDemo** - Records from model output
 9. **StreamingDemo** - Real-time responses
 10. **ApiComparisonDemo** / **ResponsesApiDemo**
 11. **EasyRAGDemo** - Document Q&A
+12. **DecisionModelDemo** - Typed answers with probabilities
 
 ::right::
 
@@ -230,7 +231,7 @@ graph LR
 
 - **Java 21+** (Records, sealed interfaces, pattern matching)
 - **Gradle 8.4+** (Kotlin DSL, test categories)
-- **<span style="color: #00D4FF">LangChain4j 1.15.0</span>** (current pinned framework)
+- **<span style="color: #00D4FF">LangChain4j 1.23.0</span>** (current pinned framework)
 - **Git** for repository management
 - **Ollama** (optional, for local AI models)
 
@@ -969,7 +970,6 @@ interface InquiryExtractor {
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
         .modelName("gpt-5-nano")
-        .temperature(0.0)
         .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
         .strictJsonSchema(true)
         .build();
@@ -989,6 +989,58 @@ validate(inquiry);
 
 ```bash
 ./gradlew run -PmainClass=com.kousenit.demos.StructuredOutputDemo
+```
+
+---
+
+# Beyond Text: Decision Models
+
+LangChain4j 1.23 adds an **experimental** `DecisionModel` API: typed questions in, probabilities out. Nothing to parse.
+
+````md magic-move
+```java
+// Step 1: TypeSafe's Jev decision model, reached through OpenRouter
+DecisionModel model = TypeSafeDecisionModel.builder()
+        .baseUrl("https://openrouter.ai/api")   // same key as the chat demos
+        .apiKey(System.getenv("OPENROUTER_API_KEY"))
+        .modelName("typesafe/jev-1.13")
+        .build();
+
+DecisionRequest request = DecisionRequest.builder()
+        .input(inquiry)
+        .question("course", ChoiceQuestion.builder()
+                .text("Which course does the inquiry ask about?")
+                .option("java", "Core Java, migrations between versions")
+                .option("spring", "Spring Framework and Spring Boot")
+                .option("ai", "AI models and APIs in Java applications")
+                .option("other", "Anything else")
+                .build())
+        .question("follow_up",
+                YesNoQuestion.from("Does the sender ask for a quote, a date, or a call?"))
+        .build();
+```
+
+```java
+// Step 2: Every option comes back with a probability. Thresholds live in Java.
+DecisionResponse response = model.decide(request);
+
+ChoiceAnswer course = response.choice("course");
+course.value();          // "java"
+course.probabilities();  // {java=1.0, spring=0.0, ai=0.0, other=0.0}
+
+if (course.margin() < 0.2) {                       // top two options too close
+    routeToHuman(inquiry);
+}
+if (response.yesNo("follow_up").isYes(0.7)) {      // tune per model
+    replyToday(inquiry);
+}
+```
+````
+
+**Key idea**: Structured output gives you one answer. A decision model tells you how sure it is about every option.
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.DecisionModelDemo
 ```
 
 ---
@@ -1036,9 +1088,10 @@ public class StreamingDemo {
                 .modelName("gemma4")
                 .build();
 
-        // One-liner for simple streaming
-        ollama.chat("Tell me a haiku about Java",
-            onPartialResponse(System.out::print));
+        // One-liner for simple streaming.
+        // The *Blocking variant waits for the stream, so main does not exit early
+        onPartialResponseBlocking(ollama,
+            "Tell me a haiku about Java", System.out::print);
     }
 }
 ```
@@ -1051,11 +1104,12 @@ var openai = OpenAiStreamingChatModel.builder()
         .build();
 
 // Handle both tokens and errors elegantly
-openai.chat("Why is the sky blue?",
-    onPartialResponseAndError(
-        System.out::print,  // Handle each token
-        error -> System.err.println("Error: " + error.getMessage())
-    ));
+onPartialResponseAndErrorBlocking(openai, "Why is the sky blue?",
+    System.out::print,  // Handle each token
+    error -> System.err.println("Error: " + error.getMessage()));
+
+// Inside a server, use the non-blocking onPartialResponse(...) /
+// onPartialResponseAndError(...) handlers with model.chat(...) instead
 ```
 ````
 
@@ -1665,6 +1719,7 @@ layout: section
 - **<span style="color: #00D4FF">ApiComparisonDemo</span>** - Framework vs raw
 - **<span style="color: #00D4FF">ToolCallingDemo</span>** - Java methods as tools
 - **<span style="color: #00D4FF">StructuredOutputDemo</span>** - Records from model output
+- **<span style="color: #00D4FF">DecisionModelDemo</span>** - Typed answers with probabilities
 - **<span style="color: #00D4FF">EasyRAGDemo</span>** - Document Q&A
 
 </div>

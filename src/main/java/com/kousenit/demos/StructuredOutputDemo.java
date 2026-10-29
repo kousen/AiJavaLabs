@@ -57,7 +57,6 @@ public class StructuredOutputDemo {
         ChatModel model = OpenAiChatModel.builder()
                 .apiKey(apiKey)
                 .modelName("gpt-5-nano")
-                .temperature(0.0)
                 .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
                 .strictJsonSchema(true)
                 .build();

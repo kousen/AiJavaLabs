@@ -8,9 +8,16 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ## Current State
 
-### Recent Updates (May 2026)
+### Recent Updates (October 2026)
+- ✅ Upgraded LangChain4j to 1.23.0
+- ✅ Routed QuickChatDemo and MultiModelDemo through OpenRouter (one key, provider-prefixed model ids)
+- ✅ Added DecisionModelDemo using the experimental `DecisionModel` API (TypeSafe Jev via OpenRouter)
+- ✅ Removed `temperature(0.0)` from gpt-5-nano demos and labs (reasoning models reject non-default values)
+- ✅ Switched StreamingDemo to the `*Blocking` handler variants so main waits for the stream
+- ✅ Compile with `-parameters` so `@Tool` argument names reach the model
+
+### Earlier Updates (May 2026)
 - ✅ Updated all AI models to latest versions (local models→gpt-oss, GPT models→gpt-5-nano)
-- ✅ Updated LangChain4j to 1.15.0
 - ✅ Updated GPT Image examples from deprecated DALL-E 3 to gpt-image-2
 - ✅ Configured Java 21 using Gradle's toolchain support
 - ✅ Refactored HttpClient usage from try-with-resources to static class attributes
@@ -30,7 +37,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ### Key Technologies & Versions
 - **Java**: 21 (configured via Gradle toolchain, uses records, sealed interfaces, pattern matching)
-- **LangChain4j**: 1.15.0 (primary AI framework with streaming enhancements)
+- **LangChain4j**: 1.23.0 (primary AI framework; includes the experimental `DecisionModel` API)
 - **Gradle**: 8.4+ with Kotlin DSL
 - **Slidev**: For interactive presentations
 - **JSON Parsing**:
@@ -52,6 +59,7 @@ src/main/java/com/kousenit/
 │   ├── ToolCallingDemo.java  # LangChain4j tools backed by Java methods
 │   ├── StructuredOutputDemo.java # Java records from model output
 │   ├── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
+│   ├── DecisionModelDemo.java # Experimental DecisionModel API: typed answers with probabilities
 │   ├── ResponsesApiDemo.java # Responses API with Gson parsing
 │   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
 ├── GptImageService.java       # GPT Image generation
@@ -216,6 +224,14 @@ This is primarily an educational repository. Changes should:
 - **Demo class**: StructuredOutputDemo
 - **Teaching point**: Structured outputs turn model interpretation into application data, but Java still validates before use
 - **Current example**: CourseInquiry record with priority, follow-up flag, and action items
+- **Model constraint**: gpt-5-nano is a reasoning model and rejects `temperature` values other than the default; do not set it in demos or labs
+
+### Decision Model Strategy
+- **High-level approach**: LangChain4j's experimental `DecisionModel` API (`langchain4j-typesafe` module) with `TypeSafeDecisionModel` pointed at OpenRouter (base URL `https://openrouter.ai/api`, model `typesafe/jev-1.13`)
+- **Demo class**: DecisionModelDemo
+- **Teaching point**: Structured output gives one answer; a decision model gives a probability for every option, so thresholds and escalation rules live in Java
+- **Current example**: Triage of training inquiries with a choice question (course), a yes/no question (asks for a next step), and a scale question (urgency)
+- **Caveat**: The API is marked experimental; re-verify method names when upgrading LangChain4j
 
 ### Demo-First Approach
 - Created standalone demo classes separate from tests
@@ -231,11 +247,12 @@ This is primarily an educational repository. Changes should:
 - JSON parsing comparison slides added
 - Tool calling lab and demo added with LangChain4j `@Tool` annotations
 - Structured output lab and demo added with LangChain4j JSON Schema support
+- OpenRouter lab added before the tool-calling lab; decision model "Going Further" section and slide added
 
 ## Recent Commit History Context
 
 - **Model Updates**: Systematic update of AI models to latest versions
-- **LangChain4j 1.15.0**: Current pinned framework version for the course
+- **LangChain4j 1.23.0**: Current pinned framework version for the course
 - **Java 21 Configuration**: Toolchain support for modern Java features
 - **JSON Parsing**: Added Jackson alongside Gson for dual approach demonstration
 - **Responses API**: Created demos showing new OpenAI API with both parsers

@@ -930,13 +930,12 @@ public int drivingDistance(
 }
 ```
 
-* Build the model and register the tools with `AiServices`:
+* Build the model and register the tools with `AiServices`. Leave the temperature at its default: `gpt-5-nano` is a reasoning model and rejects any other value.
 
 ```java
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
         .modelName("gpt-5-nano")
-        .temperature(0.0)
         .build();
 
 TravelAssistant assistant = AiServices.builder(TravelAssistant.class)
@@ -1030,7 +1029,6 @@ interface InquiryExtractor {
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
         .modelName("gpt-5-nano")
-        .temperature(0.0)
         .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
         .strictJsonSchema(true)
         .build();
@@ -1212,28 +1210,30 @@ LangChain4j provides utility methods in `LambdaStreamingResponseHandler` that ma
 For basic streaming where you just want to print tokens as they arrive:
 
 ```java
-import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponse;
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseBlocking;
 
 var model = OllamaStreamingChatModel.builder()
         .baseUrl("http://localhost:11434")
         .modelName("gemma4")
         .build();
 
-// One-liner for simple streaming
-model.chat("Tell me a joke", onPartialResponse(System.out::print));
+// One-liner for simple streaming; returns once the response is complete
+onPartialResponseBlocking(model, "Tell me a joke", System.out::print);
 ```
+
+Streaming is asynchronous. The plain `model.chat(prompt, onPartialResponse(...))` form returns immediately, which is what you want inside a web request handler, but in a `main` method the program exits before any tokens arrive. The `*Blocking` variants wait for the stream to finish, so use them in standalone demos.
 
 ### Streaming with Error Handling
 
 When you need to handle both partial responses and errors:
 
 ```java
-import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndError;
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndErrorBlocking;
 
-model.chat("Why is the sky blue?", onPartialResponseAndError(
+onPartialResponseAndErrorBlocking(model, "Why is the sky blue?",
     token -> System.out.print(token),           // Handle each token
     error -> System.err.println("Error: " + error)  // Handle errors
-));
+);
 ```
 
 ### Benefits
@@ -1252,6 +1252,39 @@ Run the `StreamingDemo` class to see both patterns in action:
 ```bash
 ./gradlew run -PmainClass=com.kousenit.demos.StreamingDemo
 ```
+
+## Going Further: Decision Models
+
+The structured output lab asked a chat model to fill in a Java record. That gives you one answer per field, but not how sure the model was. LangChain4j 1.23 adds an **experimental** `DecisionModel` API for exactly that gap: you send an input and a set of typed questions, and the model returns one answer per question with a probability for every option. There is no text to parse, and the thresholds that turn probabilities into actions stay in your Java code.
+
+Three question types are available:
+
+- `YesNoQuestion` returns the probability of "yes". Call `isYes(threshold)` to decide.
+- `ChoiceQuestion` picks one option from a named set and reports the probability of each. `margin()` is the gap between the top two, which is a good "ask a human" signal.
+- `ScaleQuestion` places the input on an ordered scale and reports a probability-weighted `mean()`.
+
+The project already includes the `langchain4j-typesafe` module. Its `TypeSafeDecisionModel` talks to TypeSafe's Jev model, and OpenRouter serves the same model, so the `OPENROUTER_API_KEY` from the earlier lab is all you need:
+
+```java
+DecisionModel model = TypeSafeDecisionModel.builder()
+        .baseUrl("https://openrouter.ai/api")   // the client appends v1/systemone itself
+        .apiKey(System.getenv("OPENROUTER_API_KEY"))
+        .modelName("typesafe/jev-1.13")
+        .build();
+```
+
+The `DecisionModelDemo` class in the `demos` package triages three training inquiries with a choice question (which course), a yes/no question (does the sender ask for a next step), and a scale question (how urgent). Run it and read the probabilities next to each answer:
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.DecisionModelDemo
+```
+
+Things to keep in mind if you take this further:
+
+- The API is marked experimental, so method names may change between LangChain4j releases.
+- Probabilities are calibrated per model. A threshold tuned for one model or version needs retuning for another, so record `response.modelName()` alongside each decision.
+- The input is sent to the model provider like any other request. Send only what the decision needs.
+- A decision model is not a security control on its own. Inputs can contain text written to influence the answer.
 
 ## Going Further: JSON Parsing Strategies
 

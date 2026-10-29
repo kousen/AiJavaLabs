@@ -102,6 +102,7 @@ src/
 │   │   ├── ToolCallingDemo.java
 │   │   ├── StructuredOutputDemo.java
 │   │   ├── StreamingDemo.java
+│   │   ├── DecisionModelDemo.java # Typed decisions with probabilities (experimental API)
 │   │   ├── ResponsesApiDemo.java  # New Responses API with Gson
 │   │   └── ResponsesApiJacksonDemo.java # Responses API with Jackson
 │   ├── GptImageService.java       # GPT Image generation
@@ -153,9 +154,15 @@ RAG implementation for document-based question answering:
 - LangChain4j integration
 - Vector store support for efficient document retrieval
 
+### 🧭 Decision Models (experimental)
+Typed yes/no, choice, and scale answers with probabilities instead of generated text:
+- LangChain4j `DecisionModel` API with `TypeSafeDecisionModel`
+- TypeSafe's Jev model, reached through OpenRouter with the same key as the chat demos
+- Demo: `DecisionModelDemo`
+
 ## Dependencies
 
-- **LangChain4j**: 1.15.0 (AI framework)
+- **LangChain4j**: 1.23.0 (AI framework)
 - **Google Gen AI SDK**: 1.55.0
 - **Apache POI**: 5.5.1 (Document processing)
 - **Gson**: 2.14.0 (JSON parsing)
