@@ -1,5 +1,6 @@
 package com.kousenit;
 
+import static com.kousenit.HttpSupport.requireSuccess;
 import static com.kousenit.OpenAiRecords.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,7 +35,7 @@ public class GptImageService {
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(imageRequest)))
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), ImageResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error sending image prompt", e);

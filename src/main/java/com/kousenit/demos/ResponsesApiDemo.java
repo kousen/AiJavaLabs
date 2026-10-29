@@ -1,5 +1,7 @@
 package com.kousenit.demos;
 
+import static com.kousenit.HttpSupport.requireSuccess;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -112,10 +114,7 @@ public class ResponsesApiDemo {
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(requestBody)))
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IllegalStateException("HTTP " + response.statusCode() + ": " + response.body());
-        }
+        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
         return mapper.readTree(response.body());
     }
 

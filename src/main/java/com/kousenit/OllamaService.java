@@ -1,5 +1,6 @@
 package com.kousenit;
 
+import static com.kousenit.HttpSupport.requireSuccess;
 import static com.kousenit.OllamaRecords.*;
 
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class OllamaService {
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
             return mapper.readValue(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
@@ -93,7 +94,7 @@ public class OllamaService {
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(visionRequest)))
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -109,7 +110,7 @@ public class OllamaService {
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), OllamaChatResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);

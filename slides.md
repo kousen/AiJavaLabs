@@ -598,6 +598,36 @@ String response = model.chat("Hello, world!");
 </v-click>
 
 ---
+
+# Raw HTTP: When the Request Fails
+
+HTTP status codes are not exceptions. A 401 or 429 still returns a body, and that body is the provider's error envelope, not the JSON you modeled.
+
+```java
+// Shared by every service: check first, then bind
+public static HttpResponse<String> requireSuccess(HttpResponse<String> response) {
+    int status = response.statusCode();
+    if (status / 100 == 2) return response;
+
+    String retryAfter = response.headers().firstValue("Retry-After")   // sent with 429
+            .map(s -> " (Retry-After: %ss)".formatted(s)).orElse("");
+    throw new ApiException(status, "HTTP %d from %s: %s%s".formatted(
+            status, response.uri(), errorMessage(response.body()), retryAfter));
+}
+
+// errorMessage: JsonNode.at("/error/message"), or the raw body when there is no envelope
+```
+
+<v-clicks>
+
+- **OpenAI, OpenRouter, Anthropic**: `{"error": {"message": ...}}`. **Ollama**: `{"error": "..."}`. Read the docs, then handle both
+- **`ofFile` handlers save the error too**: a 401 text-to-speech call produces an mp3 full of JSON
+- **Timeouts**: `HttpClient.newBuilder().connectTimeout(...)` and `HttpRequest.newBuilder(uri).timeout(...)`
+- **Retries**: on 429 and 5xx only, honor `Retry-After`, add jitter, cap attempts, retry idempotent calls
+
+</v-clicks>
+
+---
 layout: section
 ---
 
@@ -1524,29 +1554,6 @@ void testRequiresApiKey() {
 **Smart Development**: Use free local models for TDD, validate with cloud models before deployment
 
 </v-click>
-
----
-
-# Raw HTTP: Timeouts & Retries (Advanced)
-
-<v-clicks>
-
-- Add timeouts to `HttpClient` requests to avoid hanging calls
-- Implement simple retry with jitter for transient errors (429, 5xx)
-- Log request IDs and status to aid debugging
-- Prefer idempotency where possible for safe retries
-
-</v-clicks>
-
-```java
-HttpClient client = HttpClient.newBuilder()
-    .connectTimeout(Duration.ofSeconds(10))
-    .build();
-
-HttpRequest request = HttpRequest.newBuilder(uri)
-    .timeout(Duration.ofSeconds(30))
-    .build();
-```
 
 ---
 

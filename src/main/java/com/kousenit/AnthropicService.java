@@ -1,6 +1,7 @@
 package com.kousenit;
 
 import static com.kousenit.AnthropicRecords.*;
+import static com.kousenit.HttpSupport.requireSuccess;
 
 import java.io.IOException;
 import java.net.URI;
@@ -36,7 +37,7 @@ public class AnthropicService {
                 .header("Accept", "application/json")
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), ModelsResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);

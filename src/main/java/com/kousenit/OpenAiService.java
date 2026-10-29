@@ -1,5 +1,6 @@
 package com.kousenit;
 
+import static com.kousenit.HttpSupport.requireSuccess;
 import static com.kousenit.OpenAiRecords.*;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class OpenAiService {
                 .header("Accept", "application/json")
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), ModelList.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -46,7 +47,7 @@ public class OpenAiService {
                 .header("Accept", "application/json")
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), VectorStoreList.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);

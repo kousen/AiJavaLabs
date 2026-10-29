@@ -1,5 +1,6 @@
 package com.kousenit.demos;
 
+import static com.kousenit.HttpSupport.requireSuccess;
 import static com.kousenit.demos.LMStudioRecords.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -59,7 +60,7 @@ public class LMStudioService {
                 .GET()
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
             return mapper.readValue(response.body(), ModelListResponse.class).data();
         } catch (IOException | InterruptedException e) {
@@ -78,7 +79,7 @@ public class LMStudioService {
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(chatRequest)))
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
             return mapper.readValue(response.body(), ChatCompletionResponse.class);
         } catch (IOException | InterruptedException e) {

@@ -119,6 +119,20 @@ void testGenerateMp3() {
 
 - Run the test. The console should show the name of an mp3 file saved in the `src/main/resources` folder. You can play the file to hear the text you provided.
 
+- Now break it on purpose: change the `Authorization` header to use a bad key and run the test again. It still "passes" and still produces an mp3 file, but the file will not play. Open it in a text editor and you will find JSON: `{"error": {"message": "Incorrect API key provided: ..."}}`. The `ofFile` body handler saves whatever the server sends, and HTTP status codes are not exceptions. Any REST client has to check them. Add the check right after `send`:
+
+```java
+HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(filePath));
+if (response.statusCode() / 100 != 2) {
+    String body = Files.readString(filePath);   // the "audio" file holds the error JSON
+    Files.deleteIfExists(filePath);
+    throw new IllegalStateException("HTTP %d: %s".formatted(response.statusCode(), body));
+}
+return response.body();
+```
+
+- Run the test with the bad key one more time to see the failure message, then restore the real key. The next lab turns this check into a reusable helper.
+
 ## List the OpenAI Models
 
 - Whenever you access the OpenAI API, you need to specify a model. To know which models are available, the OpenAI API provides an endpoint to list them. Review the documentation for that endpoint [here](https://platform.openai.com/docs/api-reference/models).
@@ -206,6 +220,75 @@ public ModelList listModels() {
 ```
 
 - Only the HTTP call needs the `try`/`catch`: Jackson 3's exceptions are unchecked (`JacksonException`), so `readValue` adds no checked exception of its own.
+
+- Before writing the test, see what a failure looks like. Temporarily point `API_KEY` at a bad value and call `listModels`. Jackson throws a mapping error, because the body it was given is not a model list at all. It is OpenAI's error envelope, sent with a 401 status:
+
+```json
+{
+  "error": {
+    "message": "Incorrect API key provided: sk-bad. You can find your API key at https://platform.openai.com/account/api-keys.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+- OpenAI, OpenRouter, and Anthropic all use this `{"error": {"message": ...}}` shape, and a 429 rate-limit response adds a `Retry-After` header saying how long to wait. Every service in this course needs the same check, so put it in a small shared class. `ApiException` carries the status so callers can tell a 429 from a 401:
+
+```java
+public class ApiException extends RuntimeException {
+    private final int status;
+
+    public ApiException(int status, String message) {
+        super(message);
+        this.status = status;
+    }
+
+    public int status() { return status; }
+    public boolean isRateLimited() { return status == 429; }
+}
+```
+
+```java
+public final class HttpSupport {
+    private static final ObjectMapper MAPPER = JsonMapper.builder().build();
+
+    public static HttpResponse<String> requireSuccess(HttpResponse<String> response) {
+        int status = response.statusCode();
+        if (status / 100 == 2) {
+            return response;
+        }
+        String retryAfter = response.headers()
+                .firstValue("Retry-After")
+                .map(seconds -> " (Retry-After: %ss)".formatted(seconds))
+                .orElse("");
+        throw new ApiException(status, "HTTP %d from %s: %s%s".formatted(
+                status, response.uri(), errorMessage(response.body()), retryAfter));
+    }
+
+    // The message inside the envelope, or the raw body when there is none (Ollama sends {"error": "..."})
+    static String errorMessage(String body) {
+        try {
+            JsonNode message = MAPPER.readTree(body).at("/error/message");
+            return message.isMissingNode() ? body : message.asString();
+        } catch (JacksonException e) {
+            return body;   // not JSON at all, for example an HTML page from a proxy
+        }
+    }
+}
+```
+
+- The `at("/error/message")` call is Jackson's tree model, which we come back to later. For now, note that it returns a "missing node" rather than throwing when the path is absent. Wrap the `send` call in `listModels`:
+
+```java
+HttpResponse<String> response =
+    requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
+return mapper.readValue(response.body(), ModelList.class);
+```
+
+- With the bad key, the failure now reads `HTTP 401 from https://api.openai.com/v1/models: Incorrect API key provided: sk-bad ...`. Restore the key. Use `requireSuccess` on every `send` from here on. The solution's `TextToSpeechService` uses the same helper for the file case from the previous lab.
+
+- Exercise, if time permits: write a retry loop around `send` that catches `ApiException`, checks `isRateLimited()`, sleeps for the `Retry-After` value, and gives up after a few attempts. Keep the loop out of the service method itself, so the happy path stays readable.
 
 - Add a test to drive the system:
 
@@ -315,7 +398,7 @@ public class OllamaService {
             .build();
         try {
             HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+                    requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), OllamaResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -325,6 +408,7 @@ public class OllamaService {
 ```
 
 * This time the request body is a record too: `writeValueAsString` turns `OllamaTextRequest` into JSON, so you never hand-build a JSON string the way the text-to-speech lab did.
+* `requireSuccess` is the helper from the OpenAI lab. Ollama's errors have a different shape, `{"error": "model 'gemma5' not found"}` with a 404, so the helper falls back to printing the raw body. Try a model name you have not pulled to see it.
 
 * Create a test class to verify the `OllamaService` class works as expected. Here is a sample:
 
@@ -385,7 +469,7 @@ public String generateStreaming(OllamaTextRequest ollamaRequest) {
           .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
           .build();
   try {
-    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
     return response.body();
   } catch (IOException | InterruptedException e) {
     throw new RuntimeException(e);
@@ -513,7 +597,7 @@ public OllamaResponse generateVision(OllamaVisionRequest visionRequest) {
                 mapper.writeValueAsString(visionRequest)))
         .build();
     try {
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
         return mapper.readValue(response.body(), OllamaResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
@@ -578,7 +662,7 @@ public OllamaResponse generate(OllamaRequest ollamaRequest) {
           .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
           .build();
     try {
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
         return mapper.readValue(response.body(), OllamaResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
@@ -754,7 +838,7 @@ public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
         .POST(HttpRequest.BodyPublishers.ofString(json))
         .build();
     try {
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
         return mapper.readValue(response.body(), OllamaChatResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
@@ -1174,7 +1258,7 @@ public ImageResponse generateImage(ImageRequest imageRequest) {
           .build();
   try {
     HttpResponse<String> response =
-            client.send(request, HttpResponse.BodyHandlers.ofString());
+            requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
     return mapper.readValue(response.body(), ImageResponse.class);
   } catch (IOException | InterruptedException e) {
     throw new RuntimeException("Error sending image prompt", e);

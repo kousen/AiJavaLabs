@@ -16,6 +16,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Switched StreamingDemo to the `*Blocking` handler variants so main waits for the stream
 - ✅ Compile with `-parameters` so `@Tool` argument names reach the model
 - ✅ Replaced Gson with Jackson 3 (`tools.jackson`) throughout; merged the two Responses API demos into one
+- ✅ Added HttpSupport.requireSuccess and ApiException; every raw HTTP service now checks status codes, with a lab step that provokes a real 401
 - ✅ Moved image examples to gpt-image-2.5-flare (gpt-image-2 still served, but 2.5 is what OpenAI now documents)
 
 ### Earlier Updates (May 2026)
@@ -118,6 +119,7 @@ Uses Java records for API data modeling:
 - Static HttpClient instances for connection pooling and reuse
 - Avoided try-with-resources pattern (creates new instances inefficiently)
 - Direct exception wrapping in RuntimeException
+- `HttpSupport.requireSuccess` checks the status code on every raw call and throws `ApiException` (status + provider message + Retry-After); `TextToSpeechService` handles the `ofFile` case itself because the error body lands in the audio file
 - Java 21's AutoCloseable HttpClient support acknowledged but not utilized for efficiency
 
 ## Common Tasks
