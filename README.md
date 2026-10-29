@@ -28,6 +28,11 @@ This repository contains practical exercises and example implementations for wor
    export OPENAI_API_KEY=your_openai_api_key_here
    ```
 
+   OpenRouter API key, used by `QuickChatDemo` and `MultiModelDemo` (one key reaches OpenAI, Gemini, and other providers by model id):
+   ```bash
+   export OPENROUTER_API_KEY=your_openrouter_key_here
+   ```
+
    Optional provider keys used by some demos/tests:
    ```bash
    export GOOGLEAI_API_KEY=your_google_ai_key_here
