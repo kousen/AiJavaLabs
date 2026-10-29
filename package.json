@@ -9,5 +9,8 @@
     "@slidev/cli": "^53.0.0",
     "@slidev/theme-seriph": "^0.25.0",
     "playwright-chromium": "^1.55.0"
+  },
+  "overrides": {
+    "dompurify": "^3.4.17"
   }
 }
