@@ -2,6 +2,7 @@ package com.kousenit.demos;
 
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import java.util.Objects;
 
 /**
  * Quick demo showing basic chat interaction through OpenRouter.
@@ -15,9 +16,12 @@ public class QuickChatDemo {
     public static void main(String[] args) {
         System.out.println("=== Quick Chat Demo with GPT-5-nano via OpenRouter ===\n");
 
+        String apiKey = Objects.requireNonNull(
+                System.getenv("OPENROUTER_API_KEY"), "Set the OPENROUTER_API_KEY environment variable");
+
         ChatModel model = OpenAiChatModel.builder()
                 .baseUrl(OPENROUTER_BASE_URL)
-                .apiKey(System.getenv("OPENROUTER_API_KEY"))
+                .apiKey(apiKey)
                 .modelName("openai/gpt-5-nano")
                 .logRequests(false) // Set to true to show API calls
                 .logResponses(false) // Set to true to show raw responses

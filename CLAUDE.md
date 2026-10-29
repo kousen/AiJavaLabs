@@ -40,6 +40,7 @@ This file provides context for AI assistants working on the AI Java Labs project
   - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), gpt-image-2, gpt-4o-mini-tts, whisper-1
   - Ollama: gpt-oss (text), moondream (vision)
   - Google: gemini-3-flash-preview
+  - OpenRouter (QuickChatDemo, MultiModelDemo): openai/gpt-5-nano, google/gemini-3-flash-preview via `OpenAiChatModel` with base URL `https://openrouter.ai/api/v1`
 
 ### Project Structure
 ```
@@ -77,6 +78,7 @@ Training Materials:
 
 ### External Dependencies
 - **Required**: OpenAI API key (OPENAI_API_KEY environment variable)
+- **Required for QuickChatDemo/MultiModelDemo**: OpenRouter API key (OPENROUTER_API_KEY environment variable)
 - **Optional**: Ollama installation for local AI models
 - **Testing**: Some tests require external services to be available
 

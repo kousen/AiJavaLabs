@@ -19,6 +19,7 @@ This repository contains practical exercises and example implementations for wor
 - Java 21 or higher
 - Gradle 8.4+ (included via wrapper)
 - OpenAI API key (for OpenAI services)
+- OpenRouter API key (for the LangChain4j multi-model demos)
 - Ollama installation (for local AI models)
 
 ### Environment Setup

@@ -11,6 +11,7 @@
 - [Create a vision request](#create-a-vision-request)
 - [Refactor to sealed interfaces](#refactor-to-sealed-interfaces)
 - [Have a conversation](#have-a-conversation)
+- [Call cloud models through OpenRouter](#call-cloud-models-through-openrouter)
 - [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
 - [Extract structured output into Java records](#extract-structured-output-into-java-records)
 - [Generating Images](#generating-images)
@@ -752,6 +753,96 @@ public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
 ```
 
 * Run the test to see it in action. In practice, you would extract the `assistant` response from each message and add it to the next request. Note that all the major framework (Spring AI, LangChain4j, etc) have ways of doing that for you.
+
+## Call cloud models through OpenRouter
+
+The earlier labs built HTTP requests by hand. LangChain4j wraps that work in a `ChatModel` interface, and OpenRouter lets one API key reach models from many vendors. Together they make switching models a one-line change.
+
+OpenRouter exposes an OpenAI-compatible API at `https://openrouter.ai/api/v1`, so LangChain4j's `OpenAiChatModel` works against it with a different base URL, key, and a provider-prefixed model id such as `openai/gpt-5-nano` or `google/gemini-3-flash-preview`.
+
+* Create an account at [openrouter.ai](https://openrouter.ai), generate an API key, and add it to an environment variable called `OPENROUTER_API_KEY`. Restart your IDE or terminal so the new variable is visible.
+
+* Create a class called `QuickChatDemo` in the `com.kousenit.demos` package:
+
+```java
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import java.util.Objects;
+
+public class QuickChatDemo {
+    private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+
+    public static void main(String[] args) {
+        String apiKey = Objects.requireNonNull(
+                System.getenv("OPENROUTER_API_KEY"), "Set the OPENROUTER_API_KEY environment variable");
+
+        ChatModel model = OpenAiChatModel.builder()
+                .baseUrl(OPENROUTER_BASE_URL)
+                .apiKey(apiKey)
+                .modelName("openai/gpt-5-nano")
+                .build();
+
+        String prompt = "Explain what LangChain4j is in 2-3 sentences.";
+        System.out.println(model.chat(prompt));
+    }
+}
+```
+
+* Run the class. Compare this to the `HttpClient` code from the first labs: the request body, headers, and JSON parsing are all handled by the builder and the `chat` method. Set `.logRequests(true)` and `.logResponses(true)` on the builder if you want to see the HTTP traffic LangChain4j sends on your behalf.
+
+* Now create `MultiModelDemo` in the same package. Add a helper that builds a model for any OpenRouter model id:
+
+```java
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+
+public class MultiModelDemo {
+    private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+
+    private static ChatModel openRouter(String modelId) {
+        return OpenAiChatModel.builder()
+                .baseUrl(OPENROUTER_BASE_URL)
+                .apiKey(System.getenv("OPENROUTER_API_KEY"))
+                .modelName(modelId)
+                .build();
+    }
+}
+```
+
+* Add a `main` method that asks the same question of several models. Wrap each call in a `try`/`catch` so one unavailable model does not stop the others:
+
+```java
+public static void main(String[] args) {
+    String question = "What is the capital of France? Answer in exactly one word.";
+
+    for (String modelId : new String[] {"openai/gpt-5-nano", "google/gemini-3-flash-preview"}) {
+        try {
+            System.out.printf("%s: %s%n", modelId, openRouter(modelId).chat(question));
+        } catch (Exception e) {
+            System.out.printf("%s: not available - %s%n", modelId, e.getMessage());
+        }
+    }
+
+    try {
+        ChatModel ollama = OllamaChatModel.builder()
+                .baseUrl("http://localhost:11434")
+                .modelName("gemma4")
+                .build();
+        System.out.printf("ollama/gemma4 (local): %s%n", ollama.chat(question));
+    } catch (Exception e) {
+        System.out.println("ollama/gemma4 (local): not available - is Ollama running?");
+    }
+}
+```
+
+* Run it. Then pick any other chat model id from [openrouter.ai/models](https://openrouter.ai/models) and add it to the array. No other code changes are needed.
+
+* Notice the two different kinds of portability in this class:
+  - Switching between the OpenRouter models is a **model id** change. The client class stays `OpenAiChatModel` because OpenRouter speaks the OpenAI protocol.
+  - Switching to Ollama is a **client class** change. `OllamaChatModel` speaks a different protocol, but LangChain4j's `ChatModel` interface means the call to `chat` looks the same.
+
+* The solution classes `QuickChatDemo` and `MultiModelDemo` are in the `demos` package of the repository if you want to compare.
 
 ## Add tool calling with LangChain4j
 

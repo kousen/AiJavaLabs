@@ -773,7 +773,7 @@ public class QuickChatDemo {
 
 ````md magic-move
 ```java
-// Step 1: OpenAI through OpenRouter
+// Step 1: OpenAI's gpt-5-nano, reached through OpenRouter
 ChatModel openai = OpenAiChatModel.builder()
         .baseUrl("https://openrouter.ai/api/v1")
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
@@ -785,7 +785,8 @@ System.out.println("OpenAI: " + response);
 ```
 
 ```java
-// Step 2: Switch to Google Gemini - same key, just a new model id!
+// Step 2: Different MODEL, same client - only the model id changes
+// (OpenRouter speaks the OpenAI protocol, so this is still OpenAiChatModel)
 ChatModel gemini = OpenAiChatModel.builder()
         .baseUrl("https://openrouter.ai/api/v1")
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
@@ -797,7 +798,7 @@ System.out.println("Gemini: " + response);
 ```
 
 ```java
-// Step 3: Or use local Ollama - still same interface!
+// Step 3: Different CLIENT, same interface - LangChain4j's ChatModel
 ChatModel ollama = OllamaChatModel.builder()
         .baseUrl("http://localhost:11434")
         .modelName("gemma4")
@@ -808,7 +809,7 @@ System.out.println("Ollama: " + response);
 ```
 ````
 
-**Key Insight**: Same `ChatModel` interface = vendor-agnostic code!
+**Two layers of portability**: OpenRouter makes step 1 → 2 a model-id change. LangChain4j's `ChatModel` interface makes step 3 a one-class swap. The code that calls `chat()` never changes.
 
 ---
 
@@ -823,6 +824,7 @@ System.out.println("Ollama: " + response);
 <v-clicks>
 
 - **OpenAI** • gpt-5-nano, GPT Image
+- **OpenRouter** • One key, many providers (OpenAI-compatible API)
 - **Perplexity** • Sonar (OpenAI-compatible API)
 - **Google AI** • Gemini models
 - **Anthropic** • Claude models
