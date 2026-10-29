@@ -76,7 +76,7 @@ Kousen IT, Inc.
 - **Multimodal AI**: Vision, audio, and image generation
 - **RAG Systems**: Document-based question answering
 - **Cost Management**: Efficient testing and model selection
-- **Modern Java**: Records, sealed interfaces, pattern matching
+- **Modern Java**: Records, sealed interfaces, pattern matching, virtual threads
 
 </v-clicks>
 
@@ -101,7 +101,7 @@ AiJavaLabs/
 
 - **9+ Live Demos**: Ready-to-run examples for each topic
 - **Cost-Controlled Testing**: Free local tests, cheap API tests
-- **Modern Java 21**: Records, sealed interfaces, pattern matching
+- **Modern Java 21**: Records, sealed interfaces, pattern matching, virtual threads
 - **Dual Learning Path**: Raw HTTP + LangChain4j frameworks
 
 </v-clicks>
@@ -832,6 +832,39 @@ System.out.println("Ollama: " + response);
 ````
 
 **Two layers of portability**: OpenRouter makes step 1 → 2 a model-id change. LangChain4j's `ChatModel` interface makes step 3 a one-class swap. The code that calls `chat()` never changes.
+
+---
+
+# Fan Out on Virtual Threads
+
+Every `chat()` call blocks on the network. That is the work virtual threads were built for.
+
+```java
+Map<String, ChatModel> models = Map.of(
+        "gpt-5-nano", openRouter("openai/gpt-5-nano"),
+        "gemini",     openRouter("google/gemini-3-flash-preview"),
+        "gemma4",     ollama("gemma4"));
+
+Map<String, Future<String>> answers = new LinkedHashMap<>();
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    models.forEach((name, model) ->
+            answers.put(name, executor.submit(() -> model.chat(question))));
+}   // close() waits for every task
+
+answers.forEach((name, future) ->
+        System.out.printf("%s: %s%n", name, future.resultNow()));
+```
+
+<v-clicks>
+
+- **The model code did not change**: `chat()` still blocks; the virtual thread parks while it waits
+- **No pool to size**: one thread per call, three or three hundred
+- **Wall time ≈ the slowest call** instead of the sum
+- **Same shape for every fan-out**: many models, many documents, a batch of embeddings
+
+</v-clicks>
+
+**Live Demo**: `MultiModelDemo` runs the sequential and concurrent versions back to back and prints both timings.
 
 ---
 
@@ -1698,7 +1731,7 @@ layout: section
 <v-clicks>
 
 - **<span style="color: #00D4FF">HTTP Fundamentals</span>**: Raw API integration patterns
-- **<span style="color: #00D4FF">Modern Java</span>**: Records, sealed interfaces, pattern matching
+- **<span style="color: #00D4FF">Modern Java</span>**: Records, sealed interfaces, pattern matching, virtual threads
 - **<span style="color: #00D4FF">Framework Mastery</span>**: LangChain4j abstractions
 - **<span style="color: #00D4FF">Cost Management</span>**: Smart testing strategies
 
@@ -1773,7 +1806,7 @@ layout: section
 <v-clicks>
 
 1. **<span style="color: #00D4FF">Understand Both Levels</span>**: Raw HTTP gives you debugging superpowers, frameworks give you productivity
-2. **<span style="color: #00D4FF">Modern Java Shines</span>**: Records, sealed interfaces, and pattern matching are perfect for AI APIs
+2. **<span style="color: #00D4FF">Modern Java Shines</span>**: Records and sealed interfaces model the JSON, virtual threads make the blocking calls cheap to run in parallel
 3. **<span style="color: #00D4FF">LangChain4j is Powerful</span>**: Unified API across all providers enables true portability
 
 </v-clicks>

@@ -993,6 +993,34 @@ public static void main(String[] args) {
 
 * Run it. Then pick any other chat model id from [openrouter.ai/models](https://openrouter.ai/models) and add it to the array. No other code changes are needed.
 
+* Each `chat` call blocks on the network for a second or more, and the three run one after another. Nothing about them depends on each other, so run them at the same time. Each call is a blocking HTTP request that spends almost all of its time waiting, which is the work virtual threads are for: one thread per call, no pool to size. Collect the models in a map and submit each call to a virtual-thread executor:
+
+```java
+Map<String, ChatModel> models = new LinkedHashMap<>();
+models.put("openai/gpt-5-nano", openRouter("openai/gpt-5-nano"));
+models.put("google/gemini-3-flash-preview", openRouter("google/gemini-3-flash-preview"));
+models.put("gemma4 (local)", OllamaChatModel.builder()
+        .baseUrl("http://localhost:11434").modelName("gemma4").build());
+
+Instant start = Instant.now();
+Map<String, Future<String>> answers = new LinkedHashMap<>();
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    models.forEach((name, model) ->
+            answers.put(name, executor.submit(() -> model.chat(question))));
+}   // close() waits for every task, so each future below is already complete
+answers.forEach((name, future) ->
+        System.out.printf("%s: %s%n", name, future.resultNow()));
+System.out.printf("Concurrent: %d ms%n", Duration.between(start, Instant.now()).toMillis());
+```
+
+* Time the sequential loop the same way and compare. The concurrent version takes about as long as the slowest single call. A few things to notice:
+  - The code that calls the model did not change. `chat` still blocks; the virtual thread parks while it waits and costs almost nothing to keep around.
+  - `Executors.newVirtualThreadPerTaskExecutor()` is `AutoCloseable`, and `close()` waits for the submitted tasks, so the futures are done by the time the block ends. `resultNow()` reads them without checked exceptions.
+  - With a platform-thread pool you would be sizing the pool against your rate limits. With virtual threads, the provider's rate limit is the only limit you manage.
+  - The same shape works for any fan-out: one question to many models, many documents to one model, or a batch of embeddings.
+
+* The solution's `MultiModelDemo` runs both versions and prints the timings.
+
 * Notice the two different kinds of portability in this class:
   - Switching between the OpenRouter models is a **model id** change. The client class stays `OpenAiChatModel` because OpenRouter speaks the OpenAI protocol.
   - Switching to Ollama is a **client class** change. `OllamaChatModel` speaks a different protocol, but LangChain4j's `ChatModel` interface means the call to `chat` looks the same.
