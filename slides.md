@@ -314,7 +314,8 @@ npx slidev export slides.md
 
 <v-clicks>
 
-- **<span style="color: #00D4FF">gpt-5-nano</span>**: very low per-token cost
+- **<span style="color: #00D4FF">gpt-6-luna</span>**: low per-token cost, reasoning model with a 1M-token context
+- **<span style="color: #00D4FF">gemini-3.8-flash</span>**: Google's current Flash; `gemini-4-argon` is the frontier option at about 2.5x the price
 - **<span style="color: #00D4FF">gemma4 (local)</span>**: Free with Ollama (Google's open-source multimodal model)
 - **<span style="color: #00D4FF">gpt-image-2.5-flare</span>**: fast GPT Image model (sunburst for precise edits)
 - **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
@@ -582,7 +583,7 @@ return mapper.readValue(response.body(), ResponseClass.class);
 // High-level abstraction
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
+        .modelName("gpt-6-luna")
         .build();
 
 // Simple method call
@@ -828,7 +829,7 @@ public class QuickChatDemo {
 ChatModel model = OpenAiChatModel.builder()
         .baseUrl("https://openrouter.ai/api/v1")
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
-        .modelName("openai/gpt-5-nano")
+        .modelName("openai/gpt-6-luna")
         .logRequests(false)  // Toggle for debugging
         .logResponses(false) // Toggle for debugging
         .build();
@@ -841,7 +842,7 @@ public class QuickChatDemo {
         ChatModel model = OpenAiChatModel.builder()
                 .baseUrl("https://openrouter.ai/api/v1")
                 .apiKey(System.getenv("OPENROUTER_API_KEY"))
-                .modelName("openai/gpt-5-nano")
+                .modelName("openai/gpt-6-luna")
                 .build();
 
         String prompt = "Explain what LangChain4j is in 2-3 sentences.";
@@ -859,11 +860,11 @@ public class QuickChatDemo {
 
 ````md magic-move
 ```java
-// Step 1: OpenAI's gpt-5-nano, reached through OpenRouter
+// Step 1: OpenAI's gpt-6-luna, reached through OpenRouter
 ChatModel openai = OpenAiChatModel.builder()
         .baseUrl("https://openrouter.ai/api/v1")
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
-        .modelName("openai/gpt-5-nano")
+        .modelName("openai/gpt-6-luna")
         .build();
 
 String response = openai.chat("What is the capital of France?");
@@ -876,7 +877,7 @@ System.out.println("OpenAI: " + response);
 ChatModel gemini = OpenAiChatModel.builder()
         .baseUrl("https://openrouter.ai/api/v1")
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
-        .modelName("google/gemini-3-flash-preview")
+        .modelName("google/gemini-3.8-flash")
         .build();
 
 String response = gemini.chat("What is the capital of France?");
@@ -905,8 +906,8 @@ Every `chat()` call blocks on the network. That is the work virtual threads were
 
 ```java
 Map<String, ChatModel> models = Map.of(
-        "gpt-5-nano", openRouter("openai/gpt-5-nano"),
-        "gemini",     openRouter("google/gemini-3-flash-preview"),
+        "gpt-6-luna", openRouter("openai/gpt-6-luna"),
+        "gemini",     openRouter("google/gemini-3.8-flash"),
         "gemma4",     ollama("gemma4"));
 
 Map<String, Future<String>> answers = new LinkedHashMap<>();
@@ -942,7 +943,7 @@ answers.forEach((name, future) ->
 
 <v-clicks>
 
-- **OpenAI** • gpt-5-nano, GPT Image
+- **OpenAI** • gpt-6-luna, GPT Image
 - **OpenRouter** • One key, many providers (OpenAI-compatible API)
 - **Perplexity** • Sonar (OpenAI-compatible API)
 - **Google AI** • Gemini models
@@ -1147,7 +1148,7 @@ interface InquiryExtractor {
 // Enable JSON Schema support for the model
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
+        .modelName("gpt-6-luna")
         .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
         .strictJsonSchema(true)
         .build();
@@ -1181,7 +1182,7 @@ LangChain4j 1.23 adds an **experimental** `DecisionModel` API: typed questions i
 DecisionModel model = TypeSafeDecisionModel.builder()
         .baseUrl("https://openrouter.ai/api")   // same key as the chat demos
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
-        .modelName("typesafe/jev-1.13")
+        .modelName("typesafe/jev-1.14")
         .build();
 
 DecisionRequest request = DecisionRequest.builder()
@@ -1502,7 +1503,7 @@ public class EasyRAGDemo {
 
         ChatModel chatModel = OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-5-nano")
+                .modelName("gpt-6-luna")
                 .build();
 
         Assistant assistant = AiServices.builder(Assistant.class)

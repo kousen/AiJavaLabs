@@ -35,7 +35,7 @@ public class DecisionModelDemo {
         DecisionModel model = TypeSafeDecisionModel.builder()
                 .baseUrl(OPENROUTER_BASE_URL)
                 .apiKey(apiKey)
-                .modelName("typesafe/jev-1.13")
+                .modelName("typesafe/jev-1.14")
                 .build();
 
         System.out.println("=== Decision Model Demo: triaging training inquiries ===\n");

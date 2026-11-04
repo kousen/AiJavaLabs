@@ -99,7 +99,7 @@ public class ToolCallingDemo {
 
         ChatModel model = OpenAiChatModel.builder()
                 .apiKey(apiKey)
-                .modelName("gpt-5-nano")
+                .modelName("gpt-6-luna")
                 .logRequests(false)
                 .logResponses(false)
                 .build();

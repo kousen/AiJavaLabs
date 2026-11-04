@@ -74,7 +74,7 @@ public class ResponsesApiDemo {
 
         // Key difference from Chat Completions: "input" instead of "messages"
         var requestBody = Map.of(
-                "model", "gpt-5-nano",
+                "model", "gpt-6-luna",
                 "input", "What's the main difference between the Responses API and Chat Completions API?");
 
         JsonNode root = post(requestBody);
@@ -92,7 +92,7 @@ public class ResponsesApiDemo {
 
         // The API runs the web search itself; the output array gains a web_search_call item
         var requestBody = Map.of(
-                "model", "gpt-5-nano",
+                "model", "gpt-6-luna",
                 "input", "What is the most recent LangChain4j release? Search for current information.",
                 "tools", List.of(Map.of("type", "web_search")));
 

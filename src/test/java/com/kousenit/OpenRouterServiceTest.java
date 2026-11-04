@@ -19,7 +19,7 @@ class OpenRouterServiceTest {
         List<String> ids = models.stream().map(Model::id).toList();
 
         System.out.println(models.size() + " text models");
-        assertThat(ids).contains("openai/gpt-5-nano", "google/gemini-3-flash-preview");
+        assertThat(ids).contains("openai/gpt-6-luna", "google/gemini-3.8-flash");
     }
 
     @Test

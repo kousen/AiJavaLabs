@@ -47,7 +47,7 @@ public class ApiComparisonDemo {
         try {
             ChatModel model = OpenAiChatModel.builder()
                     .apiKey(API_KEY)
-                    .modelName("gpt-5-nano")
+                    .modelName("gpt-6-luna")
                     .build();
             String response = model.chat(prompt);
             System.out.printf(
@@ -111,7 +111,7 @@ public class ApiComparisonDemo {
 
     private static void chatCompletionsRaw(String prompt) throws IOException, InterruptedException {
         // A Map is enough for a one-off request body; records are better once the shape is stable
-        var requestBody = Map.of("model", "gpt-5-nano", "messages", List.of(Map.of("role", "user", "content", prompt)));
+        var requestBody = Map.of("model", "gpt-6-luna", "messages", List.of(Map.of("role", "user", "content", prompt)));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
@@ -133,7 +133,7 @@ public class ApiComparisonDemo {
     }
 
     private static void responsesApiRaw(String prompt) throws IOException, InterruptedException {
-        var requestBody = Map.of("model", "gpt-5-nano", "input", prompt);
+        var requestBody = Map.of("model", "gpt-6-luna", "input", prompt);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/responses"))

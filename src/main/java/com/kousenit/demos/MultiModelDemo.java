@@ -43,8 +43,8 @@ public class MultiModelDemo {
 
         // Same ChatModel interface whether the request goes to OpenRouter or to local Ollama
         Map<String, ChatModel> models = new LinkedHashMap<>();
-        models.put("openai/gpt-5-nano (OpenRouter)", openRouter("openai/gpt-5-nano"));
-        models.put("google/gemini-3-flash-preview (OpenRouter)", openRouter("google/gemini-3-flash-preview"));
+        models.put("openai/gpt-6-luna (OpenRouter)", openRouter("openai/gpt-6-luna"));
+        models.put("google/gemini-3.8-flash (OpenRouter)", openRouter("google/gemini-3.8-flash"));
         models.put(
                 "gemma4 (Ollama, local)",
                 OllamaChatModel.builder()

@@ -128,7 +128,7 @@ Generate MP3 audio files from text using OpenAI's TTS models:
 
 ### 🤖 Chat Interactions
 Support for both cloud and local AI models:
-- **OpenAI**: gpt-5-nano for advanced conversations
+- **OpenAI**: gpt-6-luna for advanced conversations
 - **Ollama**: Local gemma4 model (Google's open-source multimodal model)
 
 ### 🖼️ Vision Capabilities

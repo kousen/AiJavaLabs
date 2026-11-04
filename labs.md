@@ -316,7 +316,7 @@ class OpenAiServiceTest {
 
     models.forEach(System.out::println);
     assertTrue(new HashSet<>(models).containsAll(
-            List.of("gpt-image-2.5-flare", "gpt-5-nano",
+            List.of("gpt-image-2.5-flare", "gpt-6-luna",
                     "gpt-4o-mini-tts", "whisper-1")));
     }
 }
@@ -372,7 +372,7 @@ public List<Model> listModels(String outputModalities) {
 }
 ```
 
-* Test it twice: once with `"text"`, asserting the ids `openai/gpt-5-nano` and `google/gemini-3-flash-preview` are present, and once with `"image"`, printing each model's modalities and prompt price per million and asserting every result lists `image` among its output modalities.
+* Test it twice: once with `"text"`, asserting the ids `openai/gpt-6-luna` and `google/gemini-3.8-flash` are present, and once with `"image"`, printing each model's modalities and prompt price per million and asserting every result lists `image` among its output modalities.
 
 ### Anthropic: a different header, the same shape
 
@@ -1130,7 +1130,7 @@ class GptImageServiceTest {
 
 The earlier labs built HTTP requests by hand. LangChain4j wraps that work in a `ChatModel` interface, and OpenRouter lets one API key reach models from many vendors. Together they make switching models a one-line change.
 
-OpenRouter exposes an OpenAI-compatible API at `https://openrouter.ai/api/v1`, so LangChain4j's `OpenAiChatModel` works against it with a different base URL, key, and a provider-prefixed model id such as `openai/gpt-5-nano` or `google/gemini-3-flash-preview`.
+OpenRouter exposes an OpenAI-compatible API at `https://openrouter.ai/api/v1`, so LangChain4j's `OpenAiChatModel` works against it with a different base URL, key, and a provider-prefixed model id such as `openai/gpt-6-luna` or `google/gemini-3.8-flash`. Google's frontier model, `google/gemini-4-argon`, is in the same catalog at roughly two and a half times the price of 3.8 Flash; swap the id in to compare.
 
 * Create an account at [openrouter.ai](https://openrouter.ai), generate an API key, and add it to an environment variable called `OPENROUTER_API_KEY`. Restart your IDE or terminal so the new variable is visible.
 
@@ -1151,7 +1151,7 @@ public class QuickChatDemo {
         ChatModel model = OpenAiChatModel.builder()
                 .baseUrl(OPENROUTER_BASE_URL)
                 .apiKey(apiKey)
-                .modelName("openai/gpt-5-nano")
+                .modelName("openai/gpt-6-luna")
                 .build();
 
         String prompt = "Explain what LangChain4j is in 2-3 sentences.";
@@ -1170,7 +1170,7 @@ HTTP request:
 - url: https://openrouter.ai/api/v1/chat/completions
 - headers: [Authorization: Beare...4f], [Content-Type: application/json], [User-Agent: langchain4j-openai]
 - body: {
-  "model" : "openai/gpt-5-nano",
+  "model" : "openai/gpt-6-luna",
   "messages" : [ {
     "role" : "user",
     "content" : "Explain what LangChain4j is in 2-3 sentences."
@@ -1181,7 +1181,7 @@ HTTP request:
 
 * That is the same request you built by hand in the Ollama conversation lab: a model name and a list of `role`/`content` messages, posted as JSON with a bearer token. The framework saved you the records, the mapper, and the status check, but it did not do anything you could not do yourself. Note that the key is masked in the log.
 
-* Read the response log too. Beyond `choices[0].message.content`, the `usage` block separates `completion_tokens` from `reasoning_tokens` (gpt-5-nano is a reasoning model, and the reasoning can cost more than the answer), and OpenRouter adds a `cost` field in dollars. When a framework call behaves strangely, this log is the first place to look.
+* Read the response log too. Beyond `choices[0].message.content`, the `usage` block separates `completion_tokens` from `reasoning_tokens` (gpt-6-luna is a reasoning model, and the reasoning can cost more than the answer), and OpenRouter adds a `cost` field in dollars. When a framework call behaves strangely, this log is the first place to look.
 
 * Now create `MultiModelDemo` in the same package. Add a helper that builds a model for any OpenRouter model id:
 
@@ -1209,7 +1209,7 @@ public class MultiModelDemo {
 public static void main(String[] args) {
     String question = "What is the capital of France? Answer in exactly one word.";
 
-    for (String modelId : new String[] {"openai/gpt-5-nano", "google/gemini-3-flash-preview"}) {
+    for (String modelId : new String[] {"openai/gpt-6-luna", "google/gemini-3.8-flash"}) {
         try {
             System.out.printf("%s: %s%n", modelId, openRouter(modelId).chat(question));
         } catch (Exception e) {
@@ -1235,8 +1235,8 @@ public static void main(String[] args) {
 
 ```java
 Map<String, ChatModel> models = new LinkedHashMap<>();
-models.put("openai/gpt-5-nano", openRouter("openai/gpt-5-nano"));
-models.put("google/gemini-3-flash-preview", openRouter("google/gemini-3-flash-preview"));
+models.put("openai/gpt-6-luna", openRouter("openai/gpt-6-luna"));
+models.put("google/gemini-3.8-flash", openRouter("google/gemini-3.8-flash"));
 models.put("gemma4 (local)", OllamaChatModel.builder()
         .baseUrl("http://localhost:11434").modelName("gemma4").build());
 
@@ -1351,12 +1351,12 @@ public int drivingDistance(
 }
 ```
 
-* Build the model and register the tools with `AiServices`. Leave the temperature at its default: `gpt-5-nano` is a reasoning model and rejects any other value.
+* Build the model and register the tools with `AiServices`. Do not set `temperature`, `topP`, or `topK`: the GPT-6 models accept only the defaults and reject any other value.
 
 ```java
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
+        .modelName("gpt-6-luna")
         .build();
 
 TravelAssistant assistant = AiServices.builder(TravelAssistant.class)
@@ -1503,7 +1503,7 @@ interface InquiryExtractor {
 ```java
 ChatModel model = OpenAiChatModel.builder()
         .apiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-5-nano")
+        .modelName("gpt-6-luna")
         .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
         .strictJsonSchema(true)
         .build();
@@ -1646,7 +1646,7 @@ The project already includes the `langchain4j-typesafe` module. Its `TypeSafeDec
 DecisionModel model = TypeSafeDecisionModel.builder()
         .baseUrl("https://openrouter.ai/api")   // the client appends v1/systemone itself
         .apiKey(System.getenv("OPENROUTER_API_KEY"))
-        .modelName("typesafe/jev-1.13")
+        .modelName("typesafe/jev-1.14")
         .build();
 ```
 
@@ -1659,6 +1659,7 @@ The `DecisionModelDemo` class in the `demos` package triages three training inqu
 Things to keep in mind if you take this further:
 
 - The API is marked experimental, so method names may change between LangChain4j releases.
+- The bulk catalog call from the OpenRouter lab (`GET /api/v1/models`) lists TypeSafe only as `typesafe/jev-router`. The versioned id is still real: `GET /api/v1/models/typesafe/jev-1.14/endpoints` describes it, and so does its page on openrouter.ai.
 - Probabilities are calibrated per model. A threshold tuned for one model or version needs retuning for another, so record `response.modelName()` alongside each decision.
 - The input is sent to the model provider like any other request. Send only what the decision needs.
 - A decision model is not a security control on its own. Inputs can contain text written to influence the answer.

@@ -56,7 +56,7 @@ public class StructuredOutputDemo {
 
         ChatModel model = OpenAiChatModel.builder()
                 .apiKey(apiKey)
-                .modelName("gpt-5-nano")
+                .modelName("gpt-6-luna")
                 .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
                 .strictJsonSchema(true)
                 .build();

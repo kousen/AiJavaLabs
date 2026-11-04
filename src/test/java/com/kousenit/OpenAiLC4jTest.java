@@ -17,7 +17,7 @@ public class OpenAiLC4jTest {
             .apiKey(System.getenv("OPENAI_API_KEY"))
             .logRequests(true)
             .logResponses(true)
-            .modelName("gpt-5-nano")
+            .modelName("gpt-6-luna")
             .build();
 
     @Test
@@ -61,7 +61,7 @@ public class OpenAiLC4jTest {
     void gemini_from_lc4j() {
         ChatModel gemini = GoogleAiGeminiChatModel.builder()
                 .apiKey(System.getenv("GOOGLEAI_API_KEY"))
-                .modelName("gemini-3-flash-preview")
+                .modelName("gemini-3.8-flash")
                 .build();
 
         System.out.println(

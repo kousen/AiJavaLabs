@@ -56,10 +56,10 @@ This file provides context for AI assistants working on the AI Java Labs project
   - Jackson 3.2.4 (`tools.jackson.core:jackson-databind`); Gson removed in October 2026
   - LangChain4j pulls in Jackson 2 (`com.fasterxml.jackson`) transitively; both coexist, annotations are shared
 - **AI Models**:
-  - OpenAI: gpt-4o-mini, gpt-5-nano (Responses API), gpt-image-2.5-flare (gpt-image-2.5-sunburst for edits), gpt-4o-mini-tts, whisper-1
+  - OpenAI: gpt-4o-mini, gpt-6-luna (Responses API), gpt-image-2.5-flare (gpt-image-2.5-sunburst for edits), gpt-4o-mini-tts, whisper-1
   - Ollama: gpt-oss (text), moondream (vision)
-  - Google: gemini-3-flash-preview
-  - OpenRouter (QuickChatDemo, MultiModelDemo): openai/gpt-5-nano, google/gemini-3-flash-preview via `OpenAiChatModel` with base URL `https://openrouter.ai/api/v1`
+  - Google: gemini-3.8-flash (gemini-4-argon available on Google and OpenRouter at about 2.5x the price)
+  - OpenRouter (QuickChatDemo, MultiModelDemo): openai/gpt-6-luna, google/gemini-3.8-flash via `OpenAiChatModel` with base URL `https://openrouter.ai/api/v1`
 
 ### Project Structure
 ```
@@ -241,10 +241,10 @@ This is primarily an educational repository. Changes should:
 - **Demo class**: StructuredOutputDemo
 - **Teaching point**: Structured outputs turn model interpretation into application data, but Java still validates before use
 - **Current example**: CourseInquiry record with priority, follow-up flag, and action items
-- **Model constraint**: gpt-5-nano is a reasoning model and rejects `temperature` values other than the default; do not set it in demos or labs
+- **Model constraint**: the GPT-6 models (gpt-6-luna included) reject `temperature`, `top_p`, and `top_k`; leave all three at their defaults in demos and labs
 
 ### Decision Model Strategy
-- **High-level approach**: LangChain4j's experimental `DecisionModel` API (`langchain4j-typesafe` module) with `TypeSafeDecisionModel` pointed at OpenRouter (base URL `https://openrouter.ai/api`, model `typesafe/jev-1.13`)
+- **High-level approach**: LangChain4j's experimental `DecisionModel` API (`langchain4j-typesafe` module) with `TypeSafeDecisionModel` pointed at OpenRouter (base URL `https://openrouter.ai/api`, model `typesafe/jev-1.14`)
 - **Demo class**: DecisionModelDemo
 - **Teaching point**: Structured output gives one answer; a decision model gives a probability for every option, so thresholds and escalation rules live in Java
 - **Current example**: Triage of training inquiries with a choice question (course), a yes/no question (asks for a next step), and a scale question (urgency)

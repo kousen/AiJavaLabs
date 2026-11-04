@@ -30,14 +30,14 @@ class HttpSupportTest {
         HttpResponse<String> limited = stub(
                 429,
                 """
-                {"error": {"message": "Rate limit reached for gpt-5-nano", "type": "rate_limit_error"}}
+                {"error": {"message": "Rate limit reached for gpt-6-luna", "type": "rate_limit_error"}}
                 """,
                 Map.of("Retry-After", List.of("20")));
 
         assertThatThrownBy(() -> HttpSupport.requireSuccess(limited))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("HTTP 429")
-                .hasMessageContaining("Rate limit reached for gpt-5-nano")
+                .hasMessageContaining("Rate limit reached for gpt-6-luna")
                 .hasMessageContaining("Retry-After: 20s")
                 .extracting(e -> ((ApiException) e).isRateLimited())
                 .isEqualTo(true);

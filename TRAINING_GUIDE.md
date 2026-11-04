@@ -43,7 +43,7 @@ Located in `src/main/java/com/kousenit/demos/`:
 
 ### 1. QuickChatDemo
 - **Purpose**: Basic chat interaction with OpenAI
-- **Cost**: Low (gpt-5-nano)
+- **Cost**: Low (gpt-6-luna)
 - **Runtime**: ~1-2 seconds
 - **Good for**: Opening demonstrations
 
@@ -73,19 +73,19 @@ Located in `src/main/java/com/kousenit/demos/`:
 
 ### 6. ToolCallingDemo
 - **Purpose**: Show LangChain4j tool calling with Java methods
-- **Cost**: Low (gpt-5-nano)
+- **Cost**: Low (gpt-6-luna)
 - **Runtime**: ~3-6 seconds
 - **Good for**: Showing application integration beyond chat
 
 ### 7. ResponsesApiDemo
 - **Purpose**: Show new OpenAI Responses API (raw HTTP)
-- **Cost**: Low (gpt-5-nano)
+- **Cost**: Low (gpt-6-luna)
 - **Runtime**: ~2-3 seconds
 - **Good for**: Teaching why HTTP/JSON skills matter
 
 ### 8. StructuredOutputDemo
 - **Purpose**: Extract validated Java records from unstructured text
-- **Cost**: Low (gpt-5-nano)
+- **Cost**: Low (gpt-6-luna)
 - **Runtime**: ~2-4 seconds
 - **Good for**: Showing model output as application data
 
@@ -119,9 +119,9 @@ java -cp build/classes/java/main:build/libs/* com.kousenit.demos.QuickChatDemo
 3. **Avoid image generation in live loops**: GPT Image calls are slower and more expensive than text demos
 4. **Cache Responses**: Consider recording demo outputs for replay
 5. **Use Cheap Models**:
-   - gpt-5-nano for text
+   - gpt-6-luna for text
    - gpt-4o-mini-tts for speech
-   - gemini-3-flash-preview (Google's free tier)
+   - gemini-3.8-flash (Google; gemini-4-argon is the pricier frontier option)
 
 ## Environment Variables Required
 
@@ -145,11 +145,11 @@ export PERPLEXITY_API_KEY="your-key-here"  # Optional
 
 | Model | Input Cost | Output Cost | Notes |
 |-------|------------|-------------|-------|
-| gpt-5-nano | $0.00015/1K tokens | $0.0006/1K tokens | Cheapest OpenAI |
+| gpt-6-luna | $0.10/1M tokens | $0.50/1M tokens | Low-cost reasoning model (OpenRouter list price, Nov 2026) |
 | gpt-4o-mini-tts | ~$0.006/minute | N/A | Fast TTS |
 | gpt-image-2 | Varies by image tokens | N/A | Current GPT Image model; expensive for live loops |
 | gpt-oss (Ollama) | FREE | FREE | OpenAI's open-source model |
-| gemini-3-flash-preview | FREE (limited) | FREE (limited) | Google's free tier |
+| gemini-3.8-flash | $0.83/1M tokens | $4.12/1M tokens | Google's current Flash (OpenRouter list, Nov 2026); gemini-4-argon is $2.00/$10.00 |
 
 ## Presentation Flow Suggestion
 
