@@ -1273,9 +1273,43 @@ public String generateStreaming(String model, String prompt, Consumer<String> on
 }
 ```
 
+---
+
+# Streaming: What Arrives on the Wire
+
+<div class="grid grid-cols-2 gap-8">
+
+<div>
+
+**Ollama**: one JSON object per line
+
+```json
+{"model":"gemma4","response":"The","done":false}
+{"model":"gemma4","response":" sky","done":false}
+{"model":"gemma4","response":"","done":true}
+```
+
+</div>
+
+<div>
+
+**OpenAI**: server-sent events
+
+```
+data: {"choices":[{"delta":{"content":"The"}}]}
+
+data: {"choices":[{"delta":{"content":" sky"}}]}
+
+data: [DONE]
+```
+
+</div>
+
+</div>
+
 <v-clicks>
 
-- **Ollama**: one JSON object per line. **OpenAI**: server-sent events, `data: {...}` lines ending in `data: [DONE]`
+- `ofLines()` hands you each line as it lands; the parse step is the only part that differs per vendor
 - **`join()`** blocks for a `main` or a test; a server returns the future instead
 - This is the shape every framework's streaming handler wraps
 
