@@ -542,7 +542,7 @@ String value = root.at("/missing/path").asText("default");
 - **Jackson 3** (`tools.jackson`): this course and Spring Boot 4. Immutable mappers, unchecked exceptions, `java.time` built in
 - **Jackson 2** (`com.fasterxml.jackson`): still inside LangChain4j; coexists because the package differs
 - **Gson**: works, but its README says maintenance mode
-- **JEP 540**: a Simple JSON API in the JDK, incubating, targeted at JDK 28
+- **JEP 540**: a Simple JSON API in the JDK, integrated into JDK 28 as an incubator module
 
 </v-click>
 

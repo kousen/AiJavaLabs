@@ -8,7 +8,10 @@ This file provides context for AI assistants working on the AI Java Labs project
 
 ## Current State
 
-### Recent Updates (October 2026)
+### Recent Updates (November 2026)
+- ✅ Pre-delivery preflight (Nov 4): chat demos moved from gpt-5-nano to gpt-6-luna (still a reasoning model: no temperature), DecisionModelDemo to typesafe/jev-1.14, JEP 540 now "integrated into JDK 28", JUnit 6.1.3, redundant POI pin removed, GitHub Actions majors bumped; Gemini moved from gemini-3-flash-preview to gemini-3.8-flash
+
+### Earlier Updates (October 2026)
 - ✅ Upgraded LangChain4j to 1.23.0
 - ✅ Routed QuickChatDemo and MultiModelDemo through OpenRouter (one key, provider-prefixed model ids)
 - ✅ Added DecisionModelDemo using the experimental `DecisionModel` API (TypeSafe Jev via OpenRouter)
@@ -222,7 +225,7 @@ This is primarily an educational repository. Changes should:
 
 ### JSON Parsing Strategy
 - **Library**: Jackson 3 (`tools.jackson.databind`). Mappers are immutable: `JsonMapper.builder().propertyNamingStrategy(SNAKE_CASE).build()`. Exceptions are unchecked (`JacksonException`). `FAIL_ON_UNKNOWN_PROPERTIES` is off by default in 3.x.
-- **Why Jackson 3**: it is what Spring Boot 4 ships. Gson's README describes it as in maintenance mode. JEP 540 (Simple JSON API, incubator) is targeted at JDK 28 and is mentioned in the labs and slides, not used.
+- **Why Jackson 3**: it is what Spring Boot 4 ships. Gson's README describes it as in maintenance mode. JEP 540 (Simple JSON API, incubator) is integrated into JDK 28 and is mentioned in the labs and slides, not used.
 - **Coexistence**: LangChain4j still depends on Jackson 2 (`com.fasterxml.jackson`). Different packages, shared `com.fasterxml.jackson.annotation` annotations, so both sit on the classpath. Course code imports `tools.jackson.*` only; `@JsonProperty` comes from the shared annotations package.
 - **Teaching split**: records (data binding) when the shape is known, `JsonNode` with `at()`/`path()` when it varies. ResponsesApiDemo shows both; its output array proves why `/output/0/...` is the wrong pointer for reasoning models.
 - **Request bodies**: records serialized with `writeValueAsString`; services whose records have nullable fields (GptImageService, LMStudioService) set NON_NULL inclusion.

@@ -140,7 +140,7 @@ return response.body();
 
 - Whenever you access the OpenAI API, you need to specify a model. To know which models are available, the OpenAI API provides an endpoint to list them. Review the documentation for that endpoint [here](https://platform.openai.com/docs/api-reference/models).
 - You'll find that our task is to send an HTTP GET request to `https://api.openai.com/v1/models` with the required `Authorization` header, and that the result is a block of JSON data.
-- We're going to want to parse that JSON data, as well as generate JSON for other interactions. For that, we need a JSON library. The JDK does not ship one yet: [JEP 540](https://openjdk.org/jeps/540) proposes a Simple JSON API as an incubator module, currently targeted at JDK 28. Until then, we'll use Jackson, the library Spring Boot uses. We use the Jackson 3 line, which lives in the `tools.jackson` package; Jackson 2 lives in `com.fasterxml.jackson`, and you will meet both in the wild. (Gson, the other common choice, describes itself as in maintenance mode: bugs are fixed, but large new features are not planned.) Add the following dependency to your build file:
+- We're going to want to parse that JSON data, as well as generate JSON for other interactions. For that, we need a JSON library. The JDK does not ship one yet: [JEP 540](https://openjdk.org/jeps/540) adds a Simple JSON API as an incubator module, integrated into JDK 28. Until then, we'll use Jackson, the library Spring Boot uses. We use the Jackson 3 line, which lives in the `tools.jackson` package; Jackson 2 lives in `com.fasterxml.jackson`, and you will meet both in the wild. (Gson, the other common choice, describes itself as in maintenance mode: bugs are fixed, but large new features are not planned.) Add the following dependency to your build file:
 
 ```kotlin
 dependencies {
@@ -1717,6 +1717,6 @@ The `ResponsesApiDemo` class uses both styles against the live API and prints th
 - **Jackson 3** (`tools.jackson`) is what this course and Spring Boot 4 use. Mappers are immutable and built with `JsonMapper.builder()`, exceptions are unchecked, and `java.time` types work without extra modules.
 - **Jackson 2** (`com.fasterxml.jackson`) is still everywhere, including inside LangChain4j. The two lines coexist on one classpath because the packages differ, and the annotations are shared.
 - **Gson** works fine for the patterns in these labs, but its README describes it as in maintenance mode.
-- **JEP 540** proposes a Simple JSON API in the JDK itself as an incubator module, currently targeted at JDK 28. Expect it to cover the tree-model style first.
+- **JEP 540** adds a Simple JSON API to the JDK as an incubator module, integrated into JDK 28. Expect it to cover the tree-model style first.
 
 Understanding raw HTTP and JSON parsing lets you use new APIs immediately without waiting for framework updates, debug responses when things go wrong, and verify what a framework is sending when its behavior is surprising.
