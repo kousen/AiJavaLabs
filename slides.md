@@ -296,9 +296,9 @@ ollama pull gemma4
 ## **Gradle Tasks**
 
 ```bash
-./gradlew testLocal      # $0
-./gradlew testCheap      # ~$0.01
-./gradlew testDemo       # ~$0.05
+./gradlew testLocal
+./gradlew testCheap
+./gradlew testDemo
 ./gradlew testNotExpensive
 ./gradlew testOpenAI
 ```
@@ -307,15 +307,15 @@ ollama pull gemma4
 
 <div>
 
-## **Model Costs (Approximate; subject to change)**
+## **Model Costs (approx.)**
 
 <v-clicks>
 
-- **<span style="color: #00D4FF">gpt-6-luna</span>**: low per-token cost, reasoning model with a 1M-token context
-- **<span style="color: #00D4FF">gemini-3.8-flash</span>**: Google's current Flash; `gemini-4-argon` is the frontier option at about 2.5x the price
-- **<span style="color: #00D4FF">gemma4 (local)</span>**: Free with Ollama (Google's open-source multimodal model)
-- **<span style="color: #00D4FF">gpt-image-2.5-flare</span>**: fast GPT Image model (sunburst for precise edits)
-- **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: low cost per minute of audio
+- **<span style="color: #00D4FF">gpt-6-luna</span>**: low cost
+- **<span style="color: #00D4FF">gemini-3.8-flash</span>**: Google's Flash; gemini-4-argon ≈ 2.5x
+- **<span style="color: #00D4FF">gemma4</span>**: free, local
+- **<span style="color: #00D4FF">gpt-image-2.5-flare</span>**: images
+- **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: audio
 
 </v-clicks>
 
@@ -489,9 +489,10 @@ models.data().stream()
 JsonNode root = mapper.readTree(response.body());
 
 for (JsonNode item : root.path("output")) {
-    if ("message".equals(item.path("type").asString())) {
-        String text = item.at("/content/0/text").asString();
-    }
+    var type = item.path("type").asString();
+    if (!"message".equals(type)) continue;
+    String text = item.at("/content/0/text")
+                      .asString();
 }
 ```
 
@@ -565,9 +566,10 @@ HttpRequest request = HttpRequest.newBuilder()
     .build();
 
 // Manual response handling
-HttpResponse<String> response =
-    client.send(request, HttpResponse.BodyHandlers.ofString());
-return mapper.readValue(response.body(), ResponseClass.class);
+HttpResponse<String> response = client.send(
+    request, BodyHandlers.ofString());
+return mapper.readValue(
+    response.body(), ResponseClass.class);
 ```
 
 </div>
@@ -633,7 +635,7 @@ public static HttpResponse<String> requireSuccess(HttpResponse<String> response)
 
 Same pattern, three vendors. Only the headers and the JSON change.
 
-<div class="grid grid-cols-3 gap-4 text-sm">
+<div class="grid grid-cols-3 gap-4 text-xs" style="--slidev-code-font-size: 11px; --slidev-code-line-height: 1.45">
 
 <div>
 
@@ -641,8 +643,9 @@ Same pattern, three vendors. Only the headers and the JSON change.
 ```java
 HttpRequest.newBuilder()
   .uri(URI.create(MODELS_URL
-      + "?output_modalities=image"))
-  .header("Accept", "application/json")
+    + "?output_modalities=image"))
+  .header("Accept",
+          "application/json")
   .build();
 ```
 Richer JSON than OpenAI's list: modalities and per-token prices, bound to records with a `promptPerMillion()` method
@@ -668,13 +671,17 @@ HttpRequest.newBuilder()
 
 **ElevenLabs** (`xi-api-key`)
 ```java
+var body = new SpeechRequest(
+    text, model);
 HttpRequest.newBuilder()
-  .uri(URI.create(BASE + "/text-to-speech/"
-      + voiceId))
+  .uri(URI.create(BASE
+    + "/text-to-speech/"
+    + voiceId))
   .header("xi-api-key", API_KEY)
-  .header("Accept", "audio/mpeg")
-  .POST(ofString(mapper.writeValueAsString(
-      new SpeechRequest(text, model))))
+  .header("Accept",
+          "audio/mpeg")
+  .POST(ofString(mapper
+    .writeValueAsString(body)))
   .build();
 ```
 Python and JS SDKs only. Doesn't matter.
@@ -941,12 +948,11 @@ answers.forEach((name, future) ->
 <v-clicks>
 
 - **OpenAI** • gpt-6-luna, GPT Image
-- **OpenRouter** • One key, many providers (OpenAI-compatible API)
-- **Perplexity** • Sonar (OpenAI-compatible API)
-- **Google AI** • Gemini models
-- **Anthropic** • Claude models
-- **Azure OpenAI** • Enterprise GPT
-- **AWS Bedrock** • Multiple models
+- **OpenRouter** • one key, many providers
+- **Perplexity** • Sonar
+- **Google AI** • Gemini
+- **Anthropic** • Claude
+- **Azure OpenAI**, **AWS Bedrock** • enterprise hosting
 
 </v-clicks>
 
@@ -974,7 +980,7 @@ answers.forEach((name, future) ->
 <v-clicks>
 
 - **Vision** • gemma4, LLaVA
-- **Audio** • Whisper, OpenAI TTS, ElevenLabs (raw HTTP)
+- **Audio** • Whisper, OpenAI TTS, ElevenLabs
 - **Embeddings** • sentence-transformers
 - **Code** • CodeLlama, StarCoder
 
@@ -1066,7 +1072,8 @@ String answer = assistant.chat("""
 "message": { "role": "assistant", "content": null,
   "tool_calls": [{ "id": "call_NqbU...",
     "function": { "name": "drivingDistance",
-      "arguments": "{\"from\":\"Hartford\",\"to\":\"Boston\"}" }}]},
+      "arguments": "{\"from\":\"Hartford\",
+                    \"to\":\"Boston\"}" }}]},
 "finish_reason": "tool_calls"
 ```
 
@@ -1084,7 +1091,8 @@ String answer = assistant.chat("""
 **3. Response: prose, once the model has the data**
 ```json
 "message": { "role": "assistant",
-  "content": "Hartford to Boston is about 102 miles ..." },
+  "content": "Hartford to Boston is
+              about 102 miles ..." },
 "finish_reason": "stop"
 ```
 
@@ -1408,7 +1416,7 @@ layout: section
 
 # RAG: The Knowledge Problem
 
-<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-2 gap-8">
 
 <div>
 
@@ -1416,41 +1424,42 @@ layout: section
 
 <v-clicks>
 
-- **Knowledge Cutoff**: Training end date
-- **No Your Data**: Can't read docs
-- **Hallucinations**: Makes up facts
-- **Static Info**: No updates
+- **Knowledge cutoff**: training ended on a date
+- **Not your data**: it has never read your documents
+- **Hallucinations**: fills gaps with plausible text
 
 </v-clicks>
-
-### **RAG Solution**
-
-<v-click>
-
-**RAG = Retrieval-Augmented Generation**
-Give AI access to YOUR documents!
-
-</v-click>
 
 </div>
 
 <div>
 
-```mermaid {scale: 0.65}
-graph TD
+### **RAG Solution**
+
+<v-click>
+
+**Retrieval-Augmented Generation**: find the relevant pieces of your documents first, then hand them to the model with the question.
+
+</v-click>
+
+</div>
+
+</div>
+
+<v-click>
+
+```mermaid {scale: 0.6}
+graph LR
+    G[Document Store] --> H[Vector Embeddings]
     A[User Query] --> B[Search Documents]
-    B --> C[Find Relevant Docs]
+    H --> B
+    B --> C[Relevant Chunks]
     C --> D[Enhanced Prompt]
     D --> E[AI Model]
     E --> F[Informed Response]
-
-    G[Document Store] --> H[Vector Embeddings]
-    H --> B
 ```
 
-</div>
-
-</div>
+</v-click>
 
 ---
 
@@ -1828,7 +1837,8 @@ void shouldParseModelList() {
             {"id": "gpt-4", "created": 123}
         ]}
         """;
-    ModelList result = mapper.readValue(json, ModelList.class);
+    ModelList result =
+        mapper.readValue(json, ModelList.class);
     assertThat(result.data()).hasSize(1);
 }
 
@@ -1859,7 +1869,8 @@ void shouldStreamTokens() {
 
     assertThat(tokens).hasSizeGreaterThan(1);
     assertThat(String.join("", tokens))
-        .containsSubsequence("1", "2", "3", "4", "5");
+        .containsSubsequence(
+            "1", "2", "3", "4", "5");
 }
 ```
 
@@ -2052,10 +2063,7 @@ layout: section
 
 <v-click>
 
-**Resources**:
-- [LangChain4j Documentation](https://docs.langchain4j.dev/)
-- [Course Repository](https://github.com/kousen/AiJavaLabs)
-- [Ollama Models](https://ollama.com/library)
+**Resources**: [LangChain4j docs](https://docs.langchain4j.dev/) · [Course repository](https://github.com/kousen/AiJavaLabs) · [Ollama library](https://ollama.com/library)
 
 </v-click>
 
@@ -2106,6 +2114,7 @@ layout: section
 ## Questions?
 
 **Kenneth Kousen**
+
 *Java Champion, Author, Speaker*
 
 [kousenit.com](https://kousenit.com) | [@kenkousen](https://twitter.com/kenkousen)
