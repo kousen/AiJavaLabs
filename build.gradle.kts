@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("application")
-    id("com.diffplug.spotless") version "7.2.1"
+    id("com.diffplug.spotless") version "8.11.0"
 }
 
 group = "com.kousenit"
@@ -43,10 +43,8 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-typesafe")
 
     // Google Gen AI
-    implementation("com.google.genai:google-genai:1.55.0")
+    implementation("com.google.genai:google-genai:1.80.0")
 
-    // Security fix
-    implementation("org.apache.poi:poi-ooxml:5.5.1")
 
     // JSON: Jackson 3 (tools.jackson), the line Spring Boot 4 ships. LangChain4j still uses
     // Jackson 2 internally; the two coexist because 3.x moved to a new package.
@@ -56,8 +54,7 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.17")
 
     // Testing libraries
-    testImplementation(platform("org.junit:junit-bom:5.13.4"))
-    //testImplementation(platform("org.junit:junit-bom:6.0.0-RC2"))
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:4.0.0-M1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
