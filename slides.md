@@ -234,7 +234,7 @@ graph LR
 <v-clicks>
 
 - **Java 21+** (Records, sealed interfaces, pattern matching)
-- **Gradle 8.4+** (Kotlin DSL, test categories)
+- **Gradle** wrapper included (Kotlin DSL, test categories)
 - **<span style="color: #00D4FF">LangChain4j 1.23.0</span>** (current pinned framework)
 - **Git** for repository management
 - **Ollama** (optional, for local AI models)
@@ -248,29 +248,22 @@ graph LR
 ## Environment Setup
 
 ```bash
-# Required API keys
-export OPENROUTER_API_KEY=your_key  # one key for OpenAI, Gemini, and more
-export OPENAI_API_KEY=your_key
-# Optional providers used in demos/tests
-export GOOGLEAI_API_KEY=your_key
-export PERPLEXITY_API_KEY=your_key
-export ANTHROPIC_API_KEY=your_key    # models lab, other vendors
-export ELEVENLABS_API_KEY=your_key   # optional text-to-speech lab
+# Required: chat via OpenRouter; images,
+# audio, Responses API via OpenAI
+export OPENROUTER_API_KEY=...
+export OPENAI_API_KEY=...
 
-# Optional: Local AI models
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull gemma4  # Multimodal: text + vision
+# Optional: specific labs and tests
+export GOOGLEAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
+export ELEVENLABS_API_KEY=...
 
-# Clone and start
-git clone <repo-url>
+# Optional: local models
+ollama pull gemma4
+
+# Build and smoke-test
 ./gradlew build
-./gradlew testDemo  # Quick validation
-
-# Slides
-npm install
-npx slidev slides.md
-# Export to PDF (requires Playwright)
-npx slidev export slides.md
+./gradlew testDemo
 ```
 
 </div>
