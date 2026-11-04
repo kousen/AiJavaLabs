@@ -1716,19 +1716,19 @@ An agent is the tool-calling loop plus two decisions: what runs next, and what e
 
 <div class="grid grid-cols-5 gap-4">
 
-<div class="col-span-3 text-sm">
+<div class="col-span-3 text-xs">
 
 | Agent problem | Primitive you used | Demo |
 |---|---|---|
-| Act on the world | The loop: send, read `finish_reason`, run, append | ToolCallingDemo |
-| Pass data between steps | Typed contracts: records via structured output | StructuredOutputDemo |
+| Act on the world | The tool loop: send, run, append, send | ToolCallingDemo |
+| Pass data between steps | Records from structured output | StructuredOutputDemo |
 | Decide what runs next | A probability, not prose | DecisionModelDemo |
 | Run independent workers | Virtual-thread fan-out | MultiModelDemo |
-| Keep steps from oversharing | Artifacts in files or a store, not shared memory | EasyRAGDemo |
+| Keep steps from oversharing | Artifacts in files, not shared memory | EasyRAGDemo |
 
 </div>
 
-<div class="col-span-2 text-sm">
+<div class="col-span-2 text-xs">
 
 **Frameworks, as of October 2026**
 
@@ -1746,7 +1746,7 @@ An agent is the tool-calling loop plus two decisions: what runs next, and what e
 
 <v-click>
 
-**Same pipeline, four ways**: [github.com/kousen/OperaGenerator](https://github.com/kousen/OperaGenerator), with hand-written orchestration, a LangChain4j supervisor, Embabel, and Claude Code teams. The hand-written branch is still the one to ship. Agents took shortcuts in every framework.
+**Same pipeline, four ways**: [github.com/kousen/OperaGenerator](https://github.com/kousen/OperaGenerator): hand-written, LangChain4j supervisor, Embabel, Claude Code teams. The hand-written branch is still the one to ship.
 
 </v-click>
 
