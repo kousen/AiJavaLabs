@@ -529,19 +529,30 @@ for (JsonNode item : root.path("output")) {
 JsonNode root = mapper.readTree(response.body());
 
 // Instead of multiple loops and null checks:
-String text = root.at("/data/results/0/attributes/name").asText();
+String text = root.at("/data/results/0/attributes/name").asString();
 
 // With fallback:
-String value = root.at("/missing/path").asText("default");
+String value = root.at("/missing/path").asString("default");
 ```
 
+</v-click>
 
-### **Which library?**
+---
+
+# Which JSON Library?
+
+<v-clicks>
 
 - **Jackson 3** (`tools.jackson`): this course and Spring Boot 4. Immutable mappers, unchecked exceptions, `java.time` built in
 - **Jackson 2** (`com.fasterxml.jackson`): still inside LangChain4j; coexists because the package differs
 - **Gson**: works, but its README says maintenance mode
 - **JEP 540**: a Simple JSON API in the JDK, integrated into JDK 28 as an incubator module
+
+</v-clicks>
+
+<v-click>
+
+**This course**: Jackson 3 for everything you write; Jackson 2 rides along inside LangChain4j and never needs to be imported.
 
 </v-click>
 
