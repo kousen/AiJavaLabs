@@ -36,7 +36,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Created standalone demo classes for training presentations
 - ✅ Implemented test categorization with JUnit tags for cost management
 - ✅ Added cleaner streaming patterns using LambdaStreamingResponseHandler
-- ✅ Created comprehensive Slidev presentation (57 slides with interactive demos)
+- ✅ Created comprehensive Slidev presentation (58 slides with interactive demos)
 - ✅ Added Jackson dependency for JSON parsing with JsonNode
 - ✅ Created ResponsesApiDemo (Gson) and ResponsesApiJacksonDemo (Jackson)
 - ✅ Fixed Responses API to use 'input' parameter instead of 'messages'
@@ -262,7 +262,7 @@ This is primarily an educational repository. Changes should:
 - Clear separation of concerns
 
 ### Training Materials
-- Comprehensive Slidev presentation system (57 slides)
+- Comprehensive Slidev presentation system (58 slides)
 - Interactive demos with progressive reveals
 - Export capabilities for multiple formats (PDF, PPTX)
 - Mermaid diagrams for architecture visualization
@@ -280,7 +280,7 @@ This is primarily an educational repository. Changes should:
 - **Responses API**: Created demos showing new OpenAI API with both parsers
 - **Tool Calling**: Added runnable LangChain4j demo showing Java methods as model-callable tools
 - **Structured Output**: Added runnable LangChain4j demo showing model extraction into Java records
-- **Training Materials**: Created comprehensive slide deck (57 slides) with exports
+- **Training Materials**: Created comprehensive slide deck (58 slides) with exports
 - **Slide Enhancements**: Added JSON parsing comparison and fixed layout issues
 - **Code Organization**: Separated demos from tests for better presentation flow
 - **Bug Fixes**: Addressed critical issues including Responses API parameter fix

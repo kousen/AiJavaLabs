@@ -205,9 +205,13 @@ layout: two-cols
 
 </div>
 
-<v-click>
+---
 
-```mermaid
+# From Fundamentals to Intelligent Applications
+
+<div class="flex justify-center mt-12">
+
+```mermaid {scale: 1.2}
 graph LR
     A[HTTP Fundamentals] --> B[Framework Mastery] --> C[Production Systems]
     A --> D[Deep Understanding]
@@ -215,7 +219,7 @@ graph LR
     C --> F[Intelligent Applications]
 ```
 
-</v-click>
+</div>
 
 ---
 
