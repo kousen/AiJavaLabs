@@ -36,7 +36,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Created standalone demo classes for training presentations
 - ✅ Implemented test categorization with JUnit tags for cost management
 - ✅ Added cleaner streaming patterns using LambdaStreamingResponseHandler
-- ✅ Created comprehensive Slidev presentation (40 slides with interactive demos)
+- ✅ Created comprehensive Slidev presentation (68 slides with interactive demos)
 - ✅ Added Jackson dependency for JSON parsing with JsonNode
 - ✅ Created ResponsesApiDemo (Gson) and ResponsesApiJacksonDemo (Jackson)
 - ✅ Fixed Responses API to use 'input' parameter instead of 'messages'
@@ -50,7 +50,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 ### Key Technologies & Versions
 - **Java**: 21 (configured via Gradle toolchain, uses records, sealed interfaces, pattern matching)
 - **LangChain4j**: 1.23.0 (primary AI framework; includes the experimental `DecisionModel` API)
-- **Gradle**: 8.4+ with Kotlin DSL
+- **Gradle**: 9.2.1 wrapper with Kotlin DSL
 - **Slidev**: For interactive presentations
 - **JSON Parsing**:
   - Jackson 3.2.4 (`tools.jackson.core:jackson-databind`); Gson removed in October 2026
@@ -165,9 +165,9 @@ Uses Java records for API data modeling:
   - `@Tag("demo")`: Suitable for live demonstrations
   - `@Tag("expensive")`: Higher API costs
 - **Custom Gradle Tasks**:
-  - `./gradlew localTests`: Run only local tests
-  - `./gradlew cheapTests`: Run low-cost API tests
-  - `./gradlew demoTests`: Run demonstration tests
+  - `./gradlew testLocal`: Run only local tests
+  - `./gradlew testCheap`: Run low-cost API tests
+  - `./gradlew testDemo`: Run demonstration tests
 
 ### Known Test Issues
 - Some tests fail when external services are unavailable
@@ -262,7 +262,7 @@ This is primarily an educational repository. Changes should:
 - Clear separation of concerns
 
 ### Training Materials
-- Comprehensive Slidev presentation system (40 slides)
+- Comprehensive Slidev presentation system (68 slides)
 - Interactive demos with progressive reveals
 - Export capabilities for multiple formats (PDF, PPTX)
 - Mermaid diagrams for architecture visualization
@@ -280,7 +280,7 @@ This is primarily an educational repository. Changes should:
 - **Responses API**: Created demos showing new OpenAI API with both parsers
 - **Tool Calling**: Added runnable LangChain4j demo showing Java methods as model-callable tools
 - **Structured Output**: Added runnable LangChain4j demo showing model extraction into Java records
-- **Training Materials**: Created comprehensive slide deck (40 slides) with exports
+- **Training Materials**: Created comprehensive slide deck (68 slides) with exports
 - **Slide Enhancements**: Added JSON parsing comparison and fixed layout issues
 - **Code Organization**: Separated demos from tests for better presentation flow
 - **Bug Fixes**: Addressed critical issues including Responses API parameter fix
