@@ -177,7 +177,7 @@ Uses Java records for API data modeling:
   - `./gradlew testDemo`: Run demonstration tests
 
 ### Known Test Issues
-- Tests for optional services skip instead of failing when the service is absent: `AnthropicServiceTest` via `@EnabledIfEnvironmentVariable(ANTHROPIC_API_KEY)`, the four `LMStudio*Test` classes via `@EnabledIf` on `LMStudioAvailable#isRunning` (socket probe of localhost:1234). A full `./gradlew build` with OPENAI_API_KEY and OPENROUTER_API_KEY set is therefore expected to be green (Nov 5, 2026: 51 tests, 44 live ones passed, the other 7 now skip)
+- Tests for optional services skip instead of failing when the service is absent: `ElevenLabsServiceTest` via `@EnabledIfEnvironmentVariable`. A full `./gradlew build` with OPENAI_API_KEY and OPENROUTER_API_KEY set and Ollama running is expected to be green. The LM Studio experiment (Sept 2025, never course material) was removed in the Nov 2026 redesign
 - Tests use real API calls (educational approach, not production-ready)
 - Rate limiting may affect test execution
 
@@ -235,7 +235,7 @@ This is primarily an educational repository. Changes should:
 - **Why Jackson 3**: it is what Spring Boot 4 ships. Gson's README describes it as in maintenance mode. JEP 540 (Simple JSON API, incubator) is integrated into JDK 28 and is mentioned in the labs and slides, not used.
 - **Coexistence**: LangChain4j still depends on Jackson 2 (`com.fasterxml.jackson`). Different packages, shared `com.fasterxml.jackson.annotation` annotations, so both sit on the classpath. Course code imports `tools.jackson.*` only; `@JsonProperty` comes from the shared annotations package.
 - **Teaching split**: records (data binding) when the shape is known, `JsonNode` with `at()`/`path()` when it varies. ResponsesApiDemo shows both; its output array proves why `/output/0/...` is the wrong pointer for reasoning models.
-- **Request bodies**: records serialized with `writeValueAsString`; services whose records have nullable fields (GptImageService, LMStudioService) set NON_NULL inclusion.
+- **Request bodies**: records serialized with `writeValueAsString`; services whose records have nullable fields (GptImageService) set NON_NULL inclusion.
 
 ### Tool Calling Strategy
 - **High-level approach**: LangChain4j AI Services with `@Tool` annotated Java methods
