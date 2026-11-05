@@ -2,7 +2,6 @@ package com.kousenit;
 
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
@@ -29,47 +28,6 @@ public class OpenAiLC4jTest {
     @Tag(TestCategories.DEMO)
     void openai() {
         System.out.println(model.chat("When did your training data end?"));
-    }
-
-    @Test
-    @EnabledIfEnvironmentVariable(named = "PERPLEXITY_API_KEY", matches = ".+")
-    @Tag(TestCategories.INTEGRATION)
-    @Tag(TestCategories.CHEAP)
-    @Tag(TestCategories.QUICK)
-    void perplexity_via_openai() {
-        ChatModel perplexity = OpenAiChatModel.builder()
-                .apiKey(System.getenv("PERPLEXITY_API_KEY"))
-                .baseUrl("https://api.perplexity.ai")
-                .modelName("sonar")
-                .logRequests(true)
-                .logResponses(true)
-                .build();
-
-        System.out.println(
-                perplexity.chat(
-                        """
-                        What are today's top news stories
-                        in the AI field?
-                        """));
-    }
-
-    @Test
-    @EnabledIfEnvironmentVariable(named = "GOOGLEAI_API_KEY", matches = ".+")
-    @Tag(TestCategories.INTEGRATION)
-    @Tag(TestCategories.CHEAP)
-    @Tag(TestCategories.QUICK)
-    void gemini_from_lc4j() {
-        ChatModel gemini = GoogleAiGeminiChatModel.builder()
-                .apiKey(System.getenv("GOOGLEAI_API_KEY"))
-                .modelName("gemini-3.8-flash")
-                .build();
-
-        System.out.println(
-                gemini.chat(
-                        """
-                        What are today's top news stories
-                        in the AI field?
-                        """));
     }
 
     @Test

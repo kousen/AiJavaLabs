@@ -77,8 +77,9 @@ and ElevenLabs optionally. Gemini is reached through OpenRouter. So:
   generation; undocumented in labs and slides).
 - Remove the raw `AnthropicService` and its test.
 - Keep the `langchain4j-anthropic` and `langchain4j-google-ai-gemini` modules
-  on the classpath, and keep the Gemini test in `OpenAiLC4jTest` as the one
-  pointer to them. It skips without `GOOGLEAI_API_KEY`.
+  on the classpath as pointers. The Gemini-direct and Perplexity tests in
+  `OpenAiLC4jTest` are removed (decided Nov 5), so no Google or Perplexity
+  key is needed anywhere.
 - README, Prerequisites slide, and CLAUDE.md list only the keys above.
 
 ## Durable vs dated

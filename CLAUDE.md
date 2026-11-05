@@ -110,7 +110,7 @@ Training Materials:
 - **Required for QuickChatDemo/MultiModelDemo**: OpenRouter API key (OPENROUTER_API_KEY environment variable)
 - **Optional**: Ollama installation for local AI models
 - **Testing**: Some tests require external services to be available
-- **Optional keys**: ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name); GOOGLEAI_API_KEY and PERPLEXITY_API_KEY each gate one test in OpenAiLC4jTest. The raw AnthropicService and the Google GenAI SDK were removed in the Nov 2026 redesign; the `langchain4j-anthropic` and `langchain4j-google-ai-gemini` modules stay on the classpath as pointers
+- **Optional keys**: ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name). No other keys: the Perplexity and Gemini-direct tests, the raw AnthropicService, and the Google GenAI SDK were removed in the Nov 2026 redesign. The `langchain4j-anthropic` and `langchain4j-google-ai-gemini` modules stay on the classpath, unused, as pointers for anyone who wants a direct client
 
 ### Build Commands
 ```bash

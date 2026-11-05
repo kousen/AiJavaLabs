@@ -37,8 +37,6 @@ This repository contains practical exercises and example implementations for wor
    Optional provider keys used by some demos/tests:
    ```bash
    export ELEVENLABS_API_KEY=your_elevenlabs_key_here    # ElevenLabsService (optional lab)
-   export GOOGLEAI_API_KEY=your_google_ai_key_here       # one Gemini-direct test in OpenAiLC4jTest
-   export PERPLEXITY_API_KEY=your_perplexity_key_here    # one test in OpenAiLC4jTest
    ```
 
 2. **Ollama Setup**: Install Ollama and download the required models:
