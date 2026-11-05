@@ -47,6 +47,11 @@ public class StructuredOutputDemo {
         }
     }
 
+    /** Builds the extractor for any chat model, so a test can drive it with a scripted one. */
+    static InquiryExtractor extractor(ChatModel model) {
+        return AiServices.builder(InquiryExtractor.class).chatModel(model).build();
+    }
+
     public static void main(String[] args) {
         String apiKey = System.getenv("OPENAI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
@@ -61,8 +66,7 @@ public class StructuredOutputDemo {
                 .strictJsonSchema(true)
                 .build();
 
-        InquiryExtractor extractor =
-                AiServices.builder(InquiryExtractor.class).chatModel(model).build();
+        InquiryExtractor extractor = extractor(model);
 
         String message =
                 """

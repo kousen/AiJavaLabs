@@ -10,6 +10,7 @@ import dev.langchain4j.model.decision.response.DecisionResponse;
 import dev.langchain4j.model.decision.response.ScaleAnswer;
 import dev.langchain4j.model.decision.response.YesNoAnswer;
 import dev.langchain4j.model.typesafe.TypeSafeDecisionModel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,9 +55,24 @@ public class DecisionModelDemo {
         }
     }
 
-    private static void triage(DecisionModel model, String inquiry) {
-        // All questions are answered against the same input in a single call
-        DecisionRequest request = DecisionRequest.builder()
+    static void triage(DecisionModel model, String inquiry) {
+        DecisionResponse response = model.decide(triageRequest(inquiry));
+
+        ChoiceAnswer course = response.choice("course");
+        YesNoAnswer followUp = response.yesNo("follow_up");
+        ScaleAnswer urgency = response.scale("urgency");
+
+        System.out.println("Inquiry: " + inquiry.replace('\n', ' '));
+        System.out.printf("  course    : %s  %s%n", course.value(), course.probabilities());
+        System.out.printf("  follow_up : %.2f probability of yes%n", followUp.probability());
+        System.out.printf("  urgency   : %.2f on a 0-2 scale  %s%n", urgency.mean(), urgency.probabilities());
+        actions(course, followUp, urgency).forEach(action -> System.out.println("  -> " + action));
+        System.out.println();
+    }
+
+    /** All questions are answered against the same input in a single call. */
+    static DecisionRequest triageRequest(String inquiry) {
+        return DecisionRequest.builder()
                 .input(inquiry)
                 .question(
                         "course",
@@ -80,29 +96,21 @@ public class DecisionModelDemo {
                                 .level("Now", "Mentions this week or sooner")
                                 .build())
                 .build();
+    }
 
-        DecisionResponse response = model.decide(request);
-
-        ChoiceAnswer course = response.choice("course");
-        YesNoAnswer followUp = response.yesNo("follow_up");
-        ScaleAnswer urgency = response.scale("urgency");
-
-        System.out.println("Inquiry: " + inquiry.replace('\n', ' '));
-        System.out.printf("  course    : %s  %s%n", course.value(), course.probabilities());
-        System.out.printf("  follow_up : %.2f probability of yes%n", followUp.probability());
-        System.out.printf("  urgency   : %.2f on a 0-2 scale  %s%n", urgency.mean(), urgency.probabilities());
-
-        // The probabilities drive decisions in Java. Thresholds are yours to tune per model.
+    /** The probabilities drive decisions in Java. Thresholds are yours to tune per model. */
+    static List<String> actions(ChoiceAnswer course, YesNoAnswer followUp, ScaleAnswer urgency) {
+        List<String> actions = new ArrayList<>();
         if (course.margin() < 0.2) {
-            System.out.println("  -> Course unclear (top two options too close), route to a human");
+            actions.add("Course unclear (top two options too close), route to a human");
         }
         if (followUp.isYes(0.7) && urgency.mean() >= 1.5) {
-            System.out.println("  -> Asks for a next step and needs it now: reply today");
+            actions.add("Asks for a next step and needs it now: reply today");
         } else if (followUp.isYes(0.7)) {
-            System.out.println("  -> Asks for a next step: add to this week's follow-ups");
+            actions.add("Asks for a next step: add to this week's follow-ups");
         } else {
-            System.out.println("  -> No action requested: send the standard reply");
+            actions.add("No action requested: send the standard reply");
         }
-        System.out.println();
+        return actions;
     }
 }
