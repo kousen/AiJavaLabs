@@ -103,7 +103,7 @@ OpenRouter's catalog. The agents slide already does this. Make it the rule.
 5. Done. Remove the Google SDK, `ImageGenerator`, `AnthropicService`; demote the
    other-vendors section; images lab to gpt-image-2.6-flare with the catalog
    step first; key lists trimmed everywhere.
-6. Promote decision models; renumber sections; label extensions.
+6. Done. Promote decision models; renumber sections; label extensions.
 7. Optional sealed `InquiryResult` step on structured output.
 8. RAG under the hood, then Easy RAG; the lab.
 9. Update README, CLAUDE.md, and the pre-delivery checklist to the new shape;

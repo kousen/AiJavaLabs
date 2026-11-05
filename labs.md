@@ -2,6 +2,8 @@
 
 ## Table of Contents
 
+**Act 1: Read the wire**
+
 - [Generate Audio from Text](#generate-audio-from-text)
 - [List the OpenAI Models](#list-the-openai-models)
 - [Extension: Same pattern, other vendors](#extension-same-pattern-other-vendors)
@@ -11,14 +13,24 @@
 - [Streaming Results](#streaming-results)
 - [Optional: Ask about an image](#optional-ask-about-an-image)
 - [Aside: the generate endpoint](#aside-the-generate-endpoint)
-- [Generating Images](#generating-images)
+- [Extension: Generating Images](#extension-generating-images)
+
+**Act 2: Let the framework build it**
+
 - [Call cloud models through OpenRouter](#call-cloud-models-through-openrouter)
+- [Extension: Clean Streaming with LangChain4j](#extension-clean-streaming-with-langchain4j)
+
+**Act 3: Close the loop**
+
 - [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
 - [Extract structured output into Java records](#extract-structured-output-into-java-records)
-- [Clean Streaming with LangChain4j](#clean-streaming-with-langchain4j)
-- [Going Further: Decision Models](#going-further-decision-models)
+- [Decide with probabilities: decision models](#decide-with-probabilities-decision-models)
 - [Going Further: Agents](#going-further-agents)
 - [Going Further: JSON Parsing Strategies](#going-further-json-parsing-strategies)
+
+Every call to an AI model is a stateless HTTP request carrying a list of messages. These labs read that request and response on the wire first, let a framework build them second, and then close the loop: Java decides what the model is asked next, with tools, typed outputs, and probabilities.
+
+**Act 1: Read the wire.** Raw HTTP and JSON, no AI library. When a framework does something surprising, this is what you look at.
 
 ## Generate Audio from Text
 
@@ -795,7 +807,9 @@ void generate_is_the_single_prompt_aside() {
 
 * Same client, same mapper, same status check. The only thing that changed is the shape of the JSON, which is the point of modeling it with records.
 
-## Generating Images
+## Extension: Generating Images
+
+An extension: image generation does not touch the message list, and nothing later depends on it. It stays because the demo is worth seeing and the service is one more raw call in the same shape.
 
 Image models turn over faster than any other kind, so the first step is finding out what is current rather than trusting the lab text. OpenRouter's catalog lists image-capable models from every vendor behind one query, and the OpenAI ids are the same without the vendor prefix.
 
@@ -897,6 +911,8 @@ class GptImageServiceTest {
 ```
 
 * Run the test to see it in action. The response contains Base 64 encoded image data and the revised prompt. In a full application, decode the `b64Json` value and write the bytes to a `.png` file.
+
+**Act 2: Let the framework build it.** You have seen the request, so LangChain4j is a convenience you can see through, not magic.
 
 ## Call cloud models through OpenRouter
 
@@ -1096,6 +1112,60 @@ System.out.printf("Concurrent: %d ms%n", Duration.between(start, Instant.now()).
   - Switching to Ollama is a **client class** change. `OllamaChatModel` speaks a different protocol, but LangChain4j's `ChatModel` interface means the call to `chat` looks the same.
 
 * The solution classes `QuickChatDemo` and `MultiModelDemo` are in the `demos` package of the repository if you want to compare.
+
+## Extension: Clean Streaming with LangChain4j
+
+An extension: nothing later depends on it. LangChain4j provides utility methods in `LambdaStreamingResponseHandler` that make streaming much cleaner than implementing the full `StreamingChatResponseHandler` interface.
+
+### Simple Streaming
+
+For basic streaming where you just want to print tokens as they arrive:
+
+```java
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseBlocking;
+
+var model = OllamaStreamingChatModel.builder()
+        .baseUrl("http://localhost:11434")
+        .modelName("gemma4")
+        .build();
+
+// One-liner for simple streaming; returns once the response is complete
+onPartialResponseBlocking(model, "Tell me a joke", System.out::print);
+```
+
+Streaming is asynchronous. The plain `model.chat(prompt, onPartialResponse(...))` form returns immediately, which is what you want inside a web request handler, but in a `main` method the program exits before any tokens arrive. The `*Blocking` variants wait for the stream to finish, so use them in standalone demos.
+
+### Streaming with Error Handling
+
+When you need to handle both partial responses and errors:
+
+```java
+import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndErrorBlocking;
+
+onPartialResponseAndErrorBlocking(model, "Why is the sky blue?",
+    token -> System.out.print(token),           // Handle each token
+    error -> System.err.println("Error: " + error)  // Handle errors
+);
+```
+
+### Benefits
+
+This approach eliminates the need for:
+- Anonymous inner classes
+- CompletableFuture boilerplate
+- Implementing unused interface methods
+
+The utility methods provide a functional, lambda-based approach that's much cleaner and more maintainable.
+
+### Demo
+
+Run the `StreamingDemo` class to see both patterns in action:
+
+```bash
+./gradlew run -PmainClass=com.kousenit.demos.StreamingDemo
+```
+
+**Act 3: Close the loop.** Everything here is a request in a loop, and Java owns the loop: which tool runs, what shape the answer takes, how sure the model is, and what runs next.
 
 ## Add tool calling with LangChain4j
 
@@ -1426,59 +1496,7 @@ void parses_structured_output_into_record() throws Exception {
 
 The design point is the same as with tool calling: let the model help with interpretation, but keep your application responsible for contracts. In production, validate the parsed object and decide what to do when required fields are missing, enum values are wrong, or the extracted data is semantically questionable.
 
-## Clean Streaming with LangChain4j
-
-LangChain4j provides utility methods in `LambdaStreamingResponseHandler` that make streaming much cleaner than implementing the full `StreamingChatResponseHandler` interface.
-
-### Simple Streaming
-
-For basic streaming where you just want to print tokens as they arrive:
-
-```java
-import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseBlocking;
-
-var model = OllamaStreamingChatModel.builder()
-        .baseUrl("http://localhost:11434")
-        .modelName("gemma4")
-        .build();
-
-// One-liner for simple streaming; returns once the response is complete
-onPartialResponseBlocking(model, "Tell me a joke", System.out::print);
-```
-
-Streaming is asynchronous. The plain `model.chat(prompt, onPartialResponse(...))` form returns immediately, which is what you want inside a web request handler, but in a `main` method the program exits before any tokens arrive. The `*Blocking` variants wait for the stream to finish, so use them in standalone demos.
-
-### Streaming with Error Handling
-
-When you need to handle both partial responses and errors:
-
-```java
-import static dev.langchain4j.model.LambdaStreamingResponseHandler.onPartialResponseAndErrorBlocking;
-
-onPartialResponseAndErrorBlocking(model, "Why is the sky blue?",
-    token -> System.out.print(token),           // Handle each token
-    error -> System.err.println("Error: " + error)  // Handle errors
-);
-```
-
-### Benefits
-
-This approach eliminates the need for:
-- Anonymous inner classes
-- CompletableFuture boilerplate
-- Implementing unused interface methods
-
-The utility methods provide a functional, lambda-based approach that's much cleaner and more maintainable.
-
-### Demo
-
-Run the `StreamingDemo` class to see both patterns in action:
-
-```bash
-./gradlew run -PmainClass=com.kousenit.demos.StreamingDemo
-```
-
-## Going Further: Decision Models
+## Decide with probabilities: decision models
 
 The structured output lab asked a chat model to fill in a Java record. That gives you one answer per field, but not how sure the model was. LangChain4j 1.23 adds an **experimental** `DecisionModel` API for exactly that gap: you send an input and a set of typed questions, and the model returns one answer per question with a probability for every option. There is no text to parse, and the thresholds that turn probabilities into actions stay in your Java code.
 
