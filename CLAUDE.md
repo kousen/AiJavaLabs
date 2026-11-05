@@ -9,6 +9,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 ## Current State
 
 ### Recent Updates (November 2026)
+- ✅ Tool-calling hardening (Nov 5) after the Nov 4 class failed on the demo: `fuelCost` uses `@P(defaultValue)` for mpg and price, unsupported routes throw `ToolErrorVisibleToLlm`, and the AI service sets `toolArgumentsErrorHandler(sendExceptionMessageToLlm())` and `toolExecutionErrorHandler(failInvocationUnlessVisibleToLlm())` explicitly; `ToolCallingDemoTest` drives the loop with a scripted ChatModel (no key) to prove each case; lab paragraph and a "When the Model Gets the Arguments Wrong" slide added
 - ✅ Pre-delivery preflight (Nov 4): chat demos moved from gpt-5-nano to gpt-6-luna (still a reasoning model: no temperature), DecisionModelDemo to typesafe/jev-1.14, JEP 540 now "integrated into JDK 28", JUnit 6.1.3, redundant POI pin removed, GitHub Actions majors bumped; Gemini moved from gemini-3-flash-preview to gemini-3.8-flash
 
 ### Earlier Updates (October 2026)
@@ -235,6 +236,7 @@ This is primarily an educational repository. Changes should:
 - **Demo class**: ToolCallingDemo
 - **Teaching point**: The model chooses when to call a tool, but Java owns validation, execution, side effects, and logging
 - **Current example**: Travel assistant using weather, driving distance, and fuel-cost tools
+- **Argument handling (LangChain4j 1.23)**: `required` in the schema is advisory. A missing primitive argument is an arguments error, and the default `ToolArgumentsErrorHandler` is `failInvocation()`, which throws `Required parameter "miles" of tool "fuelCost" is missing` out of `chat()`; a missing object argument arrives as `null` with no error. The demo sets both handlers explicitly (`sendExceptionMessageToLlm()` for arguments, `failInvocationUnlessVisibleToLlm()` for execution), gives `mpg` and `pricePerGallon` a `@P(defaultValue)`, and throws `ToolErrorVisibleToLlm.from(...)` for errors the model should see. Unset handlers log a once-per-JVM WARN from `dev.langchain4j.service.ToolErrorHandlingNotice`; LangChain4j says the defaults will change to the recommended pair. `ToolCallingDemo.assistant(ChatModel)` exists so the test can run the loop with a scripted model
 
 ### Structured Output Strategy
 - **High-level approach**: LangChain4j AI Services returning Java records with JSON Schema support enabled

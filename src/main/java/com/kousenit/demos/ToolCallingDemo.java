@@ -2,10 +2,13 @@ package com.kousenit.demos;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.exception.ToolErrorVisibleToLlm;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.tool.ToolArgumentsErrorHandler;
+import dev.langchain4j.service.tool.ToolExecutionErrorHandler;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
@@ -16,6 +19,14 @@ import java.util.Map;
  * <p>The model decides when to call these tools. LangChain4j turns the
  * annotated Java methods into tool specifications, executes the selected
  * method, and sends the result back to the model so it can answer the user.
+ *
+ * <p>The model also composes every argument, and it does not always honor the
+ * schema: it can omit an argument or send one of the wrong type. Three things
+ * here decide what happens then. {@code @P(defaultValue)} fills in a missing
+ * optional argument. {@link ToolArgumentsErrorHandler} decides what to do when
+ * the arguments cannot be applied at all (the default fails the whole call; we
+ * tell the model so it can retry). {@link ToolExecutionErrorHandler} decides
+ * which exceptions thrown by a tool the model is allowed to see.
  */
 public class ToolCallingDemo {
 
@@ -63,14 +74,17 @@ public class ToolCallingDemo {
             if (miles != null) {
                 return miles;
             }
-            throw new IllegalArgumentException("Unsupported route: " + from + " to " + to);
+            // Written for the model, so it may see it: "we don't know this route, pick another"
+            throw ToolErrorVisibleToLlm.from("Unsupported route: " + from + " to " + to);
         }
 
+        // miles stays required: there is no sensible default. The other two have defaults,
+        // so they drop out of the schema's "required" list and are filled in if the model omits them.
         @Tool("Estimate fuel cost for a trip")
         public String fuelCost(
                 @P("driving distance in miles") int miles,
-                @P("vehicle fuel economy in miles per gallon") double mpg,
-                @P("fuel price per gallon") double pricePerGallon) {
+                @P(value = "vehicle fuel economy in miles per gallon", defaultValue = "30") double mpg,
+                @P(value = "fuel price per gallon", defaultValue = "3.65") double pricePerGallon) {
             BigDecimal gallons = BigDecimal.valueOf(miles).divide(BigDecimal.valueOf(mpg), 2, RoundingMode.HALF_UP);
             BigDecimal cost =
                     gallons.multiply(BigDecimal.valueOf(pricePerGallon)).setScale(2, RoundingMode.HALF_UP);
@@ -78,6 +92,10 @@ public class ToolCallingDemo {
         }
 
         private static String normalize(String value) {
+            if (value == null) {
+                // A required String the model left out arrives as null, not as an error
+                throw ToolErrorVisibleToLlm.from("A city name is required");
+            }
             return value.toLowerCase().replaceAll(",.*", "").trim();
         }
 
@@ -88,6 +106,22 @@ public class ToolCallingDemo {
                 return new Route(to, from);
             }
         }
+    }
+
+    /**
+     * Builds the assistant for any chat model. The two error handlers are the
+     * settings LangChain4j recommends (and plans to make the defaults): bad
+     * arguments go back to the model as text so it can retry, and only exceptions
+     * written for the model ({@link ToolErrorVisibleToLlm}) are shown to it.
+     * Leaving them unset logs a long warning on the first call.
+     */
+    static TravelAssistant assistant(ChatModel model) {
+        return AiServices.builder(TravelAssistant.class)
+                .chatModel(model)
+                .tools(new TravelTools())
+                .toolArgumentsErrorHandler(ToolArgumentsErrorHandler.sendExceptionMessageToLlm())
+                .toolExecutionErrorHandler(ToolExecutionErrorHandler.failInvocationUnlessVisibleToLlm())
+                .build();
     }
 
     public static void main(String[] args) {
@@ -104,10 +138,7 @@ public class ToolCallingDemo {
                 .logResponses(false)
                 .build();
 
-        TravelAssistant assistant = AiServices.builder(TravelAssistant.class)
-                .chatModel(model)
-                .tools(new TravelTools())
-                .build();
+        TravelAssistant assistant = assistant(model);
 
         String question =
                 """

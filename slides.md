@@ -1118,6 +1118,61 @@ String answer = assistant.chat("""
 
 ---
 
+# When the Model Gets the Arguments Wrong
+
+The schema says `required`; the model treats that as a suggestion. You decide what happens next.
+
+<div class="grid grid-cols-2 gap-4 text-sm">
+
+<div>
+
+```java
+@Tool("Estimate fuel cost for a trip")
+public String fuelCost(
+    @P("distance in miles") int miles,
+    @P(value = "mpg", defaultValue = "30")
+        double mpg,
+    @P(value = "$/gallon", defaultValue = "3.65")
+        double pricePerGallon)
+```
+
+```java
+// Written for the model, so it may see it
+throw ToolErrorVisibleToLlm.from("No such route");
+```
+
+```java
+AiServices.builder(TravelAssistant.class)
+    .chatModel(model)
+    .tools(new TravelTools())
+    .toolArgumentsErrorHandler(
+        sendExceptionMessageToLlm())
+    .toolExecutionErrorHandler(
+        failInvocationUnlessVisibleToLlm())
+    .build();
+```
+
+</div>
+
+<div>
+
+<v-clicks>
+
+- `defaultValue` drops the parameter from `required` and fills it in when omitted
+- A missing `int` with no default is an **arguments error**: the default handler fails the whole call; `sendExceptionMessageToLlm()` lets the model retry
+- A missing `String` is **not** detected: the method gets `null`. Guard it
+- An exception from your tool is an **execution error**: by default its message goes to the model, developer details and all
+- `failInvocationUnlessVisibleToLlm()` shows the model only errors you wrote for it
+- Leave the handlers unset and LangChain4j logs a warning: the defaults are changing
+
+</v-clicks>
+
+</div>
+
+</div>
+
+---
+
 # Tool Calling Guardrails
 
 <v-clicks>
