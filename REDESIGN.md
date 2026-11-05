@@ -58,7 +58,7 @@ build now. Everything here is a request in a loop, and Java owns the loop.
 | Tool calling | `@Tool` methods, the model picks, Java executes, wire-format slide, "When the Model Gets the Arguments Wrong" (defaults, the two error handlers, `ToolErrorVisibleToLlm`) | None. Scripted-model tests exist (Nov 5) |
 | Structured output | Records with JSON Schema, `validate()` for what a schema cannot say | Optional step: a sealed result hierarchy with record variants and an exhaustive switch over model output. Data-oriented programming doing AI work, not a refactor. Do not argue adoption in class |
 | Decision models | `DecisionModelDemo`, Jev through OpenRouter, probabilities drive thresholds in Java | Promoted from "Going Further" to a numbered section. Slide and lab in the same place |
-| Where agents fit | The slide: an agent is the tool loop plus "what runs next" and "what each step sees"; primitives taught here; OperaGenerator for the four-way comparison; dated framework status lines | Moves from the Advanced tail to right after tool calling. The question comes up every delivery |
+| Where agents fit | The slide: an agent is the tool loop plus "what runs next" and "what each step sees"; primitives taught here; OperaGenerator for the four-way comparison; dated framework status lines | Moves from the Advanced tail to close the tools, structured output, and decisions cluster (after the decision-model slide), so every primitive in its table has been shown. The question comes up every delivery |
 | RAG (extension) | `EasyRAGDemo`, three slides | Decide depth: Easy RAG only, or one raw embeddings call plus cosine similarity to match the course's premise. No lab exists today |
 
 ## Cross-cutting
@@ -78,7 +78,7 @@ OpenRouter's catalog. The agents slide already does this. Make it the rule.
 ## Work plan, one commit each
 
 1. Fix the labs.md table of contents (four sections missing today).
-2. Move "Where Agents Fit" to follow tool calling.
+2. Move "Where Agents Fit" to follow the decision-model slide.
 3. Ollama chat-first: `OllamaService` and `OllamaRecords` lose the `generate`
    shapes, `chat` and streaming over `/api/chat`, vision on a message; tests;
    labs rewritten; sealed-interfaces slide and wire-format streaming slide

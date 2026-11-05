@@ -1291,6 +1291,48 @@ if (response.yesNo("follow_up").isYes(0.7)) {      // tune per model
 ```
 
 ---
+
+# Where Agents Fit
+
+An agent is the tool-calling loop plus two decisions: what runs next, and what each step gets to see. You have already built every primitive.
+
+<div class="grid grid-cols-5 gap-4">
+
+<div class="col-span-3 text-xs">
+
+| Agent problem | Primitive you used | Demo |
+|---|---|---|
+| Act on the world | The tool loop: send, run, append, send | ToolCallingDemo |
+| Pass data between steps | Records from structured output | StructuredOutputDemo |
+| Decide what runs next | A probability, not prose | DecisionModelDemo |
+| Run independent workers | Virtual-thread fan-out | MultiModelDemo |
+| Keep steps from oversharing | Artifacts in files, not shared memory | EasyRAGDemo |
+
+</div>
+
+<div class="col-span-2 text-xs">
+
+**Frameworks, as of October 2026**
+
+<v-clicks>
+
+- **LangChain4j** `langchain4j-agentic`: richest feature set, still labeled experimental, beta artifact
+- **Embabel**: Rod Johnson's GOAP planner, GA since July 2026, releasing often
+- **Spring AI**: patterns documented, orchestration left to you or community libraries
+
+</v-clicks>
+
+</div>
+
+</div>
+
+<v-click>
+
+**Same pipeline, four ways**: [github.com/kousen/OperaGenerator](https://github.com/kousen/OperaGenerator): hand-written, LangChain4j supervisor, Embabel, Claude Code teams. The hand-written branch is still the one to ship.
+
+</v-click>
+
+---
 layout: section
 ---
 
@@ -1757,48 +1799,6 @@ graph LR
 <v-click>
 
 **Why it matters**: Most production AI work is not chat. It is model-assisted control flow around ordinary application code.
-
-</v-click>
-
----
-
-# Where Agents Fit
-
-An agent is the tool-calling loop plus two decisions: what runs next, and what each step gets to see. You have already built every primitive.
-
-<div class="grid grid-cols-5 gap-4">
-
-<div class="col-span-3 text-xs">
-
-| Agent problem | Primitive you used | Demo |
-|---|---|---|
-| Act on the world | The tool loop: send, run, append, send | ToolCallingDemo |
-| Pass data between steps | Records from structured output | StructuredOutputDemo |
-| Decide what runs next | A probability, not prose | DecisionModelDemo |
-| Run independent workers | Virtual-thread fan-out | MultiModelDemo |
-| Keep steps from oversharing | Artifacts in files, not shared memory | EasyRAGDemo |
-
-</div>
-
-<div class="col-span-2 text-xs">
-
-**Frameworks, as of October 2026**
-
-<v-clicks>
-
-- **LangChain4j** `langchain4j-agentic`: richest feature set, still labeled experimental, beta artifact
-- **Embabel**: Rod Johnson's GOAP planner, GA since July 2026, releasing often
-- **Spring AI**: patterns documented, orchestration left to you or community libraries
-
-</v-clicks>
-
-</div>
-
-</div>
-
-<v-click>
-
-**Same pipeline, four ways**: [github.com/kousen/OperaGenerator](https://github.com/kousen/OperaGenerator): hand-written, LangChain4j supervisor, Embabel, Claude Code teams. The hand-written branch is still the one to ship.
 
 </v-click>
 
