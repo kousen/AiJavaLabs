@@ -9,6 +9,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 ## Current State
 
 ### Recent Updates (November 2026)
+- ✅ Scripted-model tests for the other two LangChain4j demos (Nov 5): `StructuredOutputDemoTest` now drives the AI Service through a `ChatModel` that claims JSON Schema support (schema has all four fields required, fenced JSON parses, a missing required field throws `OutputParsingException` from Jackson, an unknown enum value fails in the framework); `DecisionModelDemoTest` pins the triage question keys, runs `triage` against a lambda `DecisionModel`, and checks the thresholds. Each demo exposes a package-private factory or helper (`extractor(ChatModel)`, `triageRequest`, `actions`) so no key is needed. Rule: a demo run is a happy-path check; the unhappy paths need a scripted model
 - ✅ Tool-calling hardening (Nov 5) after the Nov 4 class failed on the demo: `fuelCost` uses `@P(defaultValue)` for mpg and price, unsupported routes throw `ToolErrorVisibleToLlm`, and the AI service sets `toolArgumentsErrorHandler(sendExceptionMessageToLlm())` and `toolExecutionErrorHandler(failInvocationUnlessVisibleToLlm())` explicitly; `ToolCallingDemoTest` drives the loop with a scripted ChatModel (no key) to prove each case; lab paragraph and a "When the Model Gets the Arguments Wrong" slide added
 - ✅ Pre-delivery preflight (Nov 4): chat demos moved from gpt-5-nano to gpt-6-luna (still a reasoning model: no temperature), DecisionModelDemo to typesafe/jev-1.14, JEP 540 now "integrated into JDK 28", JUnit 6.1.3, redundant POI pin removed, GitHub Actions majors bumped; Gemini moved from gemini-3-flash-preview to gemini-3.8-flash
 
@@ -171,7 +172,7 @@ Uses Java records for API data modeling:
   - `./gradlew testDemo`: Run demonstration tests
 
 ### Known Test Issues
-- Some tests fail when external services are unavailable
+- Tests for optional services skip instead of failing when the service is absent: `AnthropicServiceTest` via `@EnabledIfEnvironmentVariable(ANTHROPIC_API_KEY)`, the four `LMStudio*Test` classes via `@EnabledIf` on `LMStudioAvailable#isRunning` (socket probe of localhost:1234). A full `./gradlew build` with OPENAI_API_KEY and OPENROUTER_API_KEY set is therefore expected to be green (Nov 5, 2026: 51 tests, 44 live ones passed, the other 7 now skip)
 - Tests use real API calls (educational approach, not production-ready)
 - Rate limiting may affect test execution
 
@@ -243,6 +244,7 @@ This is primarily an educational repository. Changes should:
 - **Demo class**: StructuredOutputDemo
 - **Teaching point**: Structured outputs turn model interpretation into application data, but Java still validates before use
 - **Current example**: CourseInquiry record with priority, follow-up flag, and action items
+- **Testing**: `StructuredOutputDemo.extractor(ChatModel)` lets `StructuredOutputDemoTest` run the real AI Service with a scripted model. `@JsonProperty(required = true)` both marks the field required in the schema and makes Jackson reject a reply that omits it (`OutputParsingException`); `validate()` covers what a schema cannot express, such as a non-empty list
 - **Model constraint**: the GPT-6 models (gpt-6-luna included) reject `temperature`, `top_p`, and `top_k`; leave all three at their defaults in demos and labs
 
 ### Decision Model Strategy
@@ -251,6 +253,7 @@ This is primarily an educational repository. Changes should:
 - **Teaching point**: Structured output gives one answer; a decision model gives a probability for every option, so thresholds and escalation rules live in Java
 - **Current example**: Triage of training inquiries with a choice question (course), a yes/no question (asks for a next step), and a scale question (urgency)
 - **Caveat**: The API is marked experimental; re-verify method names when upgrading LangChain4j
+- **Testing**: `triageRequest(String)` and `actions(ChoiceAnswer, YesNoAnswer, ScaleAnswer)` are package-private so `DecisionModelDemoTest` can pin the question keys and thresholds without Jev; `triage(DecisionModel, String)` runs end to end against a lambda model
 
 ### Agents Position
 - **Stance**: an agent is the tool-calling loop plus "what runs next" and "what each step sees"; the course teaches the primitives (tool loop, structured output contracts, decision models, virtual-thread fan-out, artifacts over shared memory) and points to OperaGenerator for the four-way framework comparison

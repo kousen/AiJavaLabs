@@ -7,7 +7,9 @@ import dev.langchain4j.service.AiServices;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
+@EnabledIf("com.kousenit.demos.LMStudioAvailable#isRunning") // skipped unless LM Studio is on :1234
 public class LMStudioToolsLC4jTest {
 
     // Define tools that LangChain4j will handle

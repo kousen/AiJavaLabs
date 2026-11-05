@@ -3,7 +3,9 @@ package com.kousenit;
 import static com.kousenit.AnthropicRecords.*;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+@EnabledIfEnvironmentVariable(named = "ANTHROPIC_API_KEY", matches = ".+")
 public class AnthropicServiceTest {
 
     private final AnthropicService service = new AnthropicService();

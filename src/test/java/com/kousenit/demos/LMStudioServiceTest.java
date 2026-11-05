@@ -4,7 +4,9 @@ import static com.kousenit.demos.LMStudioRecords.*;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
+@EnabledIf("com.kousenit.demos.LMStudioAvailable#isRunning") // skipped unless LM Studio is on :1234
 class LMStudioServiceTest {
 
     @Test
