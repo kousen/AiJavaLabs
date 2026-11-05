@@ -118,6 +118,15 @@ OpenAI images endpoint as well as through OpenRouter.
 
 ## Draft course description (for O'Reilly)
 
+The listing-ready version follows O'Reilly's registration-page sections
+(Outcomes, Description, Objectives, Target Audience, Prerequisites,
+Preparation, Schedule with durations) in the same format as the Agentic
+Commerce update, and lives in Google Docs:
+https://docs.google.com/document/d/1qps_FgmPWLZj_DOuxQWsDQZLyD52d03oQM5qXSXjeFs/edit
+The schedule there is a draft; the instructor adjusts it. The short version
+below is the thesis and act summary it was built from.
+
+
 **AI Integration for Java Developers: From the Wire to the Loop**
 
 Every call to an AI model is a stateless HTTP request carrying a list of
