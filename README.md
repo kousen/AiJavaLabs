@@ -46,7 +46,6 @@ This repository contains practical exercises and example implementations for wor
    ```bash
    # Install Ollama from https://ollama.com
    ollama pull gemma4
-   ollama pull moondream  # For vision tasks
    ```
 
 ### Building the Project

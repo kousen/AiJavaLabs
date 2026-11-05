@@ -22,7 +22,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 - ✅ Compile with `-parameters` so `@Tool` argument names reach the model
 - ✅ Replaced Gson with Jackson 3 (`tools.jackson`) throughout; merged the two Responses API demos into one
 - ✅ Added HttpSupport.requireSuccess and ApiException; every raw HTTP service now checks status codes, with a lab step that provokes a real 401
-- ✅ Raw streaming is now taught: OllamaService.generateStreaming(model, prompt, Consumer) uses sendAsync + BodyHandlers.ofLines, with a lab step, a slide, and an SSE note for OpenAI
+- ✅ Raw streaming is now taught: OllamaService.chatStreaming(model, messages, Consumer) uses sendAsync + BodyHandlers.ofLines over /api/chat (was generateStreaming over /api/generate until the Nov 2026 redesign), with a lab step, a slide, and an SSE note for OpenAI
 - ✅ MultiModelDemo fans out on virtual threads (newVirtualThreadPerTaskExecutor) and prints sequential vs concurrent timings; lab step and slide added
 - ✅ Request logging steps in the OpenRouter and tool-calling labs, with a wire-format slide built from a captured run
 - ✅ "Same pattern, other vendors" lab: OpenRouterService (catalog, no key), AnthropicService promoted from the test tree, optional ElevenLabsService; never commit a private voice id
@@ -59,7 +59,7 @@ This file provides context for AI assistants working on the AI Java Labs project
   - LangChain4j pulls in Jackson 2 (`com.fasterxml.jackson`) transitively; both coexist, annotations are shared
 - **AI Models**:
   - OpenAI: gpt-4o-mini, gpt-6-luna (Responses API), gpt-image-2.5-flare (gpt-image-2.5-sunburst for edits), gpt-4o-mini-tts, whisper-1
-  - Ollama: gpt-oss (text), moondream (vision)
+  - Ollama: gemma4 (text and vision, a thinking model: streamed chunks carry `thinking` with empty `content` first)
   - Google: gemini-3.8-flash (gemini-4-argon available on Google and OpenRouter at about 2.5x the price)
   - OpenRouter (QuickChatDemo, MultiModelDemo): openai/gpt-6-luna, google/gemini-3.8-flash via `OpenAiChatModel` with base URL `https://openrouter.ai/api/v1`
 
@@ -127,8 +127,8 @@ Each AI provider has a dedicated service class:
 
 ### Data Models
 Uses Java records for API data modeling:
-- **Sealed interfaces**: `OllamaRequest` with permitted implementations
-- **Pattern matching**: Used for request type discrimination
+- **Ollama is chat-first (Nov 2026 redesign)**: `OllamaMessage(role, content, images)` with `user`/`assistant` factories, `OllamaChatRequest`, `OllamaChatResponse`; the sealed `OllamaRequest` hierarchy is gone. `generate(model, prompt)` with `OllamaGenerateRequest/Response` stays as a one-example aside. The statelessness demo ("My name is Inigo Montoya.") is taught raw in the Ollama lab and again with `MessageWindowChatMemory` in Act 2
+- **Sealed interfaces and pattern matching**: planned as an optional step on the structured-output lab (sealed `InquiryResult` with an exhaustive switch), see REDESIGN.md
 - **JSON mapping**: Jackson 3 with the SNAKE_CASE naming strategy
 
 ### HTTP Client Usage

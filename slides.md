@@ -117,7 +117,7 @@ layout: two-cols
 1. **TextToSpeechDemo** - Raw HTTP audio
 2. **OpenAiService** - Model discovery + JSON
 3. **LocalOllamaDemo** - Local AI models
-4. **OllamaService** - Sealed interfaces
+4. **OllamaService** - Chat, stateless requests, streaming
 5. **QuickChatDemo** - LangChain4j chat
 6. **MultiModelDemo** - Compare providers
 
@@ -748,68 +748,38 @@ ollama serve              # Start server (automatic on install)
 
 ---
 
-# Demo 4: Modern Java with Sealed Interfaces
+# Demo 4: Every Request Is Stateless
 
 ````md magic-move
 ```java
-// Step 1: Model different request types with records
-public class OllamaRecords {
-    public record OllamaTextRequest(
-            String model,
-            String prompt,
-            boolean stream) {}
+// Two requests. The server keeps nothing between them.
+service.chat("gemma4", "My name is Inigo Montoya.");
 
-    public record OllamaVisionRequest(
-            String model,
-            String prompt,
-            boolean stream,
-            List<String> images) {}
-}
+var reply = service.chat("gemma4", "What's my name?");
+reply.message().content();   // "I do not know your name."
 ```
 
 ```java
-// Step 2: Use sealed interfaces for type safety (Java 17+)
-public sealed interface OllamaRequest
-    permits OllamaTextRequest, OllamaVisionRequest {}
+// The fix: the messages list IS the memory, and you own it
+List<OllamaMessage> conversation = new ArrayList<>();
+conversation.add(OllamaMessage.user("My name is Inigo Montoya."));
+var first = service.chat(new OllamaChatRequest("gemma4", conversation, false));
 
-public record OllamaTextRequest(
-        String model, String prompt, boolean stream)
-        implements OllamaRequest {}
+conversation.add(first.message());               // append the assistant's reply
+conversation.add(OllamaMessage.user("What's my name?"));
+var second = service.chat(new OllamaChatRequest("gemma4", conversation, false));
 
-public record OllamaVisionRequest(
-        String model, String prompt, boolean stream, List<String> images)
-        implements OllamaRequest {
-
-    // Compact constructor with Base64 encoding
-    public OllamaVisionRequest {
-        images = images.stream()
-                .map(this::encodeImage)
-                .collect(Collectors.toList());
-    }
-}
-```
-
-```java
-// Step 3: Pattern matching with switch expressions (Java 21)
-public OllamaResponse generate(OllamaRequest request) {
-    switch (request) {
-        case OllamaTextRequest textRequest -> {
-            logger.log(INFO, "Text request: {0}", textRequest.prompt());
-        }
-        case OllamaVisionRequest visionRequest -> {
-            logger.log(INFO, "Vision request with {0} images",
-                visionRequest.images().size());
-        }
-        // Exhaustive - no default needed with sealed types!
-    }
-
-    // Same HTTP logic for both request types
-    return sendRequest(request);
-}
+second.message().content();   // "Your name is Inigo Montoya."
 ```
 ````
 
-**Modern Java Benefits**: Type safety, exhaustive pattern matching, compact constructors
+<v-clicks>
+
+- The chat web site hides this by resending the whole conversation every time
+- Every framework's "memory" is this list plus a trimming policy (`MessageWindowChatMemory`, later)
+- Tool calling and agents are loops that append to the same list
+
+</v-clicks>
 
 ---
 layout: section
@@ -1346,12 +1316,12 @@ layout: section
 No library needed: the JDK client delivers the body as it arrives
 
 ```java
-public String generateStreaming(String model, String prompt, Consumer<String> onToken) {
+public String chatStreaming(String model, List<OllamaMessage> messages, Consumer<String> onToken) {
     var request = HttpRequest.newBuilder()
-            .uri(URI.create(URL + "/api/generate"))
+            .uri(URI.create(URL + "/api/chat"))
             .header("Content-Type", "application/json")
             .POST(BodyPublishers.ofString(mapper.writeValueAsString(
-                    new OllamaTextRequest(model, prompt, true))))
+                    new OllamaChatRequest(model, messages, true))))
             .build();
 
     return client.sendAsync(request, HttpResponse.BodyHandlers.ofLines())  // CompletableFuture
@@ -1359,8 +1329,10 @@ public String generateStreaming(String model, String prompt, Consumer<String> on
             .thenApply(response -> {
                 var text = new StringBuilder();
                 response.body()                                              // Stream<String>, live
-                        .map(line -> mapper.readValue(line, OllamaResponse.class))
-                        .forEach(chunk -> { onToken.accept(chunk.response()); text.append(chunk.response()); });
+                        .map(line -> mapper.readValue(line, OllamaChatResponse.class))
+                        .map(chunk -> chunk.message().content())
+                        .filter(token -> !token.isEmpty())                   // thinking chunks are empty
+                        .forEach(token -> { onToken.accept(token); text.append(token); });
                 return text.toString();
             })
             .join();                                                        // or return the future
@@ -1378,10 +1350,13 @@ public String generateStreaming(String model, String prompt, Consumer<String> on
 **Ollama**: one JSON object per line
 
 ```json
-{"model":"gemma4","response":"The","done":false}
-{"model":"gemma4","response":" sky","done":false}
-{"model":"gemma4","response":"","done":true}
+{"message":{"content":"","thinking":"Analyze"},"done":false}
+{"message":{"content":"The"},"done":false}
+{"message":{"content":" sky"},"done":false}
+{"message":{"content":""},"done":true}
 ```
+
+<span class="text-xs">`gemma4` thinks first: empty `content`, a `thinking` field the record ignores</span>
 
 </div>
 
@@ -1959,8 +1934,8 @@ void shouldHandleApiError() {
 void shouldStreamTokens() {
     List<String> tokens = new ArrayList<>();
 
-    ollamaService.generateStreaming("gemma4",
-        "Count from 1 to 5, digits only.",
+    ollamaService.chatStreaming("gemma4",
+        List.of(OllamaMessage.user("Count from 1 to 5, digits only.")),
         tokens::add
     );
 
@@ -2100,7 +2075,7 @@ layout: section
 <v-clicks>
 
 1. **<span style="color: #00D4FF">Understand Both Levels</span>**: Raw HTTP gives you debugging superpowers, frameworks give you productivity
-2. **<span style="color: #00D4FF">Modern Java Shines</span>**: Records and sealed interfaces model the JSON, virtual threads make the blocking calls cheap to run in parallel
+2. **<span style="color: #00D4FF">Modern Java Shines</span>**: Records model the JSON, the messages list is the memory, virtual threads make the blocking calls cheap to run in parallel
 3. **<span style="color: #00D4FF">LangChain4j is Powerful</span>**: Unified API across all providers enables true portability
 
 </v-clicks>
