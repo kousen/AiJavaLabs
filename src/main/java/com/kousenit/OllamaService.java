@@ -63,8 +63,9 @@ public class OllamaService {
                     var text = new StringBuilder();
                     response.body()
                             .map(line -> mapper.readValue(line, OllamaChatResponse.class))
-                            .forEach(chunk -> {
-                                String token = chunk.message().content();
+                            .map(chunk -> chunk.message().content())
+                            .filter(token -> !token.isEmpty()) // thinking models send empty content first
+                            .forEach(token -> {
                                 onToken.accept(token);
                                 text.append(token);
                             });

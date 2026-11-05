@@ -7,11 +7,10 @@
 - [Same pattern, other vendors](#same-pattern-other-vendors)
 - [Install Ollama](#install-ollama)
 - [Access Ollama programmatically](#access-ollama-programmatically)
+- [Every request is stateless](#every-request-is-stateless)
 - [Streaming Results](#streaming-results)
-- [Fix the camel case issue](#fix-the-camel-case-issue)
-- [Create a vision request](#create-a-vision-request)
-- [Refactor to sealed interfaces](#refactor-to-sealed-interfaces)
-- [Have a conversation](#have-a-conversation)
+- [Optional: Ask about an image](#optional-ask-about-an-image)
+- [Aside: the generate endpoint](#aside-the-generate-endpoint)
 - [Generating Images](#generating-images)
 - [Call cloud models through OpenRouter](#call-cloud-models-through-openrouter)
 - [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
@@ -453,37 +452,67 @@ Three vendors, three header schemes, one pattern. That is the whole argument for
 
 - Ollama installs a small web server on your system. Verify that it is running by accessing [http://localhost:11434](http://localhost:11434) in a browser. You should get back the string, `Ollama is running`.
 - Ollama maintains a programmatic API accessible through a RESTful web service. The documentation is located [here](https://github.com/ollama/ollama/blob/main/docs/api.md).
-- We'll start by accessing the `api/generate` endpoint, as it is the simplest. It takes a JSON object with three fields: `model`, `prompt`, and `stream`. The `model` field is the name of the model you want to use (`gemma4` in our case), the `prompt` field is the question you want the model to answer, and the `stream` field is a boolean that determines whether the response should be streamed back to the client.
+- We'll use the `api/chat` endpoint. It takes a JSON object with three fields: `model`, `messages`, and `stream`. The `model` field is the name of the model you want to use (`gemma4` in our case), `messages` is a list of messages, each with a `role` and some `content`, and `stream` is a boolean that determines whether the response should be streamed back to the client. A request with one user message looks like this:
+
+```json
+{
+  "model": "gemma4",
+  "messages": [
+    { "role": "user", "content": "Why is the sky blue?" }
+  ],
+  "stream": false
+}
+```
+
+- That shape, a list of role-tagged messages, is the one every vendor uses. OpenAI, Anthropic, Gemini, and OpenRouter all take a `messages` list, and so does every Java framework. Learn it once here and you have seen it everywhere.
 - Create a Java project (or simply add to the existing one) in your favorite IDE with either Gradle or Maven as your build tool.
 - Create a class called `OllamaService` in a package of your choosing.
-- Add a method called `generate` that takes a `String` and returns a `String`.
 - If you created a new project, add the Jackson dependency to your build file and synchronize the project. If you added to an existing project, you can skip this step.
-- Model the input and output JSON with Java records. To do so, add a class called `OllamaRecords` to your project.
+- Model the input and output JSON with Java records. To do so, add a class called `OllamaRecords` to your project. Start with the message:
 
 ```java
 public class OllamaRecords {
-    public record OllamaTextRequest(String model, String prompt, boolean stream) {
+    public record OllamaMessage(String role, String content) {}
+}
+```
+
+- The value of `role` is restricted to:
+  - `user`, for client questions
+  - `assistant`, for AI responses
+  - `system`, for global context
+- Add a compact constructor to `OllamaMessage` that validates the `role` field, and two factory methods so the tests read well:
+
+```java
+public record OllamaMessage(String role, String content) {
+    public OllamaMessage {
+        if (!List.of("user", "assistant", "system").contains(role)) {
+            throw new IllegalArgumentException("Invalid role: " + role);
+        }
+    }
+
+    public static OllamaMessage user(String content) {
+        return new OllamaMessage("user", content);
+    }
+
+    public static OllamaMessage assistant(String content) {
+        return new OllamaMessage("assistant", content);
     }
 }
 ```
 
-- The output consists of a JSON object with `model`, `created_at`, `response`, and `done` field (among other optional fields we won't use right now). Add a record for that:
+- Now the request, and the response. The response has `model`, `created_at`, `message`, and `done` fields (among other optional fields we won't use right now), and `message` is the same shape as the messages you sent:
 
 ```java
-public class OllamaRecords {
-    public record OllamaTextRequest(
-            String model,
-            String prompt,
-            boolean stream) {
-    }
+public record OllamaChatRequest(
+        String model,
+        List<OllamaMessage> messages,
+        boolean stream) {}
 
-    public record OllamaResponse(
-            String model,
-            String createdAt,
-            String response,
-            boolean done) {
-    }
-}
+public record OllamaChatResponse(
+        String model,
+        String createdAt,
+        OllamaMessage message,
+        boolean done) {}
 ```
 
 - Now we have enough to create the `OllamaService` class and use it to access the chat endpoint. Add the following code to the `OllamaService` class:
@@ -498,6 +527,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
+import static com.kousenit.HttpSupport.requireSuccess;
 import static com.kousenit.OllamaRecords.*;
 
 public class OllamaService {
@@ -508,18 +538,18 @@ public class OllamaService {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .build();
 
-    public OllamaResponse generate(OllamaTextRequest ollamaRequest) {
+    public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(URL + "/api/generate"))
+            .uri(URI.create(URL + "/api/chat"))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(
-                    mapper.writeValueAsString(ollamaRequest)))
+                    mapper.writeValueAsString(chatRequest)))
             .build();
         try {
             HttpResponse<String> response =
                     requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-            return mapper.readValue(response.body(), OllamaResponse.class);
+            return mapper.readValue(response.body(), OllamaChatResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -527,7 +557,7 @@ public class OllamaService {
 }
 ```
 
-* This time the request body is a record too: `writeValueAsString` turns `OllamaTextRequest` into JSON, so you never hand-build a JSON string the way the text-to-speech lab did.
+* This time the request body is a record too: `writeValueAsString` turns `OllamaChatRequest` into JSON, so you never hand-build a JSON string the way the text-to-speech lab did.
 * `requireSuccess` is the helper from the OpenAI lab. Ollama's errors have a different shape, `{"error": "model 'gemma5' not found"}` with a 404, so the helper falls back to printing the raw body. Try a model name you have not pulled to see it.
 
 * Create a test class to verify the `OllamaService` class works as expected. Here is a sample:
@@ -537,99 +567,108 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.kousenit.OllamaRecords.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class OllamaServiceTest {
     private final OllamaService service = new OllamaService();
 
     @Test
-    public void testGenerate() {
-        var ollamaRequest = new OllamaTextRequest("gemma4", "Why is the sky blue?", false);
-        OllamaResponse ollamaResponse = service.generate(ollamaRequest);
-        String answer = ollamaResponse.response();
-        System.out.println(answer);
-        assertTrue(answer.contains("scattering"));
+    void chat_with_one_message() {
+        var request = new OllamaChatRequest("gemma4",
+                List.of(OllamaMessage.user("Why is the sky blue?")), false);
+        OllamaChatResponse response = service.chat(request);
+        System.out.println(response);
+        assertThat(response.message().role()).isEqualTo("assistant");
+        assertThat(response.message().content()).containsIgnoringCase("scattering");
     }
 }
 ```
 
-* Run the test to verify the service works as expected.
-* Add an overload of the `generate` method to `OllamaService` that takes two Strings: one for the `model` and one for the `prompt`, and returns an `OllamaResponse` object.
+* Run the test to verify the service works as expected. The answer is inside `message.content`, and the reply's `role` is `assistant`.
+* Look at the printed response and find `createdAt`: it is `null`. The JSON field is called `created_at`, the record component is `createdAt`, and Jackson silently ignored the field it could not match. You could annotate the component with `@JsonProperty("created_at")` as in the OpenAI lab, but every Ollama field is snake_case, so set the naming strategy once on the mapper instead:
 
 ```java
-public OllamaResponse generate(String model, String prompt) {
-    return generate(new OllamaTextRequest(model, prompt, false));
+private final ObjectMapper mapper = JsonMapper.builder()
+    .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+    .enable(SerializationFeature.INDENT_OUTPUT)
+    .build();
+```
+
+* Run the test again and add an assertion that `createdAt` is not null. The strategy works in both directions, so a record component named `maxTokens` would be written as `max_tokens` in a request as well.
+* Most calls send one user message with no history, so add a convenience overload. Adding methods like that to make the calls easier for a client is a common practice:
+
+```java
+public OllamaChatResponse chat(String model, String prompt) {
+    return chat(new OllamaChatRequest(model, List.of(OllamaMessage.user(prompt)), false));
 }
 ```
 
-* Adding convenience methods like that to make the calls easier for a client is a common practice. Add a test to verify the new method works.
+## Every request is stateless
+
+* If you have only ever used a chat web site or app, this is the part that is counter-intuitive: the server remembers nothing between requests. The web site hides that from you by resending the whole conversation every time. Prove it. Add this test:
 
 ```java
 @Test
-void generate_with_model_and_name() {
-    var ollamaResponse = service.generate("gemma4", "Why is the sky blue?");
-    String answer = ollamaResponse.response();
-    System.out.println(answer);
-    assertTrue(answer.contains("scattering"));
+void each_request_is_stateless() {
+    service.chat("gemma4", "My name is Inigo Montoya.");
+    OllamaChatResponse second =
+            service.chat("gemma4", "What's my name? Answer in one short sentence.");
+    System.out.println(second.message().content());
+    assertThat(second.message().content()).doesNotContain("Inigo");
 }
 ```
+
+* Run it. The model's answer will be something like `I do not know your name.` The first request was processed, answered, and forgotten.
+* The fix is the `messages` list. It is not a transcript for your benefit; it is the model's entire memory, and you own it. Keep the list, append the assistant's reply, append your next question, and send the whole thing:
+
+```java
+@Test
+void appending_the_reply_gives_the_model_a_memory() {
+    List<OllamaMessage> conversation = new ArrayList<>();
+    conversation.add(OllamaMessage.user("My name is Inigo Montoya."));
+    OllamaChatResponse first = service.chat(new OllamaChatRequest("gemma4", conversation, false));
+
+    conversation.add(first.message());   // the assistant's reply goes into the list
+    conversation.add(OllamaMessage.user("What's my name? Answer in one short sentence."));
+    OllamaChatResponse second = service.chat(new OllamaChatRequest("gemma4", conversation, false));
+
+    System.out.println(second.message().content());
+    assertThat(second.message().content()).contains("Inigo");
+}
+```
+
+* Run it: `Your name is Inigo Montoya.` Nothing changed on the server. The second request simply carried the first exchange with it.
+* Three consequences follow, and the rest of the course keeps running into them:
+  - The list grows, and every request resends all of it, so a long conversation costs more tokens each turn. Every framework's "memory" object is this list plus a policy for trimming it; you will meet LangChain4j's `MessageWindowChatMemory` later.
+  - A `system` message at the front of the list is how you give the model standing instructions. It is just another message.
+  - Tool calling and agents, later in the course, are loops that append to this same list: the model's request to run a tool, then the tool's result, then the model's next turn.
 
 ## Streaming Results
 
-* To see what a streaming result looks like, add a method to send the message and return the response as a `String`:
-
-```java
-public String generateStreaming(OllamaTextRequest ollamaRequest) {
-    HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create(URL + "/api/generate"))
-          .header("Content-Type", "application/json")
-          .header("Accept", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
-          .build();
-  try {
-    HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-    return response.body();
-  } catch (IOException | InterruptedException e) {
-    throw new RuntimeException(e);
-  }
-}
-```
-
-* Add a test to see the streaming result:
-
-```java
-@Test
-public void streaming_generate_request() {
-    var request = new OllamaTextRequest("gemma4", "Why is the sky blue?", true);
-    String response = service.generateStreaming(request);
-    System.out.println(response);
-}
-```
-
-* Run the test to see the streaming result. It will be similar to:
+* Set `stream` to `true` and Ollama sends the reply as it is generated, one JSON object per line. Here are the first lines of a real response from `gemma4`:
 
 ```json lines
-{"model":"gemma4","created_at":"2024-07-08T20:15:46.965689Z","response":"The","done":false}
-{"model":"gemma4","created_at":"2024-07-08T20:15:46.991009Z","response":" sky","done":false}
-{"model":"gemma4","created_at":"2024-07-08T20:15:47.019408Z","response":" appears","done":false}
-{"model":"gemma4","created_at":"2024-07-08T20:15:47.050245Z","response":" blue","done":false}
-{"model":"gemma4","created_at":"2024-07-08T20:15:47.095448Z","response":" due","done":false}
-{"model":"gemma4","created_at":"2024-07-08T20:15:47.126318Z","response":" to","done":false}
+{"model":"gemma4","created_at":"2026-11-05T20:19:24.605907Z","message":{"role":"assistant","content":"","thinking":"1"},"done":false}
+{"model":"gemma4","created_at":"2026-11-05T20:19:24.616712Z","message":{"role":"assistant","content":"","thinking":"."},"done":false}
+{"model":"gemma4","created_at":"2026-11-05T20:19:24.637997Z","message":{"role":"assistant","content":"","thinking":"Analyze"},"done":false}
 ```
 
-followed by lots more lines, until the `done` field is `true`.
+followed by lines whose `content` carries the answer a token at a time, until a final line with `"done":true`.
 
-* That shows what a streaming response looks like, but waiting for the whole body and printing it at the end defeats the purpose. The JDK's `HttpClient` can hand you the body as it arrives: `sendAsync` returns a `CompletableFuture` immediately, and `BodyHandlers.ofLines()` delivers the body as a `Stream<String>` of lines while the response is still in flight. Each Ollama line is a complete JSON object, so each line maps to an `OllamaResponse`. Add this method, which takes a `Consumer<String>` to call for every token and returns the full text at the end:
+* Two things to notice before writing code. First, each line is a complete `OllamaChatResponse`, so the record you already have parses every chunk. Second, `gemma4` is a thinking model: the first chunks carry its reasoning in a `thinking` field, with empty `content`. Jackson 3 ignores fields the record does not declare, so the record still binds; you just need to skip the empty tokens.
+* The JDK's `HttpClient` can hand you the body as it arrives: `sendAsync` returns a `CompletableFuture` immediately, and `BodyHandlers.ofLines()` delivers the body as a `Stream<String>` of lines while the response is still in flight. Add this method, which takes a `Consumer<String>` to call for every token and returns the full text at the end:
 
 ```java
-public String generateStreaming(String model, String prompt, Consumer<String> onToken) {
-    var ollamaRequest = new OllamaTextRequest(model, prompt, true);
+public String chatStreaming(String model, List<OllamaMessage> messages, Consumer<String> onToken) {
+    var chatRequest = new OllamaChatRequest(model, messages, true);
     var request = HttpRequest.newBuilder()
-            .uri(URI.create(URL + "/api/generate"))
+            .uri(URI.create(URL + "/api/chat"))
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(chatRequest)))
             .build();
 
     CompletableFuture<String> fullText = client.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
@@ -637,10 +676,12 @@ public String generateStreaming(String model, String prompt, Consumer<String> on
             .thenApply(response -> {
                 var text = new StringBuilder();
                 response.body()
-                        .map(line -> mapper.readValue(line, OllamaResponse.class))
-                        .forEach(chunk -> {
-                            onToken.accept(chunk.response());
-                            text.append(chunk.response());
+                        .map(line -> mapper.readValue(line, OllamaChatResponse.class))
+                        .map(chunk -> chunk.message().content())
+                        .filter(token -> !token.isEmpty())   // thinking chunks have no content
+                        .forEach(token -> {
+                            onToken.accept(token);
+                            text.append(token);
                         });
                 return text.toString();
             });
@@ -668,10 +709,12 @@ public static HttpResponse<Stream<String>> requireSuccessLines(HttpResponse<Stre
 @Test
 void streaming_tokens_arrive_one_at_a_time() {
     List<String> tokens = new ArrayList<>();
-    String full = service.generateStreaming("gemma4", "Count from 1 to 5, digits only.", token -> {
-        System.out.print(token);
-        tokens.add(token);
-    });
+    String full = service.chatStreaming("gemma4",
+            List.of(OllamaMessage.user("Count from 1 to 5, digits only.")),
+            token -> {
+                System.out.print(token);
+                tokens.add(token);
+            });
 
     assertThat(tokens).hasSizeGreaterThan(1);
     assertThat(String.join("", tokens)).isEqualTo(full);
@@ -682,352 +725,95 @@ void streaming_tokens_arrive_one_at_a_time() {
 
 * Cloud providers stream a little differently. OpenAI's chat endpoint uses server-sent events: each line starts with `data: `, the payload after the prefix is JSON, and the stream ends with `data: [DONE]`. The code is the same shape as above with one extra `filter` and a `substring` to strip the prefix. LangChain4j's streaming models do exactly this for you, which we see later in the course.
 
-## Fix the camel case issue
+## Optional: Ask about an image
 
-* Print the full `OllamaResponse` in one of the tests and look at `createdAt`: it is `null`. The JSON field is called `created_at`, the record component is `createdAt`, and Jackson silently ignored the field it could not match.
-* You could annotate the component with `@JsonProperty("created_at")` as in the OpenAI lab, but every Ollama response has snake_case names, so set the naming strategy once on the mapper instead:
-
-```java
-private final ObjectMapper mapper = JsonMapper.builder()
-    .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-    .enable(SerializationFeature.INDENT_OUTPUT)
-    .build();
-```
-
-* Run the test again to see that the field is populated, and add an assertion that `createdAt` is not null. The strategy works in both directions, so record components named `maxTokens` would be written as `max_tokens` in requests as well.
-
-## Create a vision request
-
-* Ollama also supports vision requests, where the model can read images and generate text descriptions from them. The images must be uploaded in the form of Base 64 encoded strings.
-* Conveniently, `gemma4` is already multimodal, so we don't need to pull a separate vision model -- we'll send the image to the same model we've been using for text.
-* Add a new record to `OllamaRecords` called `OllamaVisionRequest` with the following fields:
-  - `model` of type `String`
-  - `prompt` of type `String`
-  - `stream` of type `boolean`
-  - `images` of type `List<String>`
-
-```java
-public record OllamaVisionRequest(
-        String model,
-        String prompt,
-        boolean stream,
-        List<String> images) {}
-```
-
-* Fortunately, the output response from vision models is the same as from the text models, so you can reuse the `OllamaResponse` record.
-* Rather than require the client to submit the image in that form, let's provide a method to convert a local image path into the proper string. We'll call this method inside a _compact constructor_, a cool feature of records.
-* Inside the `OllamaVisionRequest` record, add a compact constructor that takes a `String` path to a local image and converts it to a Base 64 encoded string.
-
-```java
-public record OllamaVisionRequest(
-        String model,
-        String prompt,
-        boolean stream,
-        List<String> images) {
-
-    public OllamaVisionRequest {
-        images = images.stream()
-                    .map(this::encodeImage)
-                    .collect(Collectors.toList());
-    }
-
-    private String encodeImage(String path) {
-        try {
-            byte[] imageBytes = Files.readAllBytes(Paths.get(path));
-            return Base64.getEncoder().encodeToString(imageBytes);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-}
-```
-
-* Add a new method to `OllamaService` called `generateVision` that takes an `OllamaVisionRequest` object and returns an `OllamaResponse` object.
-* We need an image to view. Here is one if you don't already have one available:
-
-![Cats playing cards](src/main/resources/cats_playing_cards.png)
-
-* Add the following test to the `OllamaServiceTest` class:
-
-```java
-
-@Test
-void test_vision_generate() {
-    var request = new OllamaVisionRequest("gemma4",
-            """
-            Generate a text description of this image
-            suitable for accessibility in HTML.
-            """,
-            false,
-            List.of("src/main/resources/cats_playing_cards.png"));
-    OllamaResponse ollamaResponse = service.generateVision(request);
-    assertNotNull(ollamaResponse);
-    System.out.println(ollamaResponse.response());
-}
-```
-
-* Add the `generateVision` method to the `OllamaService` class:
-
-```java
-public OllamaResponse generateVision(OllamaVisionRequest visionRequest) {
-    HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(URL + "/api/generate"))
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(
-                mapper.writeValueAsString(visionRequest)))
-        .build();
-    try {
-        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-        return mapper.readValue(response.body(), OllamaResponse.class);
-    } catch (IOException | InterruptedException e) {
-        throw new RuntimeException(e);
-    }
-}
-```
-
-* The result is inside the `response` field of the `OllamaResponse` object. Run the test to see the result.
-
-* That's an awful lot of duplicated code. Surely we can do better? We can, by using a _sealed interface_.
-
-## Refactor to sealed interfaces
-
-* Now comes the question: how do we send the vision request to the service? We'd rather not duplicate all the existing code. Fortunately, records can implement interfaces. In this case, we'll use a _sealed interface_, so that only _permitted_ classes can implement it.
-* Refactor our existing code by creating a sealed interface called `OllamaRequest` with two permitted classes: `OllamaTextRequest` and `OllamaVisionRequest` and add it to our `OllamaRecords` class. Add `implements OllamaRequest` to both records.
-* Make sure the tests for the text model still pass.
-
-```java
-public class OllamaRecords {
-    public sealed interface OllamaRequest
-            permits OllamaTextRequest, OllamaVisionRequest {
-    }
-
-    public record OllamaTextRequest(
-            String model,
-            String prompt,
-            boolean stream) implements OllamaRequest {}
-
-    public record OllamaVisionRequest(
-            String model,
-            String prompt,
-            boolean stream,
-            List<String> images) implements OllamaRequest {
-
-        public OllamaVisionRequest {
-            images = images.stream()
-                    .map(this::encodeImage)
-                    .collect(Collectors.toList());
-        }
-
-        private String encodeImage(String path) {
-            try {
-                byte[] imageBytes = Files.readAllBytes(Paths.get(path));
-                return Base64.getEncoder()
-                        .encodeToString(imageBytes);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-}
-```
-
-* In `OllamaService`, we can go back to when our `generate` method took an `OllamaRequest` object as its only argument and let polymorphism distinguish between a text request and a vision request. We can then use pattern matching to determine which type of request we have and act accordingly. We had this before, but let's repeat it here for convenience:
-
-```java
-public OllamaResponse generate(OllamaRequest ollamaRequest) {
-    HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create(URL + "/api/generate"))
-          .header("Content-Type", "application/json")
-          .header("Accept", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
-          .build();
-    try {
-        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-        return mapper.readValue(response.body(), OllamaResponse.class);
-    } catch (IOException | InterruptedException e) {
-        throw new RuntimeException(e);
-    }
-}
-```
-
-* Pattern matching for switch became GA in Java 21. If you have Java 21 available, let's use it to identify what type of request we are sending. First, add a system logger as an attribute to `OllamaService`:
-
-```java
-private final System.Logger logger = System.getLogger(OllamaService.class.getName());
-```
-
-* With that available, we can now add a switch statement to the beginning of the `generate` method:
-
-```java
-public OllamaResponse generate(OllamaRequest ollamaRequest) {
-    switch (ollamaRequest) {
-        case OllamaTextRequest textRequest -> {
-            logger.log(System.Logger.Level.INFO, "Text request to: {0}", textRequest.model());
-            logger.log(System.Logger.Level.INFO, "Prompt: {0}", textRequest.prompt());
-        }
-        case OllamaVisionRequest visionRequest -> {
-            logger.log(System.Logger.Level.INFO, "Vision request to: {0}", visionRequest.model());
-            logger.log(System.Logger.Level.INFO, "Size of uploaded image: {0}", visionRequest.images()
-                    .getFirst()
-                    .length());
-            logger.log(System.Logger.Level.INFO, "Prompt: {0}", visionRequest.prompt());
-        }
-    }
-
-    // ... rest as before ...
-}
-```
-
-* Because we used a sealed interface, there are only two possible types of requests. Our switch expression is therefore exhaustive. We can add tests for each to verify that the logging works as expected.
-
-```java
-@Test
-void generate_with_text_request() {
-  var ollamaRequest = new OllamaTextRequest("gemma4", "Why is the sky blue?", false);
-  OllamaResponse ollamaResponse = service.generate(ollamaRequest);
-  System.out.println(ollamaResponse);
-  String answer = ollamaResponse.response();
-  System.out.println(answer);
-  assertTrue(answer.contains("scattering"));
-  assertNotNull(ollamaResponse.createdAt());
-}
-
-@Test
-void generate_with_vision_request() {
-  var request = new OllamaVisionRequest("gemma4",
-          """
-                  Generate a text description of this image
-                  suitable for accessibility in HTML.
-                  """,
-          false,
-          List.of("src/main/resources/cats_playing_cards.png"));
-  OllamaResponse response = service.generate(request);
-  assertNotNull(response);
-  System.out.println(response);
-}
-```
-
-* Run the tests to verify that the logging works as expected. This combination of modeling the data as records, limiting the available entries with sealed interfaces, and selecting between them with switch expressions, is a form of [data oriented programming](https://www.infoq.com/articles/data-oriented-programming-java/), as described in the linked article by Brian Goetz.
-
-## Have a conversation
-
-* The `generate` endpoint we've been using is very limited. Ollama also supports a more complicated model, similar to those from OpenAI, Anthropic, Gemini, and Mistral. That model allows _conversations_, that connect messages together. You need to add the messages yourself in a list, alternating between `user` and `assistant` messages, and the AI tool will respond to the complete sequence.
-* In Ollama, you send a POST request to `/api/chat` instead of `/api/generate` when you're dealing with a list of messages rather than just a single one.
-* Here is a sample request (from the [Ollama documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)):
-
-```json
-{
-    "model": "gemma4",
-    "messages": [
-      {
-        "role": "user",
-        "content": "why is the sky blue?"
-      },
-      {
-        "role": "assistant",
-        "content": "due to rayleigh scattering."
-      },
-      {
-        "role": "user",
-        "content": "how is that different than mie scattering?"
-      }
-    ]
-}
-```
-
-* Create a new record called `OllamaMessage` with the following fields:
-  - `role` of type `String`
-  - `content` of type `String`
+* `gemma4` is multimodal, and an image rides along on a message: the chat API accepts an `images` list on any user message, each entry a Base64-encoded file. No new endpoint, no new response shape.
+* The useful version of this is not "what do you see in this picture." It is the thing you already do with a chat app: screenshot the stack trace, or the web page that rendered wrong, and ask what went wrong. The repository has a screenshot of a failed run in `src/main/resources/stack_trace.png`.
+* Add an `images` component to `OllamaMessage`, keep the two-argument constructor for the common case, and add a factory that reads and encodes a local file. The `@JsonInclude` annotation keeps `"images": null` out of text-only requests:
 
 ```java
 public record OllamaMessage(
         String role,
-        String content) {}
-```
+        String content,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<String> images) {
 
-* The value of `role` is restricted to:
-  - `user`, for client questions
-  - `assistant`, for AI responses
-  - `system`, for global context
-- With that in mind, add a compact constructor to `OllamaMessage` that validates the `role` field:
-
-```java
-public record OllamaMessage(String role,
-                            String content) {
     public OllamaMessage {
         if (!List.of("user", "assistant", "system").contains(role)) {
             throw new IllegalArgumentException("Invalid role: " + role);
         }
     }
+
+    public OllamaMessage(String role, String content) {
+        this(role, content, null);
+    }
+
+    public static OllamaMessage user(String content, Path image) {
+        try {
+            String encoded = Base64.getEncoder().encodeToString(Files.readAllBytes(image));
+            return new OllamaMessage("user", content, List.of(encoded));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    // user(String) and assistant(String) as before
 }
 ```
 
-* Create a new record called `OllamaChatRequest` with the following fields:
-  - `model` of type `String`
-  - `messages` of type `List<OllamaMessage>`
-  - `stream` of type `boolean`
-
-```java
-public record OllamaChatRequest(
-        String model,
-        List<OllamaMessage> messages,
-        boolean stream) {}
-```
-
-
-* Add a record called `OllamaChatResponse` with the following fields:
-  - `model` of type `String`
-  - `createdAt` of type `String`
-  - `message` of type `OllamaMessage`
-  - `done` of type `boolean`
-
-```java
-public record OllamaChatResponse(
-        String model,
-        String createdAt,
-        OllamaMessage message,
-        boolean done) {}
-```
-
-* Add a new method to `OllamaService` called `chat` that takes an `OllamaChatRequest` object and returns a `List<OllamaMessage>` object.
-* Add a test to try out the conversation model:
+* Add a test that sends the screenshot with the question a developer would actually ask:
 
 ```java
 @Test
-void test_chat() {
-    var request = new OllamaChatRequest("gemma4",
-            List.of(new OllamaMessage("user", "why is the sky blue?"),
-                    new OllamaMessage("assistant", "due to rayleigh scattering."),
-                    new OllamaMessage("user", "how is that different than mie scattering?")),
-            false);
-    OllamaChatResponse response = service.chat(request);
-    assertNotNull(response);
-    System.out.println(response);
+void an_image_rides_along_on_the_message() {
+    var question = OllamaMessage.user(
+            "This is a screenshot from my terminal. What went wrong, and what should I check first?",
+            Path.of("src/main/resources/stack_trace.png"));
+    OllamaChatResponse response =
+            service.chat(new OllamaChatRequest("gemma4", List.of(question), false));
+    System.out.println(response.message().content());
+    assertThat(response.message().content()).containsAnyOf("connect", "Connect", "refused", "11434", "Ollama");
 }
 ```
 
-* Update the `OllamaService` class to include the `chat` method:
+* Run it. The model reads the `ConnectException`, names Ollama and port 11434 from the stack frames, and tells you to check whether the server is running before touching the code. That is a vision model earning its keep.
+
+## Aside: the generate endpoint
+
+* Ollama also has `api/generate`: one `prompt` string in, one `response` string out, no roles and no history. It is Ollama's own; no other vendor in this course has anything like it, and nothing later uses it. It is worth one look because you will see it in Ollama's documentation and examples.
 
 ```java
-public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
-    String json = mapper.writeValueAsString(chatRequest);
+public record OllamaGenerateRequest(String model, String prompt, boolean stream) {}
+
+public record OllamaGenerateResponse(String model, String createdAt, String response, boolean done) {}
+```
+
+```java
+public OllamaGenerateResponse generate(String model, String prompt) {
+    var body = mapper.writeValueAsString(new OllamaGenerateRequest(model, prompt, false));
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(URL + "/api/chat"))
+        .uri(URI.create(URL + "/api/generate"))
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(json))
+        .POST(HttpRequest.BodyPublishers.ofString(body))
         .build();
     try {
         HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-        return mapper.readValue(response.body(), OllamaChatResponse.class);
+        return mapper.readValue(response.body(), OllamaGenerateResponse.class);
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException(e);
     }
 }
 ```
 
-* Run the test to see it in action. In practice, you would extract the `assistant` response from each message and add it to the next request. Note that all the major framework (Spring AI, LangChain4j, etc) have ways of doing that for you.
+```java
+@Test
+void generate_is_the_single_prompt_aside() {
+    OllamaGenerateResponse response = service.generate("gemma4", "Why is the sky blue?");
+    assertThat(response.response()).containsIgnoringCase("scattering");
+}
+```
+
+* Same client, same mapper, same status check. The only thing that changed is the shape of the JSON, which is the point of modeling it with records.
 
 ## Generating Images
 
