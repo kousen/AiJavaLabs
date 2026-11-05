@@ -16,6 +16,10 @@
 - [Call cloud models through OpenRouter](#call-cloud-models-through-openrouter)
 - [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
 - [Extract structured output into Java records](#extract-structured-output-into-java-records)
+- [Clean Streaming with LangChain4j](#clean-streaming-with-langchain4j)
+- [Going Further: Decision Models](#going-further-decision-models)
+- [Going Further: Agents](#going-further-agents)
+- [Going Further: JSON Parsing Strategies](#going-further-json-parsing-strategies)
 
 ## Generate Audio from Text
 
