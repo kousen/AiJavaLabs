@@ -9,7 +9,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -80,6 +79,6 @@ public class ElevenLabsService {
 
     private static Path outputPath() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        return Paths.get(TextToSpeechService.RESOURCES_DIR).resolve("elevenlabs_%s.mp3".formatted(timestamp));
+        return TextToSpeechService.audioDir().resolve("elevenlabs_%s.mp3".formatted(timestamp));
     }
 }

@@ -84,14 +84,14 @@ public class TextToSpeechService {
 }
 ```
 
-- You'll likely want to save the generated audio file into a unique file. The argument to `ofFile` is a `Path` object that represents the file where the response will be saved. Add the following private method to generate one:
+- You'll likely want to save the generated audio file into a unique file. The argument to `ofFile` is a `Path` object that represents the file where the response will be saved. Write it under `build/audio`: that folder is already gitignored, it is not packaged into the jar, and `./gradlew clean` removes it, so generated audio never needs deleting by hand. `ofFile` requires the directory to exist, so create it first. Add the following private method:
 
 ```java
-private Path getFilePath() {
+private Path getFilePath() throws IOException {
     String timestamp = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     String fileName = String.format("audio_%s.mp3", timestamp);
-    Path dir = Paths.get("src/main/resources");
+    Path dir = Files.createDirectories(Paths.get("build", "audio"));
     return dir.resolve(fileName);
 }
 ```
@@ -118,7 +118,7 @@ void testGenerateMp3() {
 }
 ```
 
-- Run the test. The console should show the name of an mp3 file saved in the `src/main/resources` folder. You can play the file to hear the text you provided.
+- Run the test. The console should show the name of an mp3 file saved in the `build/audio` folder. Play it to hear the text you provided.
 
 - A note on cost before we write more tests: the solution repository tags every test with `@Tag("local")`, `@Tag("cheap")`, `@Tag("demo")`, or `@Tag("expensive")`, and `build.gradle.kts` defines Gradle tasks such as `testLocal` and `testCheap` that select by tag. A text-to-speech call costs a fraction of a cent; an image generation costs more. Tag your tests the same way as you go, and you can rerun the free ones as often as you like.
 
@@ -432,7 +432,7 @@ public Path textToSpeech(String voiceId, String text) {
 ```
 
 * Every account includes ElevenLabs' premade voices (George, Sarah, Charlie, and others). Call `listVoices()` first, pick one by name, and pass its id. Never hardcode a voice id from someone else's account into a shared repository; cloned voices are private.
-* Write a test that lists the voices, generates a sentence with a premade voice, checks the file is more than a few kilobytes, and deletes the file afterwards so generated audio stays out of version control.
+* Write a test that lists the voices, generates a sentence with a premade voice, and checks the file is more than a few kilobytes. Leave the file where it is: it lands in `build/audio` with the OpenAI audio, so you can play it, and it stays out of version control.
 * `GET /v1/models` lists the speech models if you want to try a newer one than the default.
 
 Three vendors, three header schemes, one pattern. That is the whole argument for learning the HTTP layer: the next service you need will not have a Java library either, and it will not matter.

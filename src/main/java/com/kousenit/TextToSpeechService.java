@@ -1,10 +1,12 @@
 package com.kousenit;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -12,7 +14,8 @@ import java.time.format.DateTimeFormatter;
 
 public class TextToSpeechService {
     private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
-    public static final String RESOURCES_DIR = "src/main/resources";
+    // Generated audio goes under build/: gitignored, kept out of the jar, removed by `gradlew clean`
+    public static final Path AUDIO_DIR = Paths.get("build", "audio");
 
     // HttpClient is thread-safe and designed to be reused for multiple requests
     // Using a single instance improves performance through connection pooling
@@ -50,7 +53,15 @@ public class TextToSpeechService {
     private Path getFilePath() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String fileName = String.format("audio_%s.mp3", timestamp);
-        Path dir = Paths.get(RESOURCES_DIR);
-        return dir.resolve(fileName);
+        return audioDir().resolve(fileName);
+    }
+
+    /** The output directory, created on first use (BodyHandlers.ofFile needs it to exist). */
+    public static Path audioDir() {
+        try {
+            return Files.createDirectories(AUDIO_DIR);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

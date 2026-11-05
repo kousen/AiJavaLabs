@@ -106,7 +106,7 @@ Training Materials:
 - **Required for QuickChatDemo/MultiModelDemo**: OpenRouter API key (OPENROUTER_API_KEY environment variable)
 - **Optional**: Ollama installation for local AI models
 - **Testing**: Some tests require external services to be available
-- **Optional keys**: ANTHROPIC_API_KEY (AnthropicServiceTest), ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name; generated audio is deleted after the test)
+- **Optional keys**: ANTHROPIC_API_KEY (AnthropicServiceTest), ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name)
 
 ### Build Commands
 ```bash
@@ -135,6 +135,7 @@ Uses Java records for API data modeling:
 - Static HttpClient instances for connection pooling and reuse
 - Avoided try-with-resources pattern (creates new instances inefficiently)
 - Direct exception wrapping in RuntimeException
+- Generated audio (OpenAI TTS and ElevenLabs) is written to `build/audio` via `TextToSpeechService.audioDir()`, which creates the folder. Gitignored, outside the jar, removed by `gradlew clean`, and never deleted by a test, so it can be played in class (Nov 4, 2026: a `finally` that deleted the ElevenLabs file had to be removed live to hear it)
 - `HttpSupport.requireSuccess` checks the status code on every raw call and throws `ApiException` (status + provider message + Retry-After); `TextToSpeechService` handles the `ofFile` case itself because the error body lands in the audio file
 - Java 21's AutoCloseable HttpClient support acknowledged but not utilized for efficiency
 

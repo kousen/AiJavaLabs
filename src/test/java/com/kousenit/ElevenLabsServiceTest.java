@@ -30,11 +30,8 @@ class ElevenLabsServiceTest {
     void generates_speech_with_a_premade_voice() throws IOException {
         Voice george = service.voiceNamed("George"); // one of ElevenLabs' public premade voices
         Path audio = service.textToSpeech(george.voiceId(), "Java developers already know how to call a REST service.");
-        try {
-            System.out.println("Generated " + audio.toAbsolutePath() + " (" + Files.size(audio) + " bytes)");
-            assertThat(Files.size(audio)).isGreaterThan(10_000);
-        } finally {
-            Files.deleteIfExists(audio); // keep generated audio out of the repository
-        }
+        // Left in build/audio so you can play it; gradlew clean removes it
+        System.out.println("Generated " + audio.toAbsolutePath() + " (" + Files.size(audio) + " bytes)");
+        assertThat(Files.size(audio)).isGreaterThan(10_000);
     }
 }
