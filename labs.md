@@ -25,6 +25,7 @@
 - [Add tool calling with LangChain4j](#add-tool-calling-with-langchain4j)
 - [Extract structured output into Java records](#extract-structured-output-into-java-records)
 - [Decide with probabilities: decision models](#decide-with-probabilities-decision-models)
+- [Extension: RAG under the hood, then Easy RAG](#extension-rag-under-the-hood-then-easy-rag)
 - [Going Further: Agents](#going-further-agents)
 - [Going Further: JSON Parsing Strategies](#going-further-json-parsing-strategies)
 
@@ -1553,6 +1554,78 @@ Things to keep in mind if you take this further:
 - Probabilities are calibrated per model. A threshold tuned for one model or version needs retuning for another, so record `response.modelName()` alongside each decision.
 - The input is sent to the model provider like any other request. Send only what the decision needs.
 - A decision model is not a security control on its own. Inputs can contain text written to influence the answer.
+
+## Extension: RAG under the hood, then Easy RAG
+
+An extension. Retrieval-augmented generation is the answer to "the model has never read my documents": find the relevant pieces first, then hand them to the model with the question. Frameworks make it a one-liner, which is exactly why it is worth doing once by hand. There are only three calls and a dot product.
+
+* The repository has *The Adventures of Sherlock Holmes* in `src/main/resources/documents`. The model never sees the whole book. Split it into chunks: paragraphs merged until each chunk is at least 800 characters. Crude chunking is fine here; it is a tuning knob, not a concept.
+* Embedding is one more raw call in the shape of every other call in Act 1. Add the records to `OpenAiRecords` and the method to `OpenAiService`:
+
+```java
+public record EmbeddingRequest(String model, List<String> input) {}
+
+public record EmbeddingResponse(List<Embedding> data, Usage usage) {
+    public record Embedding(int index, double[] embedding) {}
+    public record Usage(int promptTokens, int totalTokens) {}
+}
+```
+
+```java
+public EmbeddingResponse embed(List<String> inputs) {
+    String body = mapper.writeValueAsString(new EmbeddingRequest("text-embedding-3-small", inputs));
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://api.openai.com/v1/embeddings"))
+            .header("Authorization", "Bearer %s".formatted(API_KEY))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+    try {
+        HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
+        return mapper.readValue(response.body(), EmbeddingResponse.class);
+    } catch (IOException | InterruptedException e) {
+        throw new RuntimeException(e);
+    }
+}
+```
+
+* Embed the chunks a hundred at a time and keep the vectors in a list, in chunk order. On November 5, 2026 the whole book was 705 chunks, 1536 numbers each, and 140,854 tokens to embed, which is well under a cent at `text-embedding-3-small` prices. Print the `usage` so students see the cost.
+* "Vector search" is a cosine similarity, and in plain Java it is a loop:
+
+```java
+static double cosine(double[] a, double[] b) {
+    double dot = 0, normA = 0, normB = 0;
+    for (int i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+    }
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+```
+
+* Embed the question with the same call, score every chunk against it, and keep the top three. Then paste them into the prompt. That is the "augmented" in RAG:
+
+```java
+String question = "Who is Irene Adler, and why does Holmes keep her photograph?";
+double[] q = openAi.embed(List.of(question)).data().getFirst().embedding();
+List<Scored> best = topK(q, chunks, vectors, 3);   // sort by cosine, take three
+
+String prompt = """
+        Answer the question using only the context below.
+        If the answer is not in the context, say so.
+
+        Context:
+        %s
+
+        Question: %s
+        """.formatted(best.stream().map(Scored::chunk).collect(joining("\n---\n")), question);
+System.out.println(model.chat(prompt));
+```
+
+* Run it. The three best chunks all come from *A Scandal in Bohemia*, with scores around 0.55 to 0.58, and the model answers from them: Irene Adler is the woman who outwitted Holmes, and he keeps the photograph as a memento of his defeat. The solution is `RagUnderTheHoodDemo`; `RagUnderTheHoodDemoTest` covers chunking, cosine, ranking, and the prompt with no key.
+* Now run `EasyRAGDemo`. It does the same four steps through LangChain4j: `loadDocuments` reads the folder, `EmbeddingStoreIngestor.ingest` chunks and embeds into an `InMemoryEmbeddingStore`, `EmbeddingStoreContentRetriever` does the cosine ranking, and `.contentRetriever(...)` on the AI Service pastes the results into the prompt before every call. Nothing in it is magic now, and when retrieval returns the wrong chunks you know which of the four steps to look at.
+* Things that change in production and did not matter here: chunk size and overlap, how many chunks to retrieve, a real vector store instead of a list, and re-ranking. They are all adjustments to a pipeline you have now built by hand.
 
 ## Going Further: Agents
 

@@ -105,7 +105,7 @@ OpenRouter's catalog. The agents slide already does this. Make it the rule.
    step first; key lists trimmed everywhere.
 6. Done. Promote decision models; renumber sections; label extensions.
 7. Done. Optional sealed `InquiryResult` step on structured output.
-8. RAG under the hood, then Easy RAG; the lab.
+8. Done. RAG under the hood, then Easy RAG; the lab.
 9. Update README, CLAUDE.md, and the pre-delivery checklist to the new shape;
    draft the O'Reilly course description from the thesis and the three acts.
 

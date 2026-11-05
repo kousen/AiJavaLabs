@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.json.JsonMapper;
@@ -34,6 +35,23 @@ public class OpenAiService {
         try {
             HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), ModelList.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** One raw call to the embeddings endpoint. Up to 2048 inputs per request; each comes back as a vector. */
+    public EmbeddingResponse embed(List<String> inputs) {
+        String body = mapper.writeValueAsString(new EmbeddingRequest("text-embedding-3-small", inputs));
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.openai.com/v1/embeddings"))
+                .header("Authorization", "Bearer %s".formatted(API_KEY))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        try {
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
+            return mapper.readValue(response.body(), EmbeddingResponse.class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

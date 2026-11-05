@@ -102,6 +102,7 @@ src/
 │   │   ├── MultiModelDemo.java
 │   │   ├── ToolCallingDemo.java
 │   │   ├── StructuredOutputDemo.java
+│   │   ├── RagUnderTheHoodDemo.java # Chunk, embed (raw call), cosine, prompt
 │   │   ├── StreamingDemo.java
 │   │   ├── DecisionModelDemo.java # Typed decisions with probabilities (experimental API)
 │   │   └── ResponsesApiDemo.java  # Responses API with Jackson's tree model

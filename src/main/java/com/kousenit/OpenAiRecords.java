@@ -11,6 +11,15 @@ public class OpenAiRecords {
         public record Model(String id, long created, @JsonProperty("owned_by") String ownedBy) {}
     }
 
+    // Embeddings: a list of strings in, one vector per string out, plus what it cost
+    public record EmbeddingRequest(String model, List<String> input) {}
+
+    public record EmbeddingResponse(List<Embedding> data, Usage usage) {
+        public record Embedding(int index, double[] embedding) {}
+
+        public record Usage(int promptTokens, int totalTokens) {}
+    }
+
     // Generating images
     public record ImageRequest(
             String model, String prompt, Integer n, String quality, String outputFormat, String size) {}

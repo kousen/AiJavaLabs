@@ -150,7 +150,7 @@ layout: two-cols
 8. **StructuredOutputDemo** - Records from model output
 9. **StreamingDemo** - Real-time responses
 10. **ApiComparisonDemo** / **ResponsesApiDemo**
-11. **EasyRAGDemo** - Document Q&A
+11. **RagUnderTheHoodDemo** / **EasyRAGDemo** - RAG, raw then framework
 12. **DecisionModelDemo** - Typed answers with probabilities
 
 ::right::
@@ -1623,6 +1623,34 @@ graph LR
 ```
 
 </v-click>
+
+---
+
+# RAG Under the Hood: Three Calls and a Dot Product
+
+```java
+List<String> chunks = chunk(book, 800);                       // 1. paragraphs merged to ~800 chars
+
+List<double[]> vectors = new ArrayList<>();                   // 2. one raw POST /v1/embeddings per 100 chunks
+for (int from = 0; from < chunks.size(); from += 100)
+    openAi.embed(chunks.subList(from, min(from + 100, chunks.size())))
+          .data().forEach(e -> vectors.add(e.embedding()));
+
+double[] q = openAi.embed(List.of(question)).data().getFirst().embedding();
+List<Scored> best = topK(q, chunks, vectors, 3);              // 3. cosine similarity, sort, take three
+
+model.chat(prompt(question, best));                           // 4. paste them into the prompt
+```
+
+<v-clicks>
+
+- **705 chunks, 1536 numbers each, 140,854 tokens**: under a cent to embed the whole book
+- **"Vector search" is a loop**: dot product over norms, nothing else
+- **Every framework RAG does these four steps**; when retrieval is wrong, you now know which one to look at
+
+</v-clicks>
+
+**Live Demo**: `RagUnderTheHoodDemo`, then `EasyRAGDemo` for the same thing through LangChain4j
 
 ---
 

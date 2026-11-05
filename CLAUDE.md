@@ -9,6 +9,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 ## Current State
 
 ### Recent Updates (November 2026)
+- ✅ Redesign branch, items 6-8 (Nov 5): labs structured as three acts with extensions labeled; decision models promoted to a full section; optional sealed `InquiryResult` step on structured output (LangChain4j builds an `anyOf` schema with a `type` tag for a sealed return type, verified); `RagUnderTheHoodDemo` plus `OpenAiService.embed` (raw `/v1/embeddings`, text-embedding-3-small) with no-key tests, then `EasyRAGDemo` as the framework version
 - ✅ Redesign branch, item 5 (Nov 5): Google GenAI SDK, `ImageGenerator`, and the raw `AnthropicService` removed; "Same pattern, other vendors" is now an extension with two vendors; images lab moves to gpt-image-2.6-flare and opens with the OpenRouter catalog query; key lists trimmed to OpenAI + OpenRouter, ElevenLabs optional
 - ✅ Redesign branch, item 4 (Nov 5): `ConversationDemo` shows an AI Service forgetting the user's name, then `MessageWindowChatMemory` fixing it; `ConversationDemoTest` records the messages list with a scripted model (1 message, then 3, then the window trims). `QuickChatDemo` adds an `openrouter/free` call that prints `response.metadata().modelName()` to show routing. Lab steps and a memory slide added
 - ✅ Scripted-model tests for the other two LangChain4j demos (Nov 5): `StructuredOutputDemoTest` now drives the AI Service through a `ChatModel` that claims JSON Schema support (schema has all four fields required, fenced JSON parses, a missing required field throws `OutputParsingException` from Jackson, an unknown enum value fails in the framework); `DecisionModelDemoTest` pins the triage question keys, runs `triage` against a lambda `DecisionModel`, and checks the thresholds. Each demo exposes a package-private factory or helper (`extractor(ChatModel)`, `triageRequest`, `actions`) so no key is needed. Rule: a demo run is a happy-path check; the unhappy paths need a scripted model
@@ -75,6 +76,7 @@ src/main/java/com/kousenit/
 │   ├── MultiModelDemo.java   # Compare multiple providers
 │   ├── ToolCallingDemo.java  # LangChain4j tools backed by Java methods
 │   ├── StructuredOutputDemo.java # Java records from model output
+│   ├── RagUnderTheHoodDemo.java # RAG with nothing hidden: chunk, raw embeddings call, cosine, prompt; EasyRAGDemo is the framework version
 │   ├── StreamingDemo.java    # Streaming with LambdaStreamingResponseHandler
 │   ├── DecisionModelDemo.java # Experimental DecisionModel API: typed answers with probabilities
 │   └── ResponsesApiDemo.java # Responses API with Jackson's tree model (pointer + walk)
