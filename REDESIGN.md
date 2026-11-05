@@ -106,11 +106,49 @@ OpenRouter's catalog. The agents slide already does this. Make it the rule.
 6. Done. Promote decision models; renumber sections; label extensions.
 7. Done. Optional sealed `InquiryResult` step on structured output.
 8. Done. RAG under the hood, then Easy RAG; the lab.
-9. Update README, CLAUDE.md, and the pre-delivery checklist to the new shape;
-   draft the O'Reilly course description from the thesis and the three acts.
+9. Done. README, CLAUDE.md, and the pre-delivery checklist updated; the
+   O'Reilly course description draft is below.
 
 ## Open
 
 Nothing blocking. Verify during item 3 that Ollama's chat messages accept an
 `images` list, and during item 5 that `gpt-image-2.6-flare` is served by the
 OpenAI images endpoint as well as through OpenRouter.
+
+## Draft course description (for O'Reilly)
+
+**AI Integration for Java Developers: From the Wire to the Loop**
+
+Every call to an AI model is a stateless HTTP request carrying a list of
+messages. This course starts there, with the JDK's HttpClient and Jackson and
+no AI library at all, so that when a framework does something surprising you
+know what to look at. Then it hands the same requests to LangChain4j and shows
+exactly what the framework saved you. Finally it closes the loop: tool calling,
+structured output into Java records and sealed types, decision models that
+return a probability for every option, and the question of where agents fit.
+
+Along the way you will see the model forget your name between two requests
+and fix it by appending to a list; watch a streamed response arrive one JSON
+line at a time, including a thinking model's empty chunks; hand a vision model
+a screenshot of a stack trace and get a diagnosis; find the current image
+model in a catalog instead of a tutorial; build retrieval-augmented generation
+with one embeddings call and a dot product before letting Easy RAG do it; and
+watch a sealed interface force your code to handle every shape the model can
+return. Every demo with a branch in it has a test that runs without an API key.
+
+You will leave with a project you can run against OpenAI, OpenRouter, and a
+local Ollama model, and with a clear map of which problems are the model's,
+which are the framework's, and which are yours.
+
+**What you'll learn**
+
+- Read and write the request every AI vendor accepts, and check the status code
+- Why each request is stateless, and how memory, tools, and agents all append to one list
+- Stream with the JDK alone, and with LangChain4j's handlers
+- Call models from many vendors through one key with OpenRouter
+- Let the model call Java methods, and decide what it sees when it gets the arguments wrong
+- Turn model output into records, sealed types, and probabilities your code can act on
+- Build RAG by hand, then with a framework, and know which step to debug
+
+**Prerequisites**: Java 21, Gradle, an OpenAI key and an OpenRouter key.
+Ollama is optional for local models.

@@ -1399,7 +1399,7 @@ public String chatStreaming(String model, List<OllamaMessage> messages, Consumer
 **Ollama**: one JSON object per line
 
 ```json
-{"message":{"content":"","thinking":"Analyze"},"done":false}
+{"message":{"content":"","thinking":"1."},"done":false}
 {"message":{"content":"The"},"done":false}
 {"message":{"content":" sky"},"done":false}
 {"message":{"content":""},"done":true}

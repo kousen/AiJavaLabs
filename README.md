@@ -125,15 +125,16 @@ Generate MP3 audio files from text using OpenAI's TTS models:
 - Models: `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`
 - Multiple voice options: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer
 
-### 🤖 Chat Interactions
-Support for both cloud and local AI models:
-- **OpenAI**: gpt-6-luna for advanced conversations
-- **Ollama**: Local gemma4 model (Google's open-source multimodal model)
+### 🤖 Chat Is a Stateless Request Carrying a Message List
+The idea the whole course is built on, taught twice:
+- **Raw**: `OllamaService.chat` posts a `messages` list to `/api/chat`; two requests forget your name, appending the reply fixes it
+- **Framework**: `ConversationDemo` shows an AI Service forgetting, then `MessageWindowChatMemory` doing the appending for you
+- **Models**: gpt-6-luna through OpenAI or OpenRouter, `openrouter/free` to watch routing happen, local gemma4 through Ollama
 
-### 🖼️ Vision Capabilities
-Image analysis and description generation:
-- Multimodal support with Ollama's gemma4 model (text and vision in one model)
-- Base64 image encoding for API transmission
+### 🖼️ Vision, the Way Developers Use It
+An image rides along on a chat message:
+- `OllamaMessage.user(text, imagePath)` Base64-encodes a local file onto the message
+- The example is a screenshot of a stack trace with the question "what went wrong?", answered by gemma4
 
 ### 🎨 Image Generation
 Create images from text descriptions using GPT Image:
@@ -153,16 +154,16 @@ Extract Java records from unstructured text:
 - Enable JSON Schema support in LangChain4j
 - Return records from AI Service methods
 - Validate parsed objects before using them
+- Optional: return a sealed interface (`InquiryResult`) and dispatch on the model's choice with an exhaustive switch
 
-### 📚 Document Processing
-RAG implementation for document-based question answering:
-- LangChain4j integration
-- Vector store support for efficient document retrieval
+### 📚 RAG, Under the Hood and Then Easy
+Document question answering, built by hand first:
+- `RagUnderTheHoodDemo`: chunk the text, one raw `/v1/embeddings` call per 100 chunks, cosine similarity in a loop, top chunks pasted into the prompt
+- `EasyRAGDemo`: the same four steps through LangChain4j's ingestor, in-memory store, and content retriever
 
-### 🔌 Services Without a Java SDK
+### 🔌 Services Without a Java SDK (extension)
 The same HttpClient + records + Jackson pattern against vendors that ship no Java library:
-- OpenRouter's model catalog with modalities and per-token pricing (no key required)
-- Anthropic's models list with its `x-api-key` and version headers
+- OpenRouter's model catalog with modalities and per-token pricing (no key required); the images lab uses it to find the current image model
 - ElevenLabs voices and text-to-speech, the OpenAI audio lab with different headers
 
 ### 🧭 Decision Models (experimental)
@@ -173,27 +174,36 @@ Typed yes/no, choice, and scale answers with probabilities instead of generated 
 
 ## Dependencies
 
-- **LangChain4j**: 1.23.0 (AI framework)
-- **Google Gen AI SDK**: 1.55.0
-- **Apache POI**: 5.5.1 (Document processing)
+- **LangChain4j**: 1.23.0 (AI framework, including the Easy RAG and TypeSafe decision-model modules)
 - **Jackson**: 3.2.4 (`tools.jackson`, JSON data binding and tree model)
-- **JUnit**: 5.13.4 (Testing)
-- **Spotless**: 7.2.1 (Code formatting)
+- **JUnit**: 6.1.3 and **AssertJ** 4.0.0-M1 (Testing)
+- **Spotless**: 8.11.0 (Code formatting)
 - **Playwright**: For Slidev export functionality
 
 ## Lab Exercises
 
-Detailed step-by-step exercises are available in [labs.md](labs.md), covering:
+Detailed step-by-step exercises are available in [labs.md](labs.md), in three acts. Sections marked as extensions can be skipped without affecting what follows.
 
-1. **Generate Audio from Text** - OpenAI TTS integration
-2. **List OpenAI Models** - API exploration and model discovery
-3. **Install and Use Ollama** - Local AI model setup
-4. **Streaming Responses** - Real-time AI interactions
-5. **Vision Requests** - Image analysis capabilities
-6. **Conversation Management** - Multi-turn chat implementations
-7. **Tool Calling** - Let the model call Java methods
-8. **Structured Output** - Extract validated Java records
-9. **Image Generation** - GPT Image integration
+**Act 1: Read the wire** (raw HTTP and JSON)
+1. **Generate Audio from Text** - POST, binary body, and why a status code is not an exception
+2. **List the OpenAI Models** - GET and JSON binding with records and `JsonNode`
+3. **Same pattern, other vendors** (extension) - OpenRouter's catalog, ElevenLabs
+4. **Ollama: your first chat request** - the `messages` list every vendor uses
+5. **Every request is stateless** - "My name is Inigo Montoya." then "What's my name?", and the fix
+6. **Streaming Results** - `sendAsync` + `ofLines`, including a thinking model's empty chunks
+7. **Ask about an image** (optional) - a stack-trace screenshot on a chat message
+8. **Generating Images** (extension) - find the current model in the catalog, then GPT Image
+
+**Act 2: Let the framework build it** (LangChain4j)
+9. **Call cloud models through OpenRouter** - `OpenAiChatModel`, request logging, `openrouter/free` routing, memory
+10. **Clean Streaming with LangChain4j** (extension)
+
+**Act 3: Close the loop** (Java decides what happens next)
+11. **Tool Calling** - Java methods the model can call, and what happens when it gets the arguments wrong
+12. **Structured Output** - validated records, and optionally a sealed result type
+13. **Decision models** - a probability for every option, thresholds in Java
+14. **RAG under the hood, then Easy RAG** (extension)
+15. **Going Further** - agents, JSON parsing strategies
 
 ## JSON Parsing Approaches
 
