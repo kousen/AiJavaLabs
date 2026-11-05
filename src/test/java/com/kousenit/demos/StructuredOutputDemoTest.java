@@ -9,7 +9,9 @@ import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ResponseFormatType;
+import dev.langchain4j.model.chat.request.json.JsonAnyOfSchema;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.output.OutputParsingException;
 import java.util.List;
@@ -109,6 +111,47 @@ class StructuredOutputDemoTest {
         assertThatThrownBy(() -> StructuredOutputDemo.validate(inquiry))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("action item");
+    }
+
+    // ---- the optional sealed-result step ----
+
+    @Test
+    void sealed_result_schema_offers_one_object_per_variant_with_a_type_tag() {
+        var model = new ScriptedModel("{\"value\":{\"type\":\"Noise\",\"reason\":\"curiosity\"}}");
+
+        StructuredOutputDemo.classifier(model).classify("any message");
+
+        JsonObjectSchema root =
+                (JsonObjectSchema) model.request.responseFormat().jsonSchema().rootElement();
+        JsonAnyOfSchema choice = (JsonAnyOfSchema) root.properties().get("value");
+        assertThat(choice.anyOf()).hasSize(3);
+        for (JsonSchemaElement variant : choice.anyOf()) {
+            assertThat(((JsonObjectSchema) variant).properties()).containsKey("type");
+        }
+    }
+
+    @Test
+    void model_picks_a_variant_and_java_dispatches_exhaustively() {
+        var model = new ScriptedModel(
+                """
+                {"value":{"type":"QuoteRequest","course":"Java 21 migration","developers":40,"timeframe":"next quarter"}}
+                """);
+
+        StructuredOutputDemo.InquiryResult result =
+                StructuredOutputDemo.classifier(model).classify("any message");
+
+        assertThat(result).isInstanceOf(StructuredOutputDemo.QuoteRequest.class);
+        assertThat(StructuredOutputDemo.nextStep(result))
+                .isEqualTo("Send a Java 21 migration quote for 40 developers (next quarter)");
+    }
+
+    @Test
+    void noise_gets_the_standard_reply() {
+        var model = new ScriptedModel("{\"value\":{\"type\":\"Noise\",\"reason\":\"just curious\"}}");
+
+        var result = StructuredOutputDemo.classifier(model).classify("any message");
+
+        assertThat(StructuredOutputDemo.nextStep(result)).isEqualTo("Standard reply (just curious)");
     }
 
     /** Claims JSON Schema support (as the OpenAI model in main does) and replies with fixed text. */

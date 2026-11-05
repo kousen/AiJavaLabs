@@ -1230,6 +1230,35 @@ validate(inquiry);
 
 ---
 
+# Optional: When the Answer Is One of Several Shapes
+
+```java
+public sealed interface InquiryResult permits QuoteRequest, SchedulingRequest, Noise {}
+public record QuoteRequest(String course, int developers, String timeframe) implements InquiryResult {}
+public record SchedulingRequest(String course, String preferredDates)       implements InquiryResult {}
+public record Noise(String reason)                                           implements InquiryResult {}
+
+interface InquiryClassifier { InquiryResult classify(String message); }   // LangChain4j: anyOf + a "type" tag
+
+static String nextStep(InquiryResult result) {
+    return switch (result) {                                   // exhaustive: no default, sealed type
+        case QuoteRequest(var course, var devs, var when) -> "Send a %s quote for %d".formatted(course, devs);
+        case SchedulingRequest(var course, var dates)     -> "Offer " + course + " dates";
+        case Noise(var reason)                            -> "Standard reply";
+    };
+}
+```
+
+<v-clicks>
+
+- The model picks the shape; Java was forced to handle every shape it can pick
+- Add a fourth record and `nextStep` stops compiling until you do
+- Data-oriented programming doing AI work: records, a sealed interface, record patterns in a switch
+
+</v-clicks>
+
+---
+
 # Beyond Text: Decision Models
 
 LangChain4j 1.23 adds an **experimental** `DecisionModel` API: typed questions in, probabilities out. Nothing to parse.

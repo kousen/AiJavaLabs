@@ -1469,30 +1469,54 @@ public static void validate(CourseInquiry inquiry) {
 ./gradlew run -PmainClass=com.kousenit.demos.StructuredOutputDemo
 ```
 
-* Add a cheap unit test that does not call the model. This verifies the Java-side parse and validation behavior:
+* The solution's `StructuredOutputDemoTest` tests this without a key, and without bypassing the framework. A scripted `ChatModel` claims JSON Schema support and replies with fixed text, so the test can assert what LangChain4j sent (a schema with all four fields required) and what it did with the reply: a record for good JSON, an `OutputParsingException` when a required field is missing or an enum value is unknown. Note what that means for `validate()`: `@JsonProperty(required = true)` is enforced on the way in by Jackson, so validation is for what a schema cannot say, such as "at least one action item".
+
+### Optional: when the answer is one of several shapes
+
+* A record is one shape with every field. Some answers are a choice between shapes. A training inquiry is a quote request (with a head count), a scheduling request (with dates), or noise, and the three do not share fields. Model that as a sealed interface:
 
 ```java
-private final ObjectMapper mapper = JsonMapper.builder().build();  // tools.jackson.databind.json.JsonMapper
+@Description("What the sender of a training inquiry actually wants")
+public sealed interface InquiryResult permits QuoteRequest, SchedulingRequest, Noise {}
 
-@Test
-void parses_structured_output_into_record() throws Exception {
-    String json = """
-        {
-          "topic": "Tool calling versus structured outputs",
-          "priority": "HIGH",
-          "needsFollowUp": true,
-          "actionItems": [
-            "Add a small structured-output demo",
-            "Explain when to use tools versus JSON records"
-          ]
-        }
-        """;
+@Description("The sender wants a price for training a group")
+public record QuoteRequest(
+        @JsonProperty(required = true) String course,
+        @JsonProperty(required = true) int developers,
+        @Description("When they need it, if they said") String timeframe) implements InquiryResult {}
 
-    CourseInquiry inquiry = mapper.readValue(json, CourseInquiry.class);
-    StructuredOutputDemo.validate(inquiry);
-    assertThat(inquiry.priority()).isEqualTo(Priority.HIGH);
+@Description("The sender wants to arrange dates or a call, no price asked")
+public record SchedulingRequest(
+        @JsonProperty(required = true) String course,
+        String preferredDates) implements InquiryResult {}
+
+@Description("No concrete request: curiosity, thanks, or spam")
+public record Noise(@JsonProperty(required = true) String reason) implements InquiryResult {}
+
+interface InquiryClassifier {
+    InquiryResult classify(String message);
 }
 ```
+
+* LangChain4j turns the sealed interface into a JSON Schema with `anyOf` over the three records, each carrying a `type` tag naming the record, and parses the reply back into whichever one the model chose. Turn `logRequests` on once to see the schema it sent.
+* Now the part the whole exercise is for. Write the application's decision as a switch over the sealed type, with record patterns pulling the fields out:
+
+```java
+static String nextStep(InquiryResult result) {
+    return switch (result) {
+        case QuoteRequest(String course, int developers, String timeframe) ->
+            "Send a %s quote for %d developers (%s)".formatted(course, developers,
+                    timeframe == null ? "no date given" : timeframe);
+        case SchedulingRequest(String course, String dates) ->
+            "Offer %s dates%s".formatted(course, dates == null ? "" : " around " + dates);
+        case Noise(String reason) -> "Standard reply (" + reason + ")";
+    };
+}
+```
+
+* There is no `default` branch, and the compiler accepts that because the interface is sealed. Add a fourth permitted record and `nextStep` stops compiling until you handle it. That is the property you want when the thing producing the data is a model you do not control: every shape it can return is a shape your code was forced to consider.
+* Classify a few inquiries and print `nextStep` for each; the solution's `main` does this for a quote, a scheduling request, and a curious bystander. `StructuredOutputDemoTest` covers the schema shape and the dispatch with scripted replies.
+* The decision-model lab that follows answers a related question, "how sure is the model", with a probability per option instead of one chosen shape. The two compose: classify with the sealed type when you need the fields, ask the decision model when you need to know whether to trust the classification.
 
 The design point is the same as with tool calling: let the model help with interpretation, but keep your application responsible for contracts. In production, validate the parsed object and decide what to do when required fields are missing, enum values are wrong, or the extracted data is semantically questionable.
 
