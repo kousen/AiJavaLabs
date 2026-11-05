@@ -1276,10 +1276,13 @@ In this lab, create a small travel assistant that can call Java methods for weat
 ```java
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.exception.ToolErrorVisibleToLlm;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.tool.ToolArgumentsErrorHandler;
+import dev.langchain4j.service.tool.ToolExecutionErrorHandler;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
@@ -1321,8 +1324,8 @@ public static class TravelTools {
     @Tool("Estimate fuel cost for a trip")
     public String fuelCost(
             @P("driving distance in miles") int miles,
-            @P("vehicle fuel economy in miles per gallon") double mpg,
-            @P("fuel price per gallon") double pricePerGallon) {
+            @P(value = "vehicle fuel economy in miles per gallon", defaultValue = "30") double mpg,
+            @P(value = "fuel price per gallon", defaultValue = "3.65") double pricePerGallon) {
         BigDecimal gallons = BigDecimal.valueOf(miles)
                 .divide(BigDecimal.valueOf(mpg), 2, RoundingMode.HALF_UP);
         BigDecimal cost = gallons.multiply(BigDecimal.valueOf(pricePerGallon))
@@ -1347,9 +1350,13 @@ public int drivingDistance(
     if (from.equalsIgnoreCase("Hartford") && to.equalsIgnoreCase("New York")) {
         return 116;
     }
-    throw new IllegalArgumentException("Unsupported route: " + from + " to " + to);
+    throw ToolErrorVisibleToLlm.from("Unsupported route: " + from + " to " + to);
 }
 ```
+
+* Two things in those methods are about what the model does with the schema, not about travel:
+  - `@P(defaultValue = "30")` makes `mpg` optional. LangChain4j leaves it out of the schema's `required` list and fills in `30` when the model omits the argument. `miles` has no sensible default, so it stays required.
+  - `ToolErrorVisibleToLlm.from(...)` creates an exception written for the model to read. In a moment you will configure the service so that only exceptions of that kind reach the model.
 
 * Build the model and register the tools with `AiServices`. Do not set `temperature`, `topP`, or `topK`: the GPT-6 models accept only the defaults and reject any other value.
 
@@ -1362,8 +1369,15 @@ ChatModel model = OpenAiChatModel.builder()
 TravelAssistant assistant = AiServices.builder(TravelAssistant.class)
         .chatModel(model)
         .tools(new TravelTools())
+        .toolArgumentsErrorHandler(ToolArgumentsErrorHandler.sendExceptionMessageToLlm())
+        .toolExecutionErrorHandler(ToolExecutionErrorHandler.failInvocationUnlessVisibleToLlm())
         .build();
 ```
+
+* The two error handlers decide what happens when a tool call goes wrong, and you want to choose that yourself rather than inherit it. Without them, LangChain4j logs a long warning on the first call and uses defaults it has announced it will change:
+  - `ToolArgumentsErrorHandler` runs when the arguments cannot be applied to your method at all: the JSON does not parse, a required `int` is missing, or a value is the wrong type. The current default fails the whole `chat` call with an exception such as `Required parameter "miles" of tool "fuelCost" is missing`. `sendExceptionMessageToLlm()` sends that message back to the model instead, and the model usually retries with corrected arguments.
+  - `ToolExecutionErrorHandler` runs when your method throws. The current default sends every exception message to the model, including stack-trace details written for developers. `failInvocationUnlessVisibleToLlm()` lets through only exceptions that implement `ToolErrorVisibleToLlm`, such as the unsupported-route error above, and fails the call for anything else (a `NullPointerException`, say). That is why the demo code throws `ToolErrorVisibleToLlm.from(...)` for the one failure the model is meant to recover from.
+  - Required is advisory. The schema marks `city` as required, but if the model leaves it out anyway, your method is called with `null`. Only a missing primitive is detected as an argument error; a missing object argument just arrives as `null`, so guard your `String` parameters as you would any user input.
 
 * Ask a question that requires multiple tools:
 
@@ -1404,6 +1418,8 @@ The important design point is that the model does not get direct access to your 
   }
 }, ... ]
 ```
+
+Look at the `fuelCost` entry too: its `required` array holds only `miles`, because the other two parameters have a `defaultValue`.
 
 * The first response has no answer. Its `finish_reason` is `tool_calls`, and the message asks your application to run three methods, with the arguments as a JSON string:
 

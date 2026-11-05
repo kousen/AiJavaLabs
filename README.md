@@ -146,6 +146,7 @@ Expose Java methods as model-callable tools through LangChain4j:
 - Annotate methods with `@Tool`
 - Document parameters with `@P`
 - Register tools through `AiServices`
+- Choose what the model sees when arguments are missing or a tool throws (`@P(defaultValue)`, `ToolArgumentsErrorHandler`, `ToolExecutionErrorHandler`)
 - Keep validation and side effects in Java application code
 
 ### 🧾 Structured Output
