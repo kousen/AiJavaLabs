@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import tools.jackson.databind.ObjectMapper;
@@ -21,95 +22,15 @@ public class OllamaService {
     private static final HttpClient client = HttpClient.newHttpClient();
     private static final String URL = "http://localhost:11434";
 
-    private final System.Logger logger = System.getLogger(OllamaService.class.getName());
-
     // SNAKE_CASE maps created_at <-> createdAt without annotating every record
     private final ObjectMapper mapper = JsonMapper.builder()
             .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
             .enable(SerializationFeature.INDENT_OUTPUT)
             .build();
 
-    public OllamaResponse generate(OllamaRequest ollamaRequest) {
-        switch (ollamaRequest) {
-            case OllamaTextRequest textRequest -> {
-                logger.log(System.Logger.Level.INFO, "Text request to: {0}", textRequest.model());
-                logger.log(System.Logger.Level.INFO, "Prompt: {0}", textRequest.prompt());
-            }
-            case OllamaVisionRequest visionRequest -> {
-                logger.log(System.Logger.Level.INFO, "Vision request to: {0}", visionRequest.model());
-                logger.log(
-                        System.Logger.Level.INFO,
-                        "Size of uploaded image: {0}",
-                        visionRequest.images().getFirst().length());
-                logger.log(System.Logger.Level.INFO, "Prompt: {0}", visionRequest.prompt());
-            }
-        }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(URL + "/api/generate"))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
-                .build();
-        try {
-            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-            logger.log(System.Logger.Level.INFO, "Response: {0}", response.body());
-            return mapper.readValue(response.body(), OllamaResponse.class);
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public OllamaResponse generate(String model, String input) {
-        return generate(new OllamaTextRequest(model, input, false));
-    }
-
-    public String generateStreaming(OllamaTextRequest ollamaTextRequest) {
-        logger.log(System.Logger.Level.INFO, "Generating streaming response with request: {0}", ollamaTextRequest);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(URL + "/api/generate"))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaTextRequest)))
-                .build();
-        try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            logger.log(System.Logger.Level.DEBUG, "Response: {0}", response.body());
-            return response.body();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public OllamaResponse generateVision(OllamaVisionRequest visionRequest) {
-        logger.log(System.Logger.Level.INFO, "Model: {0}", visionRequest.model());
-        logger.log(
-                System.Logger.Level.INFO,
-                "Size of uploaded image: {0}",
-                visionRequest.images().getFirst().length());
-        logger.log(System.Logger.Level.INFO, "Prompt: {0}", visionRequest.prompt());
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(URL + "/api/generate"))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(visionRequest)))
-                .build();
-        try {
-            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
-            return mapper.readValue(response.body(), OllamaResponse.class);
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    /** Sends the whole conversation. The server keeps nothing between calls: the list is the memory. */
     public OllamaChatResponse chat(OllamaChatRequest chatRequest) {
-        String json = mapper.writeValueAsString(chatRequest);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(URL + "/api/chat"))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
+        HttpRequest request = post("/api/chat", mapper.writeValueAsString(chatRequest));
         try {
             HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
             return mapper.readValue(response.body(), OllamaChatResponse.class);
@@ -118,8 +39,13 @@ public class OllamaService {
         }
     }
 
+    /** One user message, no history. */
+    public OllamaChatResponse chat(String model, String prompt) {
+        return chat(new OllamaChatRequest(model, List.of(OllamaMessage.user(prompt)), false));
+    }
+
     /**
-     * Streams a response, handing each token to the consumer as it arrives, and returns the
+     * Streams the reply, handing each token to the consumer as it arrives, and returns the
      * whole text once the server sends done=true.
      *
      * The JDK does the streaming for us: sendAsync returns a CompletableFuture immediately,
@@ -127,27 +53,45 @@ public class OllamaService {
      * still arriving. Ollama sends one JSON object per line, so each line maps to a record.
      * join() blocks until the stream ends; return the future instead if the caller should not wait.
      */
-    public String generateStreaming(String model, String prompt, Consumer<String> onToken) {
-        var ollamaRequest = new OllamaTextRequest(model, prompt, true);
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(URL + "/api/generate"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(ollamaRequest)))
-                .build();
+    public String chatStreaming(String model, List<OllamaMessage> messages, Consumer<String> onToken) {
+        var chatRequest = new OllamaChatRequest(model, messages, true);
+        HttpRequest request = post("/api/chat", mapper.writeValueAsString(chatRequest));
 
         CompletableFuture<String> fullText = client.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
                 .thenApply(HttpSupport::requireSuccessLines)
                 .thenApply(response -> {
                     var text = new StringBuilder();
                     response.body()
-                            .map(line -> mapper.readValue(line, OllamaResponse.class))
+                            .map(line -> mapper.readValue(line, OllamaChatResponse.class))
                             .forEach(chunk -> {
-                                onToken.accept(chunk.response());
-                                text.append(chunk.response());
+                                String token = chunk.message().content();
+                                onToken.accept(token);
+                                text.append(token);
                             });
                     return text.toString();
                 });
 
         return fullText.join();
+    }
+
+    /** Aside: Ollama's own single-prompt endpoint. No history, no roles; nothing else in the course uses it. */
+    public OllamaGenerateResponse generate(String model, String prompt) {
+        HttpRequest request =
+                post("/api/generate", mapper.writeValueAsString(new OllamaGenerateRequest(model, prompt, false)));
+        try {
+            HttpResponse<String> response = requireSuccess(client.send(request, HttpResponse.BodyHandlers.ofString()));
+            return mapper.readValue(response.body(), OllamaGenerateResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static HttpRequest post(String path, String json) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(URL + path))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
     }
 }
