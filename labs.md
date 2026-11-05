@@ -31,9 +31,12 @@
 
 Every call to an AI model is a stateless HTTP request carrying a list of messages. These labs read that request and response on the wire first, let a framework build them second, and then close the loop: Java decides what the model is asked next, with tools, typed outputs, and probabilities.
 
-**Act 1: Read the wire.** Raw HTTP and JSON, no AI library. When a framework does something surprising, this is what you look at.
+**Act 1: Read the wire.** Raw HTTP and JSON, no AI library. When a framework does something surprising, this is what you look at. The first three labs are a ladder, each adding exactly one thing: the audio lab is the HTTP call with nothing else in the way, the models lab adds parsing a JSON response, and the Ollama lab adds sending JSON too, in the shape of a message list.
 
 ## Generate Audio from Text
+
+No JSON yet, on purpose. This lab is the HTTP request and nothing else: a key in a header, a body, a status code, and bytes written to a file. The next lab adds parsing a response, and the one after that adds sending a message list.
+
 
 - At the [OpenAI developer site](https://platform.openai.com/docs/overview), sign up for an account and create an API key. Currently the link to your API keys is at https://platform.openai.com/api-keys . OpenAI now recommends project API keys. See [this page](https://help.openai.com/en/articles/9186755-managing-your-work-in-the-api-platform-with-projects) for more information.
 - Add the API key to an environment variable called `OPENAI_API_KEY`.
