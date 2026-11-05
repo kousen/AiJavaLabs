@@ -952,6 +952,27 @@ public class QuickChatDemo {
 
 * Run the class. Compare this to the `HttpClient` code from the first labs: the request body, headers, and JSON parsing are all handled by the builder and the `chat` method.
 
+* Now let OpenRouter choose the model. Build a second `ChatModel` with the id `openrouter/free`, and this time ask for the full `ChatResponse` so you can see which model actually answered:
+
+```java
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
+
+ChatModel free = OpenAiChatModel.builder()
+        .baseUrl(OPENROUTER_BASE_URL)
+        .apiKey(apiKey)
+        .modelName("openrouter/free")
+        .build();
+ChatResponse response = free.chat(ChatRequest.builder()
+        .messages(UserMessage.from("What is the capital of France? One word."))
+        .build());
+System.out.printf("openrouter/free routed to %s: %s%n",
+        response.metadata().modelName(), response.aiMessage().text());
+```
+
+* Run it a few times. One run answered from `cohere/north-mini-code:free`, the next from `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`. Different vendors, different APIs underneath, and nothing in your Java changed. The vendor-specific headers and JSON shapes you would otherwise learn one at a time are OpenRouter's problem now. The `model` field in the response is the only way to know who answered, which is one more reason to read responses rather than just their text.
+
 * Now look at what the builder did for you. Add `.logRequests(true)` and `.logResponses(true)` to the builder and run it again. LangChain4j logs the exact HTTP exchange:
 
 ```
@@ -972,6 +993,45 @@ HTTP request:
 * That is the same request you built by hand in the Ollama conversation lab: a model name and a list of `role`/`content` messages, posted as JSON with a bearer token. The framework saved you the records, the mapper, and the status check, but it did not do anything you could not do yourself. Note that the key is masked in the log.
 
 * Read the response log too. Beyond `choices[0].message.content`, the `usage` block separates `completion_tokens` from `reasoning_tokens` (gpt-6-luna is a reasoning model, and the reasoning can cost more than the answer), and OpenRouter adds a `cost` field in dollars. When a framework call behaves strangely, this log is the first place to look.
+
+* The request log showed a `messages` list with exactly one entry. So the framework has the same problem the raw Ollama lab had: it remembers nothing between calls. Prove it the same way. Create `ConversationDemo` in the `demos` package with an AI Service, LangChain4j's way of turning an interface into a client:
+
+```java
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.service.AiServices;
+
+public class ConversationDemo {
+    interface Assistant {
+        String chat(String message);
+    }
+
+    static Assistant stateless(ChatModel model) {
+        return AiServices.builder(Assistant.class).chatModel(model).build();
+    }
+
+    public static void main(String[] args) {
+        // ... build the OpenRouter model as in QuickChatDemo ...
+        Assistant forgetful = stateless(model);
+        System.out.println(forgetful.chat("My name is Inigo Montoya."));
+        System.out.println(forgetful.chat("What's my name? Answer in one short sentence."));
+    }
+}
+```
+
+* Run it: `I don't know your name.` Same result as the raw lab, for the same reason. Now add memory to the service:
+
+```java
+static Assistant withMemory(ChatModel model) {
+    return AiServices.builder(Assistant.class)
+            .chatModel(model)
+            .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+            .build();
+}
+```
+
+* Call the same two lines through `withMemory(model)` and run again: `Your name is Inigo Montoya.` Turn `logRequests` on and watch the `messages` list in the second request: three entries, your first message, the assistant's reply, your question. The framework did the appending. It is the same list you built by hand with `conversation.add(first.message())` in the Ollama lab, nothing more.
+* `withMaxMessages(10)` is the trimming policy. Once the list passes ten messages the oldest drop off, which keeps the cost of each request bounded and also means the model forgets whatever fell out of the window. `TokenWindowChatMemory` budgets by tokens instead. Either way, the policy is a decision you make, not something the model does.
+* The solution's `ConversationDemoTest` proves all of this without a key: a scripted `ChatModel` records the messages list on every call, so the test can assert one message without memory, three with it, and the oldest exchanges gone after the window fills. That is the right kind of test for framework behavior, because it checks what was sent, not what a model happened to say.
 
 * Now create `MultiModelDemo` in the same package. Add a helper that builds a model for any OpenRouter model id:
 

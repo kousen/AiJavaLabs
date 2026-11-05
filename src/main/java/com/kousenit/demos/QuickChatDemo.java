@@ -1,6 +1,9 @@
 package com.kousenit.demos;
 
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import java.util.Objects;
 
@@ -30,6 +33,19 @@ public class QuickChatDemo {
         String prompt = "Explain what LangChain4j is in 2-3 sentences.";
         System.out.println("Question: " + prompt);
         System.out.println("\nAnswer: " + model.chat(prompt));
+
+        // Let OpenRouter choose. The response says which model actually answered.
+        ChatModel free = OpenAiChatModel.builder()
+                .baseUrl(OPENROUTER_BASE_URL)
+                .apiKey(apiKey)
+                .modelName("openrouter/free")
+                .build();
+        ChatResponse response = free.chat(ChatRequest.builder()
+                .messages(UserMessage.from("What is the capital of France? One word."))
+                .build());
+        System.out.printf(
+                "%nopenrouter/free routed to %s: %s%n",
+                response.metadata().modelName(), response.aiMessage().text());
 
         System.out.println("\n--- Demo Complete ---");
     }

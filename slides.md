@@ -118,7 +118,7 @@ layout: two-cols
 2. **OpenAiService** - Model discovery + JSON
 3. **LocalOllamaDemo** - Local AI models
 4. **OllamaService** - Chat, stateless requests, streaming
-5. **QuickChatDemo** - LangChain4j chat
+5. **QuickChatDemo** / **ConversationDemo** - Chat, routing, memory
 6. **MultiModelDemo** - Compare providers
 
 ::right::
@@ -834,7 +834,44 @@ public class QuickChatDemo {
 ```
 ````
 
-**Live Demo**: Run `QuickChatDemo.java` - from complex HTTP to simple method call!
+**Live Demo**: Run `QuickChatDemo.java` - from complex HTTP to simple method call! Its second call uses `openrouter/free` and prints which model answered.
+
+---
+
+# Memory: The Framework Does the Appending
+
+````md magic-move
+```java
+// An AI Service without memory sends one message per call
+interface Assistant { String chat(String message); }
+
+Assistant forgetful = AiServices.builder(Assistant.class)
+        .chatModel(model)
+        .build();
+
+forgetful.chat("My name is Inigo Montoya.");
+forgetful.chat("What's my name?");   // "I don't know your name."
+```
+
+```java
+// Add a ChatMemory: the service keeps the list and resends it
+Assistant attentive = AiServices.builder(Assistant.class)
+        .chatModel(model)
+        .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+        .build();
+
+attentive.chat("My name is Inigo Montoya.");
+attentive.chat("What's my name?");   // "Your name is Inigo Montoya."
+```
+````
+
+<v-clicks>
+
+- Same list you appended to by hand in the Ollama lab; `logRequests(true)` shows it grow from 1 message to 3
+- `withMaxMessages(10)` is the trimming policy: bounded cost, and the model forgets what falls out
+- `ConversationDemoTest` proves it with a scripted model: one message, then three, then the oldest gone
+
+</v-clicks>
 
 ---
 

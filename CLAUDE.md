@@ -9,6 +9,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 ## Current State
 
 ### Recent Updates (November 2026)
+- ✅ Redesign branch, item 4 (Nov 5): `ConversationDemo` shows an AI Service forgetting the user's name, then `MessageWindowChatMemory` fixing it; `ConversationDemoTest` records the messages list with a scripted model (1 message, then 3, then the window trims). `QuickChatDemo` adds an `openrouter/free` call that prints `response.metadata().modelName()` to show routing. Lab steps and a memory slide added
 - ✅ Scripted-model tests for the other two LangChain4j demos (Nov 5): `StructuredOutputDemoTest` now drives the AI Service through a `ChatModel` that claims JSON Schema support (schema has all four fields required, fenced JSON parses, a missing required field throws `OutputParsingException` from Jackson, an unknown enum value fails in the framework); `DecisionModelDemoTest` pins the triage question keys, runs `triage` against a lambda `DecisionModel`, and checks the thresholds. Each demo exposes a package-private factory or helper (`extractor(ChatModel)`, `triageRequest`, `actions`) so no key is needed. Rule: a demo run is a happy-path check; the unhappy paths need a scripted model
 - ✅ Tool-calling hardening (Nov 5) after the Nov 4 class failed on the demo: `fuelCost` uses `@P(defaultValue)` for mpg and price, unsupported routes throw `ToolErrorVisibleToLlm`, and the AI service sets `toolArgumentsErrorHandler(sendExceptionMessageToLlm())` and `toolExecutionErrorHandler(failInvocationUnlessVisibleToLlm())` explicitly; `ToolCallingDemoTest` drives the loop with a scripted ChatModel (no key) to prove each case; lab paragraph and a "When the Model Gets the Arguments Wrong" slide added
 - ✅ Pre-delivery preflight (Nov 4): chat demos moved from gpt-5-nano to gpt-6-luna (still a reasoning model: no temperature), DecisionModelDemo to typesafe/jev-1.14, JEP 540 now "integrated into JDK 28", JUnit 6.1.3, redundant POI pin removed, GitHub Actions majors bumped; Gemini moved from gemini-3-flash-preview to gemini-3.8-flash
@@ -68,6 +69,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 src/main/java/com/kousenit/
 ├── demos/                     # Standalone demo classes
 │   ├── QuickChatDemo.java    # Basic chat example
+│   ├── ConversationDemo.java # Stateless AI Service, then MessageWindowChatMemory (Inigo Montoya demo)
 │   ├── TextToSpeechDemo.java # TTS demonstration
 │   ├── MultiModelDemo.java   # Compare multiple providers
 │   ├── ToolCallingDemo.java  # LangChain4j tools backed by Java methods

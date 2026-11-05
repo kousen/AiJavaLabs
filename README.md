@@ -98,6 +98,7 @@ src/
 ├── main/java/com/kousenit/
 │   ├── demos/                     # Standalone demo classes for training
 │   │   ├── QuickChatDemo.java
+│   │   ├── ConversationDemo.java  # Statelessness, then MessageWindowChatMemory
 │   │   ├── TextToSpeechDemo.java
 │   │   ├── MultiModelDemo.java
 │   │   ├── ToolCallingDemo.java
