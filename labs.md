@@ -4,7 +4,7 @@
 
 - [Generate Audio from Text](#generate-audio-from-text)
 - [List the OpenAI Models](#list-the-openai-models)
-- [Same pattern, other vendors](#same-pattern-other-vendors)
+- [Extension: Same pattern, other vendors](#extension-same-pattern-other-vendors)
 - [Install Ollama](#install-ollama)
 - [Access Ollama programmatically](#access-ollama-programmatically)
 - [Every request is stateless](#every-request-is-stateless)
@@ -319,7 +319,7 @@ class OpenAiServiceTest {
 
     models.forEach(System.out::println);
     assertTrue(new HashSet<>(models).containsAll(
-            List.of("gpt-image-2.5-flare", "gpt-6-luna",
+            List.of("gpt-image-2.6-flare", "gpt-6-luna",
                     "gpt-4o-mini-tts", "whisper-1")));
     }
 }
@@ -327,9 +327,9 @@ class OpenAiServiceTest {
 
 - Run the test. You should see a list of model names in the console, and the assertion should pass.
 
-## Same pattern, other vendors
+## Extension: Same pattern, other vendors
 
-Everything in the last lab was: build a request, send it, check the status, bind the JSON to records. That pattern does not care who is on the other end. This lab applies it to three vendors with no Java SDK, or none worth the dependency. Only the details change: which header carries the key, and what the JSON looks like.
+This section is an extension: skip it if time is short, nothing later depends on it. Everything in the last lab was: build a request, send it, check the status, bind the JSON to records. That pattern does not care who is on the other end. This lab applies it to two vendors with no Java SDK, or none worth the dependency. Only the details change: which header carries the key, and what the JSON looks like. The OpenRouter catalog comes back in the images lab, where it is how you find the current image model.
 
 ### OpenRouter: a catalog with no key required
 
@@ -377,26 +377,6 @@ public List<Model> listModels(String outputModalities) {
 
 * Test it twice: once with `"text"`, asserting the ids `openai/gpt-6-luna` and `google/gemini-3.8-flash` are present, and once with `"image"`, printing each model's modalities and prompt price per million and asserting every result lists `image` among its output modalities.
 
-### Anthropic: a different header, the same shape
-
-Anthropic's API uses an `x-api-key` header instead of a bearer token, plus a required `anthropic-version` header. Its models endpoint returns `created_at` as an ISO-8601 timestamp, which Jackson 3 reads into a `java.time.Instant` with no extra configuration.
-
-```java
-public record ModelsResponse(List<Model> data, String firstId, boolean hasMore, String lastId) {}
-public record Model(Instant createdAt, String displayName, String id, String type) {}
-```
-
-```java
-HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create("https://api.anthropic.com/v1/models"))
-        .header("x-api-key", System.getenv("ANTHROPIC_API_KEY"))
-        .header("anthropic-version", "2023-06-01")
-        .header("Accept", "application/json")
-        .build();
-```
-
-* If you have an Anthropic key, add `AnthropicService.listModels()` on this pattern and print the display names and creation dates. If not, read the solution's `AnthropicService` and note how little differs from `OpenAiService`.
-
 ### Optional: ElevenLabs, text to speech without an SDK
 
 [ElevenLabs](https://elevenlabs.io) is a popular text-to-speech service with official SDKs for Python and JavaScript and none for Java. The API is two calls: a GET for the available voices and a POST that returns audio bytes, the same shape as the OpenAI text-to-speech lab. Skip this section if you do not want another account; it costs nothing to read.
@@ -438,7 +418,7 @@ public Path textToSpeech(String voiceId, String text) {
 * Write a test that lists the voices, generates a sentence with a premade voice, and checks the file is more than a few kilobytes. Leave the file where it is: it lands in `build/audio` with the OpenAI audio, so you can play it, and it stays out of version control.
 * `GET /v1/models` lists the speech models if you want to try a newer one than the default.
 
-Three vendors, three header schemes, one pattern. That is the whole argument for learning the HTTP layer: the next service you need will not have a Java library either, and it will not matter.
+Two vendors, two header schemes, one pattern. That is the whole argument for learning the HTTP layer: the next service you need will not have a Java library either, and it will not matter.
 
 ## Install Ollama
 
@@ -817,7 +797,9 @@ void generate_is_the_single_prompt_aside() {
 
 ## Generating Images
 
-OpenAI's current image models are the GPT Image 2.5 pair: `gpt-image-2.5-flare` is the fast, everyday generator and `gpt-image-2.5-sunburst` is tuned for precise edits. The lab uses Flare. Both take the same request shape, so switching is a one-string change.
+Image models turn over faster than any other kind, so the first step is finding out what is current rather than trusting the lab text. OpenRouter's catalog lists image-capable models from every vendor behind one query, and the OpenAI ids are the same without the vendor prefix.
+
+* Run `OpenRouterService.listModels("image")` from the earlier lab (or open [openrouter.ai/models?output_modalities=image](https://openrouter.ai/models?output_modalities=image)) and look for the newest `openai/gpt-image-*` ids. On November 5, 2026 that was the GPT Image 2.6 pair, released the day before: `gpt-image-2.6-flare` is the fast, everyday generator and `gpt-image-2.6-sunburst` is tuned for precise edits. The lab uses Flare. Both take the same request shape, so switching is a one-string change, and so is moving to whatever is newest when you read this.
 
 * Back to OpenAI for one more raw-HTTP service, the GPT Image model. Generating images is straightforward. Again, we'll create an image request object that models the input JSON data, send it in a POST request, and process the results. GPT Image returns Base 64 encoded image data from the Image API.
 
@@ -900,7 +882,7 @@ class GptImageServiceTest {
     @Test
     void generate_image() {
         var imageRequest = new ImageRequest(
-            "gpt-image-2.5-flare",
+            "gpt-image-2.6-flare",
             "Draw a picture of cats playing cards",
             1,
             "medium",

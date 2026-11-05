@@ -42,9 +42,6 @@ dependencies {
     // Decision models (experimental API): typed answers with probabilities instead of text
     implementation("dev.langchain4j:langchain4j-typesafe")
 
-    // Google Gen AI
-    implementation("com.google.genai:google-genai:1.80.0")
-
 
     // JSON: Jackson 3 (tools.jackson), the line Spring Boot 4 ships. LangChain4j still uses
     // Jackson 2 internally; the two coexist because 3.x moved to a new package.

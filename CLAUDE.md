@@ -9,6 +9,7 @@ This file provides context for AI assistants working on the AI Java Labs project
 ## Current State
 
 ### Recent Updates (November 2026)
+- ✅ Redesign branch, item 5 (Nov 5): Google GenAI SDK, `ImageGenerator`, and the raw `AnthropicService` removed; "Same pattern, other vendors" is now an extension with two vendors; images lab moves to gpt-image-2.6-flare and opens with the OpenRouter catalog query; key lists trimmed to OpenAI + OpenRouter, ElevenLabs optional
 - ✅ Redesign branch, item 4 (Nov 5): `ConversationDemo` shows an AI Service forgetting the user's name, then `MessageWindowChatMemory` fixing it; `ConversationDemoTest` records the messages list with a scripted model (1 message, then 3, then the window trims). `QuickChatDemo` adds an `openrouter/free` call that prints `response.metadata().modelName()` to show routing. Lab steps and a memory slide added
 - ✅ Scripted-model tests for the other two LangChain4j demos (Nov 5): `StructuredOutputDemoTest` now drives the AI Service through a `ChatModel` that claims JSON Schema support (schema has all four fields required, fenced JSON parses, a missing required field throws `OutputParsingException` from Jackson, an unknown enum value fails in the framework); `DecisionModelDemoTest` pins the triage question keys, runs `triage` against a lambda `DecisionModel`, and checks the thresholds. Each demo exposes a package-private factory or helper (`extractor(ChatModel)`, `triageRequest`, `actions`) so no key is needed. Rule: a demo run is a happy-path check; the unhappy paths need a scripted model
 - ✅ Tool-calling hardening (Nov 5) after the Nov 4 class failed on the demo: `fuelCost` uses `@P(defaultValue)` for mpg and price, unsupported routes throw `ToolErrorVisibleToLlm`, and the AI service sets `toolArgumentsErrorHandler(sendExceptionMessageToLlm())` and `toolExecutionErrorHandler(failInvocationUnlessVisibleToLlm())` explicitly; `ToolCallingDemoTest` drives the loop with a scripted ChatModel (no key) to prove each case; lab paragraph and a "When the Model Gets the Arguments Wrong" slide added
@@ -59,7 +60,7 @@ This file provides context for AI assistants working on the AI Java Labs project
   - Jackson 3.2.4 (`tools.jackson.core:jackson-databind`); Gson removed in October 2026
   - LangChain4j pulls in Jackson 2 (`com.fasterxml.jackson`) transitively; both coexist, annotations are shared
 - **AI Models**:
-  - OpenAI: gpt-4o-mini, gpt-6-luna (Responses API), gpt-image-2.5-flare (gpt-image-2.5-sunburst for edits), gpt-4o-mini-tts, whisper-1
+  - OpenAI: gpt-4o-mini, gpt-6-luna (Responses API), gpt-image-2.6-flare (gpt-image-2.6-sunburst for edits; released Nov 4, 2026; the images lab opens by finding the current id in the OpenRouter catalog), gpt-4o-mini-tts, whisper-1
   - Ollama: gemma4 (text and vision, a thinking model: streamed chunks carry `thinking` with empty `content` first)
   - Google: gemini-3.8-flash (gemini-4-argon available on Google and OpenRouter at about 2.5x the price)
   - OpenRouter (QuickChatDemo, MultiModelDemo): openai/gpt-6-luna, google/gemini-3.8-flash via `OpenAiChatModel` with base URL `https://openrouter.ai/api/v1`
@@ -79,7 +80,6 @@ src/main/java/com/kousenit/
 │   └── ResponsesApiDemo.java # Responses API with Jackson's tree model (pointer + walk)
 ├── GptImageService.java       # GPT Image generation
 ├── OpenRouterService.java     # Raw HTTP: OpenRouter model catalog, output_modalities filter, no key
-├── AnthropicService.java      # Raw HTTP: Anthropic models list (x-api-key + anthropic-version headers)
 ├── ElevenLabsService.java     # Raw HTTP: ElevenLabs voices + text-to-speech (optional lab, ELEVENLABS_API_KEY)
 ├── HttpSupport.java           # requireSuccess / requireSuccessLines / requireSuccessFile + ApiException
 ├── EasyRAGDemo.java           # RAG implementation
@@ -108,7 +108,7 @@ Training Materials:
 - **Required for QuickChatDemo/MultiModelDemo**: OpenRouter API key (OPENROUTER_API_KEY environment variable)
 - **Optional**: Ollama installation for local AI models
 - **Testing**: Some tests require external services to be available
-- **Optional keys**: ANTHROPIC_API_KEY (AnthropicServiceTest), ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name)
+- **Optional keys**: ELEVENLABS_API_KEY (ElevenLabsServiceTest, uses a premade public voice found by name); GOOGLEAI_API_KEY and PERPLEXITY_API_KEY each gate one test in OpenAiLC4jTest. The raw AnthropicService and the Google GenAI SDK were removed in the Nov 2026 redesign; the `langchain4j-anthropic` and `langchain4j-google-ai-gemini` modules stay on the classpath as pointers
 
 ### Build Commands
 ```bash

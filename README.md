@@ -36,10 +36,9 @@ This repository contains practical exercises and example implementations for wor
 
    Optional provider keys used by some demos/tests:
    ```bash
-   export GOOGLEAI_API_KEY=your_google_ai_key_here
-   export PERPLEXITY_API_KEY=your_perplexity_key_here
-   export ANTHROPIC_API_KEY=your_anthropic_key_here      # AnthropicService (models list)
    export ELEVENLABS_API_KEY=your_elevenlabs_key_here    # ElevenLabsService (optional lab)
+   export GOOGLEAI_API_KEY=your_google_ai_key_here       # one Gemini-direct test in OpenAiLC4jTest
+   export PERPLEXITY_API_KEY=your_perplexity_key_here    # one test in OpenAiLC4jTest
    ```
 
 2. **Ollama Setup**: Install Ollama and download the required models:
@@ -108,7 +107,6 @@ src/
 │   │   └── ResponsesApiDemo.java  # Responses API with Jackson's tree model
 │   ├── GptImageService.java       # GPT Image generation
 │   ├── OpenRouterService.java     # OpenRouter model catalog (no key needed)
-│   ├── AnthropicService.java      # Anthropic models list (x-api-key header)
 │   ├── ElevenLabsService.java     # ElevenLabs voices and text-to-speech (no Java SDK)
 │   ├── HttpSupport.java           # Status-code checks shared by the raw services
 │   ├── EasyRAGDemo.java           # RAG implementation example

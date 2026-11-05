@@ -253,9 +253,7 @@ graph LR
 export OPENROUTER_API_KEY=...
 export OPENAI_API_KEY=...
 
-# Optional: specific labs and tests
-export GOOGLEAI_API_KEY=...
-export ANTHROPIC_API_KEY=...
+# Optional: the ElevenLabs lab
 export ELEVENLABS_API_KEY=...
 
 # Optional: local models
@@ -314,7 +312,7 @@ ollama pull gemma4
 - **<span style="color: #00D4FF">gpt-6-luna</span>**: low cost
 - **<span style="color: #00D4FF">gemini-3.8-flash</span>**: Google's Flash; gemini-4-argon ≈ 2.5x
 - **<span style="color: #00D4FF">gemma4</span>**: free, local
-- **<span style="color: #00D4FF">gpt-image-2.5-flare</span>**: images
+- **<span style="color: #00D4FF">gpt-image-2.6-flare</span>**: images
 - **<span style="color: #00D4FF">gpt-4o-mini-tts</span>**: audio
 
 </v-clicks>
@@ -641,9 +639,9 @@ public static HttpResponse<String> requireSuccess(HttpResponse<String> response)
 
 # Services Without a Java SDK
 
-Same pattern, three vendors. Only the headers and the JSON change.
+Same pattern, two vendors. Only the headers and the JSON change.
 
-<div class="grid grid-cols-3 gap-4 text-xs" style="--slidev-code-font-size: 11px; --slidev-code-line-height: 1.45">
+<div class="grid grid-cols-2 gap-8 text-xs" style="--slidev-code-font-size: 11px; --slidev-code-line-height: 1.45">
 
 <div>
 
@@ -657,21 +655,6 @@ HttpRequest.newBuilder()
   .build();
 ```
 Richer JSON than OpenAI's list: modalities and per-token prices, bound to records with a `promptPerMillion()` method
-
-</div>
-
-<div>
-
-**Anthropic** (`x-api-key`)
-```java
-HttpRequest.newBuilder()
-  .uri(URI.create(MODELS_URL))
-  .header("x-api-key", API_KEY)
-  .header("anthropic-version",
-          "2023-06-01")
-  .build();
-```
-`created_at` binds straight to `java.time.Instant`
 
 </div>
 

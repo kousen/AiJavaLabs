@@ -93,14 +93,14 @@ OpenRouter's catalog. The agents slide already does this. Make it the rule.
 
 1. Fix the labs.md table of contents (four sections missing today). Done.
 2. Move "Where Agents Fit" to follow the decision-model slide. Done.
-3. Ollama chat-first: `OllamaRecords` loses the sealed request hierarchy;
+3. Done. Ollama chat-first: `OllamaRecords` loses the sealed request hierarchy;
    `OllamaService` keeps `generate(model, prompt)` as the aside, gains chat
    streaming over `/api/chat` and vision on a message; tests; labs rewritten
    with the raw Inigo Montoya step; sealed-interfaces slide and wire-format
    streaming slide replaced. Largest item.
-4. Act 2 memory step with `MessageWindowChatMemory`, the `openrouter/free`
+4. Done. Act 2 memory step with `MessageWindowChatMemory`, the `openrouter/free`
    routing step, one slide.
-5. Remove the Google SDK, `ImageGenerator`, `AnthropicService`; demote the
+5. Done. Remove the Google SDK, `ImageGenerator`, `AnthropicService`; demote the
    other-vendors section; images lab to gpt-image-2.6-flare with the catalog
    step first; key lists trimmed everywhere.
 6. Promote decision models; renumber sections; label extensions.

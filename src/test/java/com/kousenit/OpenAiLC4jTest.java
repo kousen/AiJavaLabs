@@ -82,7 +82,7 @@ public class OpenAiLC4jTest {
         ImageModel model = OpenAiImageModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
                 .modelName(
-                        "gpt-image-2.5-flare") // newer than the OpenAiImageModelName enum, so pass the id as a string
+                        "gpt-image-2.6-flare") // newer than the OpenAiImageModelName enum, so pass the id as a string
                 .build();
 
         Response<Image> response = model.generate(
